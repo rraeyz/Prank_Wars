@@ -550,8 +550,10 @@ func it_rush() -> void:
 	r.in_interact = true
 	await _seconds(3.5)
 	check(w.scoring.totals[1] == 30, "chore during the rush = 30 (got %d)" % w.scoring.totals[1])
+	Config.rule_choice = "off"
 	w._host_start_round(1)
 	check(not w.rush and w.scoring.mult == 1, "rush resets next round")
+	Config.rule_choice = "random"
 
 
 func it_sniff() -> void:
