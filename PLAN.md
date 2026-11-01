@@ -63,12 +63,12 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [x] Türkçe + İngilizce arayüz
 - [x] Ayarlar (ses, dil, tam ekran)
 - [x] Gamepad desteği
-- [ ] CC0 mobilya modelleri (Kenney Furniture Kit) — erişim sorunu, bkz. PROGRESS
-- [ ] Performans ve hata düzeltme turu
+- [~] CC0 mobilya modelleri (Kenney Furniture Kit) — bu ortamdan kenney.nl'ye erişim yok (403); şimdilik koddan modeller. Kullanıcı isterse zip'i repoya koyabilir
+- [x] Performans ve hata düzeltme turu (282 mesh, 73 fizik gövdesi; NaN göz hatası düzeltildi)
 - [K] Arkadaş gruplarıyla 4–8 kişilik test
 
 ## Faz 5 — Steam'e hazırlık
-- [ ] Steam sürümü (GodotSteam ile, appID ayarlanabilir)
+- [~] Steam sürümü (GodotSteam ile; appID `steam_appid.txt`'den okunuyor, şimdilik 480) — gerçek appID için Steamworks hesabı gerekli
 - [x] Mağaza metinleri ve tanıtım klasörü (`marketing/`)
 - [K] Steamworks hesabı + $100 ödeme
 - [K] Mağaza görselleri / fragman çekimi
@@ -79,8 +79,8 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [x] Oyun içi ipuçları (ilk raunt için kısa rehber yazıları)
 - [x] F9 ile ekran görüntüsü kaydetme (her an)
 - [x] Oyun içi krediler / lisans ekranı
-- [ ] Görsel cila: konturlar, gölgeler, oda süsleri, düşüşte toz/yıldız efekti
-- [ ] Denge: puanlar, şaka maliyetleri, süreler (test sonuçlarına göre)
+- [x] Görsel cila: konturlar, gölgeler, oda süsleri, düşüşte toz/yıldız efekti
+- [~] Denge: puanlar, şaka maliyetleri, süreler (botlu maçlarda iki taraf yakın puan alıyor; gerçek oyuncu testine göre ayarlanacak)
 
 ## Haftalık
 - [x] Hafta 1 video fikirleri (`marketing/VIDEO_IDEAS.md`)

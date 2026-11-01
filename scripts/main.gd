@@ -35,6 +35,8 @@ func _ready() -> void:
 		var np: Node = load("res://tests/net_probe.gd").new()
 		np.role = str(args["nettest"])
 		add_child(np)
+	if args.has("countprobe"):
+		add_child(load("res://tests/count_probe.gd").new())
 	if args.has("nanprobe"):
 		add_child(load("res://tests/nan_probe.gd").new())
 	Net.match_begin.connect(_on_match_begin)

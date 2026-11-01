@@ -19,7 +19,12 @@ func _ready() -> void:
 	if not Engine.has_singleton("Steam") or DisplayServer.get_name() == "headless":
 		return
 	steam = Engine.get_singleton("Steam")
-	var r = steam.steamInitEx(APP_ID, false)
+	# steam_appid.txt next to the exe wins (CI writes 480 now; put the real app id there later)
+	var app_id := APP_ID
+	var f := OS.get_executable_path().get_base_dir().path_join("steam_appid.txt")
+	if FileAccess.file_exists(f):
+		app_id = FileAccess.get_file_as_string(f).strip_edges().to_int()
+	var r = steam.steamInitEx(app_id, false)
 	ready_ok = r is Dictionary and int(r.get("status", 1)) == 0
 	if not ready_ok:
 		push_warning("Steam init failed: %s" % str(r))
