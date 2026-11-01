@@ -237,7 +237,7 @@ var now := 0.0
 var settings := {
 	"name": "", "lang": "", "master": 0.8, "music": 0.5, "sfx": 0.9,
 	"fullscreen": false, "last_ip": "127.0.0.1", "keys": {}, "look": {}, "xp": 0,
-	"brightness": 1.0, "contrast": 1.0, "saturation": 1.0, "twitch": "", "twitch_on": false,
+	"brightness": 1.0, "contrast": 1.0, "saturation": 1.0, "quality": 2, "twitch": "", "twitch_on": false,
 	"ach": {}, "counts": {}, "daily": {},
 }
 const REBINDABLE := ["move_up", "move_down", "move_left", "move_right", "jump", "interact", "dive", "action", "prev_item", "next_item", "cam_next", "reveal", "taunt", "ghost", "trigger_all"]
@@ -364,15 +364,60 @@ func save_settings() -> void:
 
 signal visuals_changed
 const SLIDERS := {"master": [0.0, 1.0], "music": [0.0, 1.0], "sfx": [0.0, 1.0],
-	"brightness": [0.5, 1.5], "contrast": [0.6, 1.4], "saturation": [0.0, 1.6]}
+	"brightness": [0.5, 1.5], "contrast": [0.6, 1.4], "saturation": [0.0, 1.6], "quality": [0.0, 2.0]}
 
 
-## Applies the player's brightness / contrast / saturation (plus our base color grade) to an Environment.
+## The shared look: sky light, soft AO, gentle glow, AgX tonemap. Effects the renderer can't do are ignored.
+func make_env() -> Environment:
+	var e := Environment.new()
+	var sky := Sky.new()
+	var sm := ProceduralSkyMaterial.new()
+	sm.sky_top_color = Color("5fa8ff")
+	sm.sky_horizon_color = Color("cfe9ff")
+	sm.ground_bottom_color = Color("6d8f5a")
+	sm.ground_horizon_color = Color("cfe9ff")
+	sky.sky_material = sm
+	e.sky = sky
+	e.background_mode = Environment.BG_SKY
+	e.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+	e.ambient_light_energy = 1.0
+	e.ambient_light_sky_contribution = 0.6
+	e.ambient_light_color = Color("fff3e0")
+	e.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
+	e.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	e.tonemap_exposure = 1.05
+	e.tonemap_white = 5.0
+	apply_env(e)
+	return e
+
+
+## Shared sun: warm, soft shadows.
+func make_sun() -> DirectionalLight3D:
+	var sun := DirectionalLight3D.new()
+	sun.rotation_degrees = Vector3(-55, -30, 0)
+	sun.light_color = Color("fff1dc")
+	sun.light_energy = 1.25
+	sun.shadow_enabled = true
+	sun.shadow_blur = 1.8
+	sun.shadow_opacity = 0.85
+	sun.directional_shadow_max_distance = 45.0
+	return sun
+
+
+## Applies the player's brightness / contrast / saturation and graphics quality to an Environment.
 func apply_env(e: Environment) -> void:
+	var q := int(settings.get("quality", 2))
+	e.ssao_enabled = q >= 1
+	e.ssao_radius = 1.0
+	e.ssao_intensity = 1.1
+	e.ssil_enabled = q >= 2
+	e.glow_enabled = q >= 1
+	e.glow_intensity = 0.35
+	e.glow_bloom = 0.05
 	e.adjustment_enabled = true
-	e.adjustment_brightness = 0.94 * float(settings["brightness"])
-	e.adjustment_contrast = 1.06 * float(settings["contrast"])
-	e.adjustment_saturation = 1.15 * float(settings["saturation"])
+	e.adjustment_brightness = 1.0 * float(settings["brightness"])
+	e.adjustment_contrast = 1.05 * float(settings["contrast"])
+	e.adjustment_saturation = 1.25 * float(settings["saturation"])
 
 
 func apply_settings() -> void:

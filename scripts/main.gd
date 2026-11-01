@@ -92,19 +92,9 @@ func _make_bg() -> void:
 	var h := House.new()
 	bg.add_child(h)
 	h.build()
-	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-55, -30, 0)
-	sun.shadow_enabled = true
-	bg.add_child(sun)
+	bg.add_child(Config.make_sun())
 	var env := WorldEnvironment.new()
-	var e := Environment.new()
-	e.background_mode = Environment.BG_COLOR
-	e.background_color = Color("9fd8ff")
-	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	e.ambient_light_color = Color("fff4e6")
-	e.ambient_light_energy = 0.45
-	env.environment = e
-	Config.apply_env(e)
+	env.environment = Config.make_env()
 	bg.add_child(env)
 	var cam := Camera3D.new()
 	cam.name = "BgCam"

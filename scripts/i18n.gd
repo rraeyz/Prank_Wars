@@ -71,6 +71,7 @@ const S := {
 	"pu_coffee": ["Kahve (10 sn hız)", "Coffee (10 s speed)"],
 	"feed_powerup": ["%s aldı: %s", "%s got: %s"],
 	"feed_shield": ["%s şemsiyeyle korundu!", "%s's umbrella blocked it!"],
+	"quality": ["Grafik kalitesi (0-2)", "Graphics quality (0-2)"],
 	"brightness": ["Parlaklık", "Brightness"], "contrast": ["Kontrast", "Contrast"], "saturation": ["Renk doygunluğu", "Saturation"],
 	"chat_hint": ["Sohbet: yaz ve Enter (F1-F4 hızlı mesaj)", "Chat: type and press Enter (F1-F4 quick messages)"],
 	"q_1": ["HAHAHA!", "HAHAHA!"], "q_2": ["Dikkat, tuzak var!", "Watch out, trap!"], "q_3": ["Buraya gel!", "Come here!"],

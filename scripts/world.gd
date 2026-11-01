@@ -123,25 +123,14 @@ func _ready() -> void:
 
 
 func _lights() -> void:
-	var sun := DirectionalLight3D.new()
+	var sun := Config.make_sun()
 	_sun = sun
-	sun.rotation_degrees = Vector3(-58, -28, 0)
-	sun.shadow_enabled = true
-	sun.light_energy = 0.8
-	sun.shadow_opacity = 0.75
-	sun.directional_shadow_max_distance = 40.0
 	add_child(sun)
 	var env := WorldEnvironment.new()
-	var e := Environment.new()
-	e.background_mode = Environment.BG_COLOR
-	e.background_color = Color("9fd8ff")
-	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	e.ambient_light_color = Color("fff4e6")
-	e.ambient_light_energy = 0.36
+	var e := Config.make_env()
 	env.environment = e
 	add_child(env)
 	_env = e
-	Config.apply_env(e)
 	Config.visuals_changed.connect(func(): Config.apply_env(e))
 
 
@@ -1139,9 +1128,11 @@ func s_round_reset(i: int, ttm: int, picked: Array, mod: String) -> void:
 	reveal_until = 0.0
 	_reveal_local_ready = 0.0
 	if _sun:
-		_sun.light_energy = 0.04 if modifier == "blackout" else 0.8
-		_env.ambient_light_energy = 0.07 if modifier == "blackout" else 0.42
-		_env.background_color = Color("10142a") if modifier == "blackout" else Color("9fd8ff")
+		var dark := modifier == "blackout"
+		_sun.light_energy = 0.05 if dark else 1.25
+		_env.ambient_light_energy = 0.08 if dark else 1.0
+		_env.background_mode = Environment.BG_COLOR if dark else Environment.BG_SKY
+		_env.background_color = Color("10142a")
 	round_i = i
 	trapper_team = ttm
 	replaying = false

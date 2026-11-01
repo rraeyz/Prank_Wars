@@ -337,7 +337,7 @@ func _build_settings() -> void:
 		var sl := HSlider.new()
 		sl.min_value = Config.SLIDERS[k][0]
 		sl.max_value = Config.SLIDERS[k][1]
-		sl.step = 0.05
+		sl.step = 1.0 if k == "quality" else 0.05
 		sl.value = float(Config.settings[k])
 		sl.custom_minimum_size = Vector2(260, 24)
 		sl.value_changed.connect(func(val): Config.settings[k] = val; Config.save_settings())
