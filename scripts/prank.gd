@@ -26,6 +26,7 @@ var _hit_cd := {}
 var _revealed := false
 var _anim := -1.0  # trigger animation time
 var _fx_parts: Array = []
+var _tag: Label3D
 
 
 func setup(w: Node, pid: int, t: String, tm: int, sock: String) -> void:
@@ -39,6 +40,8 @@ func setup(w: Node, pid: int, t: String, tm: int, sock: String) -> void:
 	visual = Node3D.new()
 	add_child(visual)
 	_build_visual()
+	if def["trigger"] == "remote":
+		_tag = U.label3d("", 56, Color("ffe14d"), Vector3(0, 0.9 if def["place"] != "ceiling" else -0.9, 0), self)
 	if Net.is_host() and def["trigger"] == "step":
 		area = Area3D.new()
 		area.collision_layer = 0
@@ -194,6 +197,13 @@ func _process(delta: float) -> void:
 	if type == "vacuum":
 		show = true
 	visual.visible = show
+	if _tag:
+		_tag.visible = false
+		if (world.phase == "run" or world.phase == "sandbox") and not used and world.local_team() == team and not world.replaying:
+			var idx: int = world.remote_pranks(team).find(self)
+			if idx >= 0:
+				_tag.visible = true
+				_tag.text = "[%d]" % (idx + 1)
 	if ringing:
 		visual.rotation.z = sin(Time.get_ticks_msec() * 0.06) * 0.25
 	if disarmed:

@@ -54,6 +54,7 @@ var local_prompt := ["", 0.0]
 var _pending_remote := {}
 var _clock := 0.0
 var _in_acc := 0.0
+var _mouse_mode := false
 var _last_mv := Vector2.ZERO
 var _last_inter := false
 
@@ -330,7 +331,7 @@ func _local_input() -> void:
 				selected = i - 1
 	if Input.is_action_just_pressed("action"):
 		if building() and local_is_trapper() and me.visible:
-			var pl := placement_for(list[selected], me.global_position, -me.global_transform.basis.z)
+			var pl := local_placement(list[selected])
 			if pl["ok"]:
 				_send_action("place", [list[selected], pl["pos"], pl["yaw"], pl["socket"]])
 			else:
@@ -344,7 +345,16 @@ func _local_input() -> void:
 			if Input.is_action_just_pressed("slot_%d" % i) and i - 1 < rl.size():
 				_send_action("remote", [rl[i - 1].id])
 		if Input.is_action_just_pressed("action") and rl.size() > 0:
-			_send_action("remote", [rl[0].id])
+			var pick: Prank = rl[0]
+			if _mouse_mode and cam:
+				var mp := get_viewport().get_mouse_position()
+				var bd := 140.0
+				for rp in rl:
+					var sp := cam.unproject_position(rp.global_position)
+					if sp.distance_to(mp) < bd:
+						bd = sp.distance_to(mp)
+						pick = rp
+			_send_action("remote", [pick.id])
 	if Input.is_action_just_pressed("cam_next"):
 		cam.cycle()
 	if phase == "sandbox":
@@ -536,7 +546,7 @@ func host_place(slot: int, type: String, pos: Vector3, yaw: float, socket: Strin
 	if budget[a.team] < cost:
 		_toast_to(a, "no_budget")
 		return false
-	if U.dist_xz(a.global_position, pos) > 3.5:
+	if U.dist_xz(a.global_position, pos) > 7.0:
 		return false
 	# re-validate from the host's view of the world
 	var check := placement_for(type, pos - Vector3(0, 0, 0), Vector3.FORWARD) if Config.PRANKS[type]["place"] in ["door", "container", "task"] else {}
@@ -1379,13 +1389,42 @@ func _build_ghost() -> void:
 	_ghost.visible = false
 
 
+## Mouse users place where they point (within reach); keyboard/gamepad users place in front of the bean.
+func local_placement(type: String) -> Dictionary:
+	var me := local_avatar()
+	var fwd := -me.global_transform.basis.z
+	if _mouse_mode and cam and not headless:
+		var mp := get_viewport().get_mouse_position()
+		var from := cam.project_ray_origin(mp)
+		var dir := cam.project_ray_normal(mp)
+		var q := PhysicsRayQueryParameters3D.create(from, from + dir * 60.0, U.L_WORLD)
+		var hit := get_world_3d().direct_space_state.intersect_ray(q)
+		if not hit.is_empty():
+			var p: Vector3 = hit["position"]
+			var to := U.flat_xz(p - me.global_position)
+			if to.length() > 5.5:
+				to = to.normalized() * 5.5
+			if to.length() > 0.2:
+				fwd = to.normalized()
+			var origin := me.global_position + to - fwd * (0.6 if Config.PRANKS[type]["place"] == "ceiling" else 1.0)
+			return placement_for(type, origin, fwd)
+	return placement_for(type, me.global_position, fwd)
+
+
+func _input(e: InputEvent) -> void:
+	if e is InputEventMouseMotion:
+		_mouse_mode = true
+	elif e is InputEventJoypadButton or (e is InputEventJoypadMotion and absf(e.axis_value) > 0.5):
+		_mouse_mode = false
+
+
 func _update_ghost() -> void:
 	var me := local_avatar()
 	if me == null or not building() or not local_is_trapper() or not me.visible:
 		_ghost.visible = false
 		return
 	var type: String = Config.enabled_pranks()[selected]
-	var pl := placement_for(type, me.global_position, -me.global_transform.basis.z)
+	var pl := local_placement(type)
 	_ghost.visible = true
 	_ghost.global_position = pl["pos"] + Vector3(0, 0.03, 0)
 	var ok: bool = pl["ok"] and budget[local_team()] >= int(Config.PRANKS[type]["cost"])
