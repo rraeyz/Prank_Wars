@@ -90,7 +90,7 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 
 ## Faz 8 — Dünya pazarı ve erişilebilirlik (saatlik tetikleyici için)
 - [x] Gamepad ile menüde gezinme (Steam Deck)
-- [ ] Yeni diller: İspanyolca, Portekizce (BR), Almanca, Fransızca, Rusça (arayüz metinleri)
+- [x] Yeni diller: İspanyolca, Portekizce (BR), Almanca, Fransızca, Rusça (arayüz metinleri; ipuçları İngilizce kalıyor)
 - [ ] Tuş atama ekranı (klavye)
 - [ ] Botlar bazen görünen tuzaktan kaçsın (daha inandırıcı antrenman)
 - [ ] İkinci harita taslağı (ofis) — rapor: çıkıştan sonra; sadece altyapı (harita seçimi)

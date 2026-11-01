@@ -2,6 +2,9 @@ extends Node
 ## Tiny TR/EN string table (autoload "I18n"). Use I18n.t("key") or I18n.t("key", [args]).
 
 var lang := "en"
+const EXTRA := preload("res://scripts/i18n_extra.gd")
+const ALL_LANGS := ["tr", "en", "es", "pt", "de", "fr", "ru"]
+const LANG_NAMES := ["Türkçe", "English", "Español", "Português", "Deutsch", "Français", "Русский"]
 
 const S := {
 	"title_sub": ["Evi şakalarla donat. Arkadaşların içine yürüsün.", "Booby-trap the house. Watch your friends walk right into it."],
@@ -157,8 +160,8 @@ func _ready() -> void:
 
 func set_lang(l: String) -> void:
 	if l == "":
-		l = "tr" if OS.get_locale_language() == "tr" else "en"
-	lang = l
+		l = OS.get_locale_language()
+	lang = l if l in ALL_LANGS else "en"
 
 
 func tip(key: String, i: int) -> String:
@@ -172,6 +175,9 @@ func tip(key: String, i: int) -> String:
 func t(key: String, args: Array = []) -> String:
 	var row = S.get(key)
 	var s: String = key if row == null else str(row[0 if lang == "tr" else 1])
+	var ei: int = EXTRA.LANGS.find(lang)
+	if ei >= 0 and EXTRA.S.has(key):
+		s = str(EXTRA.S[key][ei])
 	if args.size() > 0:
 		return s % args
 	return s

@@ -250,12 +250,13 @@ func _build_settings() -> void:
 	v.add_child(fs)
 	var lr := HBoxContainer.new()
 	lr.add_child(_lbl(I18n.t("lang") + ":", 20))
-	for code in ["tr", "en"]:
-		var b := Button.new()
-		b.text = "Türkçe" if code == "tr" else "English"
-		b.custom_minimum_size = Vector2(130, 40)
-		b.pressed.connect(func(): Config.settings["lang"] = code; Config.save_settings(); I18n.set_lang(code); main.rebuild_menu())
-		lr.add_child(b)
+	var ob := OptionButton.new()
+	ob.custom_minimum_size = Vector2(200, 40)
+	for i in I18n.ALL_LANGS.size():
+		ob.add_item(I18n.LANG_NAMES[i], i)
+	ob.selected = maxi(0, I18n.ALL_LANGS.find(I18n.lang))
+	ob.item_selected.connect(func(i): var code: String = I18n.ALL_LANGS[i]; Config.settings["lang"] = code; Config.save_settings(); I18n.set_lang(code); main.rebuild_menu())
+	lr.add_child(ob)
 	v.add_child(lr)
 	var cr := _lbl("", 15, Color(1, 1, 1, 0.85))
 	cr.visible = false

@@ -28,6 +28,7 @@ func _run() -> void:
 	test_timeline()
 	test_house()
 	test_sample_one()
+	test_i18n()
 	print("== integration tests")
 	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "full_match"]:
 		if only != "" and only != t:
@@ -424,3 +425,14 @@ func test_sample_one() -> void:
 	var s: Array = tl.sample_one(5, 2.0)
 	check(s.size() == 3 and absf(s[0].x - 5.0) < 0.01, "sample_one interpolates across frames missing the entity (%s)" % str(s))
 	check(tl.sample_one(5, 9.0)[0].x == 10.0 and tl.sample_one(7, 2.0).is_empty(), "sample_one holds last / unknown id empty")
+
+
+func test_i18n() -> void:
+	var keep: String = I18n.lang
+	for l in I18n.ALL_LANGS:
+		I18n.set_lang(l)
+		check(I18n.t("p_banana") != "p_banana" and I18n.t("chain", [3, 40]).find("40") >= 0, "lang %s: strings + format args" % l)
+		check(I18n.t("feed_disarm", ["A", "B", 10]).find("10") >= 0 and I18n.t("winner", ["X"]).find("X") >= 0, "lang %s: feed formats" % l)
+	I18n.set_lang("xx")
+	check(I18n.lang == "en", "unknown language falls back to English")
+	I18n.set_lang(keep)

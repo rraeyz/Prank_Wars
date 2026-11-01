@@ -17,3 +17,6 @@ Two teams. One house. Sixty seconds to hide banana peels, buckets over doors, fl
 - **Instant replays:** the best prank of each round, in slow motion
 - **1v1 up to 4v4** online with friends, or practice against bots
 - No blood, no violence — just a very, very messy house
+
+## Languages / Diller
+Interface: Turkish, English, Spanish, Portuguese (BR), German, French, Russian. (Steam'de 'Interface' olarak işaretle; ses yok.)
