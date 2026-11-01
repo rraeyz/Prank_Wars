@@ -15,6 +15,19 @@ const S := {
 	"sandbox": ["Kum Havuzu (tuzak dene)", "Sandbox (test your traps)"],
 	"phase_sandbox": ["KUM HAVUZU", "SANDBOX"],
 	"sandbox_help": ["[Q/R] seç  [Sol tık] koy  [T] uzaktan şakaları patlat  [Backspace] tuzakları yenile  [Delete] hepsini sil  [E] görev/aç", "[Q/R] pick  [LMB] place  [T] fire remote pranks  [Backspace] re-arm traps  [Delete] clear all  [E] chore/open"],
+	"tips_trap": [["İpucu: Görev yerlerinin hemen önüne kur — herkes oraya gelmek zorunda.", "Tip: trap right in front of chore spots — everyone has to go there."],
+		["İpucu: Kapılar herkesin geçtiği yer. Kova + kapının arkasına muz = zincir!", "Tip: doors are where everyone walks. Bucket + banana behind the door = chain!"],
+		["İpucu: Buzdolabına boya bombası koy, sandviç görevi varsa kesin açılır.", "Tip: paint bomb in the fridge — the sandwich chore will open it."],
+		["İpucu: Yapışkan bant + üstüne un torbası: rakip kaçamaz.", "Tip: sticky tape + flour sack above it: they can't escape."],
+		["İpucu: Uçan koşucu başka koşucuya çarparsa zincir büyür.", "Tip: a flying runner that hits another runner grows the chain."]],
+	"tips_run": [["İpucu: Yerdeki tuzaklar ancak yakınına gelince görünür. Yavaş git!", "Tip: floor traps only show up when you're close. Go slow!"],
+		["İpucu: Görünen tuzağın yanında E'yi basılı tut: etkisiz bırak, +10 puan.", "Tip: hold E next to a visible trap to disarm it: +10."],
+		["İpucu: Alarm çalarsa hemen bul ve sustur, yoksa rakip puan alır.", "Tip: if the alarm rings, find and stop it or they score."],
+		["İpucu: Görevler takımca yapılır, ayrılın!", "Tip: chores are shared by your team — split up!"]],
+	"tips_warm": [["Isınma: arkadaşlarına dalış yap (Shift), topu kap ve fırlat!", "Warm-up: dive into your friends (Shift), grab the ball and throw it!"]],
+	"credits": ["Krediler", "Credits"],
+	"credits_text": ["Prank Wars\nTasarım, test ve tanıtım: idris\nKod: Claude (Anthropic) ile birlikte\n\nMotor: Godot Engine (MIT lisansı)\nModeller, sesler ve müzik koddan üretildi.\nSteam bağlantısı: GodotSteam (MIT)", "Prank Wars\nDesign, testing and marketing: idris\nCode: made together with Claude (Anthropic)\n\nEngine: Godot Engine (MIT license)\nModels, sounds and music are generated in code.\nSteam integration: GodotSteam (MIT)"],
+	"shot_saved": ["Ekran görüntüsü kaydedildi: %s", "Screenshot saved: %s"],
 	"settings": ["Ayarlar", "Settings"],
 	"quit": ["Çıkış", "Quit"],
 	"back": ["Geri", "Back"],
@@ -141,6 +154,14 @@ func set_lang(l: String) -> void:
 	if l == "":
 		l = "tr" if OS.get_locale_language() == "tr" else "en"
 	lang = l
+
+
+func tip(key: String, i: int) -> String:
+	var rows: Array = S.get(key, [])
+	if rows.is_empty():
+		return ""
+	var row: Array = rows[i % rows.size()]
+	return str(row[0 if lang == "tr" else 1])
 
 
 func t(key: String, args: Array = []) -> String:

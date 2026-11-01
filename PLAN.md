@@ -75,10 +75,10 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [ ] Demo yapılandırması (5 şaka)
 
 ## Faz 6 — Eğlence ve klip cilası (prototip testinden bağımsız yapılabilenler)
-- [ ] Kum havuzu / Antrenman evi: sınırsız şaka kur, kendin dene, botlar dolaşsın (içerik üreticileri için)
-- [ ] Oyun içi ipuçları (ilk raunt için kısa rehber yazıları)
-- [ ] Tekrar sırasında F9 ile ekran görüntüsü kaydetme
-- [ ] Oyun içi krediler / lisans ekranı
+- [x] Kum havuzu / Antrenman evi: sınırsız şaka kur, kendin dene, botlar dolaşsın (içerik üreticileri için)
+- [x] Oyun içi ipuçları (ilk raunt için kısa rehber yazıları)
+- [x] F9 ile ekran görüntüsü kaydetme (her an)
+- [x] Oyun içi krediler / lisans ekranı
 - [ ] Görsel cila: konturlar, gölgeler, oda süsleri, düşüşte toz/yıldız efekti
 - [ ] Denge: puanlar, şaka maliyetleri, süreler (test sonuçlarına göre)
 

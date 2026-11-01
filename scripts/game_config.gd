@@ -133,6 +133,7 @@ func _setup_input() -> void:
 		"cam_next": [_key(KEY_TAB), _joy(JOY_BUTTON_Y)],
 		"menu": [_key(KEY_ESCAPE), _joy(JOY_BUTTON_START)],
 		"scoreboard": [_key(KEY_C)],
+		"screenshot": [_key(KEY_F9)],
 		"trigger_all": [_key(KEY_T), _joy(JOY_BUTTON_DPAD_UP)],
 		"rearm": [_key(KEY_BACKSPACE), _joy(JOY_BUTTON_BACK)],
 		"clear_all": [_key(KEY_DELETE)],

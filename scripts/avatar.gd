@@ -63,6 +63,8 @@ var _pupil_off := [Vector3.ZERO, Vector3.ZERO]
 var _pupil_v := [Vector3.ZERO, Vector3.ZERO]
 var _mess_color := Color.WHITE
 var _flour := 0.0
+var _stars: Node3D
+var _dizzy := 0.0
 
 
 func setup(w: Node, info: Dictionary, s: int, pid: int) -> void:
@@ -143,6 +145,13 @@ func _build_visual() -> void:
 	_tape.top_level = true
 	_tape.visible = false
 	_label = U.label3d(pname, 40, color.lightened(0.3), Vector3(0, 1.05, 0), self)
+	_stars = Node3D.new()
+	_stars.position = Vector3(0, 0.85, 0)
+	body_root.add_child(_stars)
+	for i in 3:
+		var a := TAU * i / 3.0
+		U.sphere(0.07, Color("ffe14d"), Vector3(cos(a) * 0.32, 0, sin(a) * 0.32), _stars, 6)
+	_stars.visible = false
 
 
 # ---------------------------------------------------------------- host simulation
@@ -454,6 +463,12 @@ func _process(delta: float) -> void:
 		_pupil_off[i] = (_pupil_off[i] + _pupil_v[i] * dt).limit_length(0.08)
 		var base := Vector3(0.15 * (-1.0 if i == 0 else 1.0), 0.42, -0.41)
 		_pupils[i].position = base + _pupil_off[i].limit_length(0.06)
+	_dizzy = 1.2 if knocked else maxf(0.0, _dizzy - delta)
+	_stars.visible = _dizzy > 0.0 and not knocked
+	if _stars.visible:
+		_stars.rotation.y += delta * 9.0
+		_stars.global_rotation.x = 0.0
+		_stars.global_rotation.z = 0.0
 	_hat.visible = (flags & F.HAT) != 0
 	_tape.visible = (flags & F.STUCK) != 0
 	if _tape.visible:

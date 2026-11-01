@@ -33,6 +33,8 @@ var _toast_t := 0.0
 var _blind_t := 0.0
 var _blind_max := 1.0
 var _last_sec := -1
+var _tip: Label
+var _tip_t := 0.0
 
 
 func _ready() -> void:
@@ -75,6 +77,10 @@ func _ready() -> void:
 	_sub = _lbl("", 18, Color(1, 1, 1, 0.9))
 	_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	mid.add_child(_sub)
+	_tip = _lbl("", 17, Color("bfe9ff"))
+	_tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	mid.add_child(_tip)
 	_score_r = _lbl("0", 44, Config.TEAM_COLORS[1])
 	_score_r.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_score_r.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -274,6 +280,11 @@ func is_blocking() -> bool:
 func _unhandled_input(e: InputEvent) -> void:
 	if e.is_action_pressed("menu"):
 		_pause.visible = not _pause.visible
+	if e.is_action_pressed("screenshot"):
+		DirAccess.make_dir_recursive_absolute("user://screenshots")
+		var path := "user://screenshots/prankwars_%s.png" % Time.get_datetime_string_from_system().replace(":", "-")
+		get_viewport().get_texture().get_image().save_png(path)
+		toast(I18n.t("shot_saved", [ProjectSettings.globalize_path(path)]))
 
 
 # ------------------------------------------------------------------ events from World
@@ -367,6 +378,18 @@ func _process(delta: float) -> void:
 		Sfx.play("tick")
 	_sub.visible = _sub.visible and p != "sandbox"
 	_sub.text = I18n.t("round_n", [world.round_i + 1, Config.rounds]) + "   ·   " + I18n.t("team_%d" % world.trapper_team) + " ⚑"
+	# rotating tips (more of them in the first round)
+	_tip_t += delta
+	var tip_key := ""
+	if p == "setup":
+		tip_key = "tips_trap" if world.local_is_trapper() else "tips_warm"
+	elif p == "run" and not world.local_is_trapper():
+		tip_key = "tips_run"
+	elif p == "sandbox":
+		tip_key = "tips_trap"
+	_tip.visible = tip_key != "" and not rp and (world.round_i < 2 or p == "sandbox")
+	if _tip.visible:
+		_tip.text = I18n.tip(tip_key, int(_tip_t / 7.0))
 	# tasks
 	var tasks: Array = world.tasks
 	while _tasks.get_child_count() < tasks.size() + 1:

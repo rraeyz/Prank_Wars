@@ -238,4 +238,8 @@ func _build_settings() -> void:
 		b.pressed.connect(func(): Config.settings["lang"] = code; Config.save_settings(); I18n.set_lang(code); main.rebuild_menu())
 		lr.add_child(b)
 	v.add_child(lr)
+	var cr := _lbl("", 15, Color(1, 1, 1, 0.85))
+	cr.visible = false
+	_btn(I18n.t("credits"), func(): cr.text = I18n.t("credits_text"); cr.visible = not cr.visible, v)
+	v.add_child(cr)
 	_btn(I18n.t("back"), func(): show_screen("main"), v)
