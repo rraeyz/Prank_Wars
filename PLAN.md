@@ -138,7 +138,7 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [ ] Kurucu ayrılınca maçın devam etmesi (host migration) — zor, Steam testi sonrası
 - [x] Harita editörü: Q/R eşya seç, sol tık koy, X döndür, sağ tık sil; user://maps/*.json; lobide özel harita seçimi
 - [x] Yeni harita: Okul (sınıf, spor salonu, öğretmenler odası, koridor, kantin; 4 yeni görev)
-- [ ] Yeni harita: düğün salonu
+- [x] Yeni harita: Düğün Salonu (salon, dans pisti, mutfak, gelin odası, fuaye, lavabo; 5 yeni görev)
 - [x] Günlük görevler (her gün 3 küçük hedef, +150 XP)
 
 ## Haftalık

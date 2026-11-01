@@ -14,7 +14,7 @@ Booby-trap the house, then watch your friends walk right into it.
 - 16 pranks: banana peels, buckets over doors, paint bombs in fridges, flour sacks, giant springs, marbles, a rogue robot vacuum, a bait cake...
 - Chain reactions double your points with every extra link; slow-motion replay of the best prank every round.
 - Ghosts, trap-sniffing, comeback perks, house rules (Moon Gravity, Ice Rink, Blackout...), random events and a free-for-all Chaos mode.
-- 4 maps (house, office, school, mansion) + a map editor.
+- 5 maps (house, office, school, wedding hall, mansion) + a map editor.
 - Twitch chat voting; every replay saved as landscape + vertical video.
 - Unlockable pajamas, hats and slippers, achievements, daily challenges.
 - No blood, no violence: family- and stream-friendly.

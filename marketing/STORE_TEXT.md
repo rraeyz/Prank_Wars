@@ -25,8 +25,8 @@ Knocked-out trappers come back as ghosts who can shove furniture into the runner
 **Every round is different**
 House rules like *Moon Gravity*, *Ice Rink*, *Blackout* or *Earthquake*, surprise events (the cat escaped! pizza delivery!), power-ups and a free-for-all **Chaos mode** where everyone traps and runs at once.
 
-**4 maps + a map editor**
-A cosy house, an office, a school and a big mansion — or build your own layout and play it with friends.
+**5 maps + a map editor**
+A cosy house, an office, a school, a wedding hall and a big mansion — or build your own layout and play it with friends.
 
 **Made for streams and clips**
 Twitch chat can vote on the next house rule. Every replay is saved as a landscape *and* a vertical video, ready for TikTok / Shorts.
@@ -48,7 +48,7 @@ Pajamas, hats, slippers and faces to unlock just by playing. Daily challenges, a
 - **Zincirleme şakalar:** biri kayıp diğer tuzağa uçar — her ek halka puanı ikiye katlar. Her rauntun en iyi şakası ağır çekim tekrar olarak gelir.
 - **Kimse boş durmaz:** elenen tuzakçılar hayalet olup eşyaları itebilir; koşucular gizli tuzakları koklayıp etkisiz hâle getirebilir. Geride kalan takıma geri dönüş yeteneği.
 - **Her raunt farklı:** Ay Çekimi, Buz Pisti, Elektrik Kesik, Deprem gibi ev kuralları; kedi kaçtı / pizza geldi olayları; güçlendirmeler ve herkesin aynı anda kurup koştuğu **Kaos modu**.
-- **4 harita + harita editörü:** ev, ofis, okul, malikane — ya da kendi düzenini kur.
+- **5 harita + harita editörü:** ev, ofis, okul, düğün salonu, malikane — ya da kendi düzenini kur.
 - **Yayın ve klip için:** Twitch sohbeti sonraki kuralı oylar; her tekrar yatay *ve* dikey video olarak kaydedilir.
 - **Kişiselleştir:** oynadıkça açılan pijamalar, şapkalar, terlikler; günlük görevler, başarımlar, seviyeler.
 - 2–8 oyuncu çevrim içi (1v1–4v4), Steam lobileri; botlarla pratik, 1 dakikalık eğitim, sandbox

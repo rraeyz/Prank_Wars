@@ -35,8 +35,8 @@ var spawn_house: Array = []
 var _front_block: StaticBody3D
 var map := "house"
 var custom_nodes: Array = []
-const MAPS := ["house", "office", "school", "mansion"]
-const MAP_SIZE := {"house": "medium", "office": "medium", "school": "medium", "mansion": "large"}
+const MAPS := ["house", "office", "school", "wedding", "mansion"]
+const MAP_SIZE := {"house": "medium", "office": "medium", "school": "medium", "wedding": "medium", "mansion": "large"}
 var _nav_centers := {"kitchen": Vector3(-3.4, 0, -3.0), "living": Vector3(1.6, 0, -2.6),
 	"bath": Vector3(-5.3, 0, 2.8), "hall": Vector3(-1.0, 0, 3.0), "bed": Vector3(3.6, 0, 2.6)}
 
@@ -56,6 +56,15 @@ func build(map_name := "house", custom: Array = []) -> void:
 			"hall": Color("bf9c78"), "living": Color("c08f5e"), "bed": Color("b9a3dc")})
 		_mansion_walls()
 		_mansion_furniture()
+	elif map == "wedding":
+		rooms = {"banquet": Rect2(-8, -6, 11, 7), "kitchen": Rect2(3, -6, 5, 6), "bride": Rect2(3, 0, 5, 6),
+			"restroom": Rect2(-8, 1, 5, 5), "foyer": Rect2(-3, 1, 6, 5), "garden": GARDEN}
+		_nav_centers = {"banquet": Vector3(-2.0, 0, -2.0), "kitchen": Vector3(5.0, 0, -1.2), "bride": Vector3(5.0, 0, 2.6),
+			"restroom": Vector3(-5.5, 0, 2.6), "foyer": Vector3(0.0, 0, 3.5)}
+		_floors({"banquet": Color("e8d9c0"), "kitchen": Color("dfe7ee"), "bride": Color("f2c4d6"),
+			"restroom": Color("9fd3dc"), "foyer": Color("c9b79c")})
+		_wedding_walls()
+		_wedding_furniture()
 	elif map == "school":
 		rooms = {"classroom": Rect2(-8, -6, 8, 6), "gym": Rect2(0, -6, 8, 6), "teachers": Rect2(-8, 0, 5, 6),
 			"corridor": Rect2(-3, 0, 6, 6), "cafeteria": Rect2(3, 0, 5, 6), "garden": GARDEN}
@@ -770,6 +779,101 @@ func _school_furniture() -> void:
 		_prop("chair", Vector3(0.4, 0.75, 0.4), Vector3(4.4, 0.42, z + 0.75), Color("ffd166"), 3.0)
 	_plant("plant_b", Vector3(7.4, 0, 5.4))
 	_cat(Vector3(4.0, 0, 5.4))
+
+
+# ------------------------------------------------------------------ wedding hall map
+
+func _wedding_walls() -> void:
+	_wall_x(-6.0, -8.0, 8.0, [])
+	_wall_x(6.0, -8.0, 8.0, [-1.0], ["front"])
+	_wall_x(1.0, -8.0, 3.0, [-1.0], ["banquet_foyer"])
+	_wall_x(0.0, 3.0, 8.0, [5.5], ["kitchen_bride"])
+	_wall_z(-8.0, -6.0, 6.0, [])
+	_wall_z(8.0, -6.0, 6.0, [])
+	_wall_z(3.0, -6.0, 6.0, [-3.0, 3.0], ["banquet_kitchen", "foyer_bride"])
+	_wall_z(-3.0, 1.0, 6.0, [3.5], ["foyer_restroom"])
+	_ceiling()
+
+
+func _round_table(pos: Vector3, cloth: Color) -> void:
+	U.cyl(0.62, 0.06, cloth, pos + Vector3(0, 0.76, 0), self)
+	U.cyl(0.63, 0.5, cloth, pos + Vector3(0, 0.5, 0), self)
+	U.invisible_wall(self, Vector3(1.0, 0.74, 1.0), pos + Vector3(0, 0.37, 0))
+	U.cyl(0.07, 0.25, Color("f7f7f7"), pos + Vector3(0, 0.92, 0), self)
+	U.sphere(0.13, Color("ff8fab"), pos + Vector3(0, 1.1, 0), self)
+	for k in 2:
+		var off := Vector3(0.95, 0, 0) if k == 0 else Vector3(-0.95, 0, 0)
+		_prop("chair", Vector3(0.42, 0.85, 0.42), pos + off + Vector3(0, 0.45, 0), Color("f0e6d2"), 3.0)
+
+
+func _wedding_furniture() -> void:
+	var gold := Color("e0b84f")
+	# --- banquet hall: head table, cake, dance floor + disco ball, DJ ---
+	U.solid(self, Vector3(3.0, 0.08, 0.8), Vector3(-5.5, 0.78, -5.4), Color.WHITE)
+	U.solid(self, Vector3(3.0, 0.74, 0.75), Vector3(-5.5, 0.37, -5.4), Color("f4ecf7"))
+	U.box(Vector3(3.0, 0.12, 0.05), gold, Vector3(-5.5, 0.6, -5.0), self)
+	_spot("head_table", Vector3(-5.5, 0.8, -4.6), 1.4)
+	U.cyl(0.45, 0.76, Color.WHITE, Vector3(0.6, 0.38, -5.2), self)
+	U.invisible_wall(self, Vector3(0.8, 0.76, 0.8), Vector3(0.6, 0.38, -5.2))
+	U.cyl(0.32, 0.22, Color("fff3e0"), Vector3(0.6, 0.87, -5.2), self)
+	U.cyl(0.24, 0.2, Color("fff3e0"), Vector3(0.6, 1.08, -5.2), self)
+	U.cyl(0.16, 0.18, Color("fff3e0"), Vector3(0.6, 1.27, -5.2), self)
+	U.sphere(0.07, Color("e63946"), Vector3(0.6, 1.4, -5.2), self)
+	_spot("wedding_cake", Vector3(0.6, 0.8, -4.5), 1.3)
+	var tiles := [Color("ff4d6d"), Color("4cc9f0"), Color("ffd166"), Color("9b5de5")]
+	for i in 16:
+		U.box(Vector3(0.78, 0.05, 0.78), tiles[(i + i / 4) % 4], Vector3(-3.2 + (i % 4) * 0.8, 0.0, -3.2 + (i / 4) * 0.8), self)
+	_spot("dance_floor", Vector3(-2.0, 0.0, -2.0), 1.6)
+	U.box(Vector3(0.02, 0.4, 0.02), Color("888888"), Vector3(-2.0, 2.4, -2.0), self)
+	var disco := U.sphere(0.25, Color("dfe6ee"), Vector3(-2.0, 2.1, -2.0), self)
+	var dm := StandardMaterial3D.new()
+	dm.albedo_color = Color("dfe6ee")
+	dm.metallic = 0.9
+	dm.roughness = 0.15
+	disco.material_override = dm
+	U.solid(self, Vector3(0.6, 1.0, 1.4), Vector3(2.55, 0.5, -0.6), Color("2b2d42"))
+	U.box(Vector3(0.5, 0.06, 0.4), Color("4cc9f0"), Vector3(2.5, 1.03, -0.8), self)
+	U.solid(self, Vector3(0.45, 1.1, 0.45), Vector3(2.6, 0.55, -1.8), Color("1d1d22"))
+	_spot("dj_booth", Vector3(1.9, 0.0, -0.6), 1.3)
+	_round_table(Vector3(-6.6, 0, -2.6), Color.WHITE)
+	_round_table(Vector3(-6.6, 0, -0.2), Color("fde2e4"))
+	# --- kitchen ---
+	_cupboard("fridge", Vector3(0.9, 1.9, 0.75), Vector3(7.45, 0, -5.5), 0.0, Color("e9eef2"), Color("dfe7ee"))
+	U.solid(self, Vector3(2.6, 0.92, 0.7), Vector3(5.6, 0.46, -5.6), Color("c9d6df"))
+	U.box(Vector3(2.65, 0.06, 0.75), Color("f7f7f7"), Vector3(5.6, 0.95, -5.58), self)
+	_spot("counter", Vector3(5.9, 0.95, -5.1), 1.3)
+	_cupboard("drinks_cooler", Vector3(0.9, 0.92, 0.7), Vector3(3.65, 0, -5.6), 0.0, Color("c9d6df"), Color("8fb3c9"))
+	U.solid(self, Vector3(1.4, 0.9, 0.7), Vector3(5.6, 0.45, -2.6), Color("b0bec5"))
+	for k in 3:
+		U.cyl(0.12, 0.18, Color("fff3e0"), Vector3(5.1 + k * 0.5, 0.99, -2.6), self)
+	_prop("trash_bag", Vector3(0.5, 0.6, 0.5), Vector3(7.4, 0.35, -0.6), Color("2f3a33"), 2.0)
+	# --- bride's room ---
+	U.solid(self, Vector3(0.5, 0.8, 1.2), Vector3(7.65, 0.4, 3.2), Color("f6f0e6"))
+	U.box(Vector3(0.05, 1.3, 0.9), Color(0.8, 0.92, 1.0), Vector3(7.88, 1.5, 3.2), self)
+	U.box(Vector3(0.06, 1.42, 1.02), gold, Vector3(7.9, 1.5, 3.2), self)
+	_spot("bride_mirror", Vector3(7.0, 0.8, 3.2), 1.4)
+	U.solid(self, Vector3(2.0, 0.45, 0.8), Vector3(5.6, 0.22, 5.5), Color("ff8fab"))
+	U.solid(self, Vector3(2.0, 0.5, 0.2), Vector3(5.6, 0.7, 5.85), Color("f26b8f"))
+	U.cyl(0.32, 1.1, Color.WHITE, Vector3(4.0, 0.55, 5.3), self, 0.12)  # wedding dress on a stand
+	U.sphere(0.16, Color.WHITE, Vector3(4.0, 1.2, 5.3), self)
+	_cupboard("wardrobe", Vector3(1.4, 2.0, 0.6), Vector3(7.5, 0, 1.0), -PI / 2.0, Color("a0785a"), Color("c49a74"))
+	_plant("plant_b", Vector3(7.4, 0, 5.4))
+	# --- foyer: gift table, bouquet, welcome sign ---
+	U.solid(self, Vector3(1.2, 0.8, 0.6), Vector3(2.2, 0.4, 5.5), Color.WHITE)
+	for k in 3:
+		U.box(Vector3(0.28, 0.24, 0.28), [Color("4cc9f0"), Color("ffd166"), Color("ff4d6d")][k], Vector3(1.8 + k * 0.38, 0.93, 5.6), self)
+	_prop("bouquet", Vector3(0.3, 0.3, 0.3), Vector3(-2.2, 0.95, 1.7), Color("ff8fab"), 0.4, "ball")
+	U.solid(self, Vector3(0.9, 0.8, 0.5), Vector3(-2.2, 0.4, 1.7), C_WOOD)
+	U.box(Vector3(0.8, 1.0, 0.05), Color("fff3e0"), Vector3(1.2, 1.1, 1.25), self)
+	U.box(Vector3(0.6, 0.06, 0.06), gold, Vector3(1.2, 1.3, 1.22), self)
+	_plant("plant_a", Vector3(-2.4, 0, 5.4))
+	_cat(Vector3(0.8, 0, 5.3))
+	# --- restroom ---
+	U.solid(self, Vector3(0.6, 0.9, 2.2), Vector3(-7.65, 0.45, 2.6), Color("e0e0e0"))
+	U.box(Vector3(0.05, 0.8, 2.0), Color(0.8, 0.92, 1.0), Vector3(-7.88, 1.5, 2.6), self)
+	for x in [-6.6, -5.2]:
+		U.solid(self, Vector3(0.08, 1.8, 1.4), Vector3(x, 0.9, 5.3), Color("9fb3c8"))
+	_cupboard("towel_cabinet", Vector3(0.9, 1.2, 0.5), Vector3(-4.0, 0, 1.4), 0.0, C_WHITE, Color("9fd3dc"))
 
 
 # ------------------------------------------------------------------ mansion map (large)
