@@ -34,4 +34,13 @@ Sonraki oturum: önce `PLAN.md`, sonra bu dosyanın en üstündeki kaydı oku.
 4. Bir arkadaşla dene (aynı Wi-Fi'da kurucunun ekranında yazan IP ile; internetten ise Radmin VPN/ZeroTier gibi ücretsiz sanal LAN).
 5. Bana yaz: güldünüz mü? En komik an neydi? Ne sıkıcıydı? Kontroller rahat mı? FPS düşük mü? Hata/çökme oldu mu?
 
-**Sıradaki:** Faz 6 (kum havuzu modu, ipuçları, görsel cila), demo yapılandırması.
+**Oturum 1 devamı (aynı gün)**
+- Kum havuzu modu (sınırsız tuzak, kendini şakala, Backspace yenile, Delete sil, T uzaktan hepsini patlat).
+- Fareyle gösterilen yere şaka koyma; uzaktan şakalarda [1]-[9] etiketleri, tıklayarak patlatma.
+- İpuçları, "Nasıl Oynanır" ekranı, raunt giriş kartı, krediler, F9 ekran görüntüsü, sersemleme yıldızları, kontur çizgileri, bahçe süsleri.
+- Demo dışa aktarma (5 şaka) — CI `PrankWarsDemo-Windows.zip` de üretiyor.
+- Ağ: 30 Hz, kendi karakterin daha taze; maç sürerken katılma reddi.
+- Pazarlama: `marketing/` (mağaza metni, basın kiti, yayıncı mesajı, video fikirleri), `tools/keyart.gd` tanıtım görseli aracı.
+- Testler: 86 kontrol + ağ testi geçiyor; CI yeşil.
+
+**Sıradaki:** Kullanıcı testi 1 sonuçlarına göre mekanik/denge değişiklikleri. Steam lobisinin ilk gerçek testi (Kullanıcı testi 2).

@@ -119,14 +119,16 @@ func _ready() -> void:
 	_root.add_child(_remote)
 
 	# popup + toast (center)
-	_popup = _lbl("", 64, Color("ffe14d"))
+	_popup = _lbl("", 50, Color("ffe14d"))
 	_popup.set_anchors_preset(Control.PRESET_CENTER)
 	_popup.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_popup.offset_left = -500
-	_popup.offset_right = 500
-	_popup.offset_top = -170
-	_popup.offset_bottom = -90
-	_popup.pivot_offset = Vector2(500, 40)
+	_popup.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_popup.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_popup.offset_left = -520
+	_popup.offset_right = 520
+	_popup.offset_top = -230
+	_popup.offset_bottom = -70
+	_popup.pivot_offset = Vector2(520, 80)
 	_root.add_child(_popup)
 	_toast = _lbl("", 26, Color.WHITE)
 	_toast.set_anchors_preset(Control.PRESET_CENTER)
@@ -311,6 +313,8 @@ func on_phase(p: String) -> void:
 			_end_text.add_theme_color_override("font_color", Config.TEAM_COLORS[w])
 		_end_lobby.visible = Net.is_host()
 		Sfx.play("win")
+	if p == "intro":
+		popup(I18n.t("round_n", [world.round_i + 1, Config.rounds]) + "\n" + I18n.t("intro_trap", [I18n.t("team_%d" % world.trapper_team)]), Config.TEAM_COLORS[world.trapper_team])
 	if p == "setup":
 		popup(I18n.t("you_trap") if world.local_is_trapper() else I18n.t("you_run"), Color.WHITE)
 	if p == "run":
@@ -448,7 +452,7 @@ func _process(delta: float) -> void:
 	if _popup_t > 0.0:
 		_popup_t -= delta
 		var k := clampf(_popup_t / 2.2, 0.0, 1.0)
-		var s := 1.0 + 0.4 * pow(maxf(0.0, (k - 0.85) / 0.15), 2.0)
+		var s := 1.0 + 0.25 * pow(maxf(0.0, (k - 0.85) / 0.15), 2.0)
 		_popup.scale = Vector2(s, s)
 		_popup.modulate.a = clampf(_popup_t * 2.0, 0.0, 1.0)
 	else:
