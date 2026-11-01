@@ -124,6 +124,54 @@ func add_count(key: String, n := 1) -> void:
 	for id in ACHIEVEMENTS:
 		if ACHIEVEMENTS[id][0] == key and int(c[key]) >= int(ACHIEVEMENTS[id][1]):
 			unlock_ach(id)
+	_check_daily()
+
+
+# ------------------------------------------------------------------ daily challenges
+
+const DAILY_POOL := [["tasks", 3], ["disarms", 2], ["hits", 5], ["chains", 1], ["cats", 1], ["ghosts", 1], ["wins", 1], ["matches", 2]]
+const DAILY_XP := 150
+signal daily_done(index: int)
+
+
+## Today's 3 challenges (same for everyone on the same date). Progress counts from the start of the day.
+func daily() -> Dictionary:
+	var today := Time.get_date_string_from_system()
+	var d: Dictionary = settings["daily"] if settings["daily"] is Dictionary else {}
+	if str(d.get("date", "")) != today:
+		var rng := RandomNumberGenerator.new()
+		rng.seed = hash(today)
+		var idx := range(DAILY_POOL.size())
+		for i in range(idx.size() - 1, 0, -1):
+			var j := rng.randi_range(0, i)
+			var tmp = idx[i]
+			idx[i] = idx[j]
+			idx[j] = tmp
+		var counts: Dictionary = settings["counts"] if settings["counts"] is Dictionary else {}
+		var base := {}
+		for k in DAILY_POOL:
+			base[k[0]] = int(counts.get(k[0], 0))
+		d = {"date": today, "picks": idx.slice(0, 3), "done": [], "base": base}
+		settings["daily"] = d
+	return d
+
+
+func daily_progress(i: int) -> Array:
+	var d := daily()
+	var k: Array = DAILY_POOL[int(d["picks"][i])]
+	var counts: Dictionary = settings["counts"] if settings["counts"] is Dictionary else {}
+	return [mini(int(counts.get(k[0], 0)) - int(d["base"].get(k[0], 0)), int(k[1])), int(k[1]), str(k[0])]
+
+
+func _check_daily() -> void:
+	var d := daily()
+	for i in 3:
+		var p := daily_progress(i)
+		if p[0] >= p[1] and not (i in d["done"]):
+			d["done"].append(i)
+			settings["xp"] = int(settings.get("xp", 0)) + DAILY_XP
+			save_settings()
+			daily_done.emit(i)
 
 
 ## Level from saved XP (local progress; shortcut: stored in the settings file, move to Steam Stats for anti-cheat).
@@ -133,10 +181,11 @@ func level() -> int:
 
 ## Match-end reward. Returns {"gained", "level", "leveled", "unlocked": [item ids]}.
 func add_match_xp(won: bool, team_points: int, played_rounds: int) -> Dictionary:
+	var before := level()
 	add_count("matches")
 	if won:
+		add_count("wins")
 		unlock_ach("WINNER")
-	var before := level()
 	var gained := 40 + 15 * played_rounds + (40 if won else 0) + mini(60, team_points / 5)
 	settings["xp"] = int(settings.get("xp", 0)) + gained
 	save_settings()
@@ -189,7 +238,7 @@ var settings := {
 	"name": "", "lang": "", "master": 0.8, "music": 0.5, "sfx": 0.9,
 	"fullscreen": false, "last_ip": "127.0.0.1", "keys": {}, "look": {}, "xp": 0,
 	"brightness": 1.0, "contrast": 1.0, "saturation": 1.0, "twitch": "", "twitch_on": false,
-	"ach": {}, "counts": {},
+	"ach": {}, "counts": {}, "daily": {},
 }
 const REBINDABLE := ["move_up", "move_down", "move_left", "move_right", "jump", "interact", "dive", "action", "prev_item", "next_item", "cam_next", "reveal", "taunt", "ghost", "trigger_all"]
 const SETTINGS_PATH := "user://settings.cfg"

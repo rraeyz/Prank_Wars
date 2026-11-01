@@ -1618,6 +1618,8 @@ func feed_all(key: String, args: Array, team: int, big := false) -> void:
 	if key == "chain" and Net.is_host():
 		for s in avatars:
 			if avatars[s].team == team:
+				if int(args[0]) == 2:
+					achieve(s, "+chains")
 				if int(args[0]) >= 3:
 					achieve(s, "CHAIN_3")
 				if int(args[0]) >= 5:
@@ -1947,8 +1949,10 @@ func stat(slot: int, key: String, v: float) -> void:
 		"trap":
 			if v > 0:
 				achieve(slot, "FIRST_PRANK")
+				achieve(slot, "+hits")
 		"ghost":
 			achieve(slot, "GHOSTLY")
+			achieve(slot, "+ghosts")
 		"disarms", "tasks":
 			achieve(slot, "+" + key)
 
@@ -2027,6 +2031,7 @@ func _catch_cat(a: Avatar) -> void:
 	cat.linear_velocity = Vector3.ZERO
 	scoring.bonus(a.team, Config.CAT_BONUS * scoring.mult, "cat", Config.now)
 	achieve(a.slot, "CAT_HERDER")
+	achieve(a.slot, "+cats")
 	feed_all("feed_cat_caught", [a.pname, Config.CAT_BONUS * scoring.mult], a.team)
 	fx_all("sfx", ["meow", cat.global_position])
 	_sync_state()

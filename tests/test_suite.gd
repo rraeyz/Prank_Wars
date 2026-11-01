@@ -33,6 +33,7 @@ func _run() -> void:
 	test_cosmetics()
 	test_twitch()
 	test_achievements()
+	test_daily()
 	Sfx.build_all()
 	check(Sfx.sounds.has("meow") and Sfx.sounds.has("doorbell") and Sfx.sounds.size() >= 26, "all sounds synthesize (%d)" % Sfx.sounds.size())
 	var mus: AudioStreamWAV = Sfx.build_music()
@@ -922,6 +923,7 @@ func test_cosmetics() -> void:
 	for slot in Cosmetics.SLOTS:
 		check(Cosmetics.items_for(slot).size() >= 4, "slot %s has items" % slot)
 	var keep: int = int(Config.settings.get("xp", 0))
+	Config.settings["daily"] = {"date": Time.get_date_string_from_system(), "picks": [0, 1, 2], "done": [0, 1, 2], "base": {}}
 	Config.settings["xp"] = Config.XP_PER_LEVEL * 3 - 10
 	var r: Dictionary = Config.add_match_xp(true, 200, 2)
 	check(r["leveled"] and r["level"] == 4 and "hat_propeller" in r["unlocked"], "XP levels up and unlocks items (%s)" % str(r))
@@ -988,4 +990,22 @@ func test_achievements() -> void:
 	check(got == ["CHAIN_3", "BOMB_SQUAD"], "achievements unlock once, counters work, unknown ids ignored (%s)" % str(got))
 	Config.settings["ach"] = keep_a
 	Config.settings["counts"] = keep_c
+	Config.save_settings()
+
+
+
+func test_daily() -> void:
+	var keep := Config.settings.duplicate(true)
+	Config.settings["daily"] = {}
+	Config.settings["counts"] = {}
+	var d: Dictionary = Config.daily()
+	check(d["picks"].size() == 3 and d["picks"][0] != d["picks"][1], "3 different daily challenges")
+	check(Config.daily()["picks"] == d["picks"], "same challenges all day")
+	var k: Array = Config.DAILY_POOL[int(d["picks"][0])]
+	var xp0: int = int(Config.settings["xp"])
+	for i in int(k[1]):
+		Config.add_count(k[0])
+	check(0 in Config.daily()["done"] and int(Config.settings["xp"]) >= xp0 + Config.DAILY_XP, "finishing a daily gives XP once")
+	for key in keep:
+		Config.settings[key] = keep[key]
 	Config.save_settings()

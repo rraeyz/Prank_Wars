@@ -542,7 +542,11 @@ func _show_rooms(list: Array) -> void:
 func _refresh_ach() -> void:
 	var got: Dictionary = Config.settings.get("ach", {}) if Config.settings.get("ach", {}) is Dictionary else {}
 	var counts: Dictionary = Config.settings.get("counts", {}) if Config.settings.get("counts", {}) is Dictionary else {}
-	var t := ""
+	var t := I18n.t("daily") + ":\n"
+	for i in 3:
+		var p := Config.daily_progress(i)
+		t += ("✔ " if p[0] >= p[1] else "○ ") + I18n.t("d_" + p[2], [p[1]]) + "  (%d/%d)\n" % [p[0], p[1]]
+	t += "\n"
 	for id in Config.ACHIEVEMENTS:
 		var c: Array = Config.ACHIEVEMENTS[id]
 		var prog := "" if c[0] == "" or got.has(id) else "  (%d/%d)" % [mini(int(counts.get(c[0], 0)), int(c[1])), int(c[1])]

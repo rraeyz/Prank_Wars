@@ -13,6 +13,10 @@ Sonraki oturum: önce `PLAN.md`, sonra bu dosyanın en üstündeki kaydı oku.
 
 ---
 
+## Oturum 5 — 2026-11-01
+- Twitch modu (canlı bağlantı denendi), 10 başarım (oyun içi + Steam), günlük görevler.
+- 233 test geçiyor. Sıradaki fikirler PLAN.md Faz 12'de.
+
 ## Oturum 4 — 2026-11-01 (kullanıcı soruları ve fikirleri)
 - Parlaklık/kontrast/doygunluk ayarı ve daha canlı görünüm; görev görselleri; Z yakınlaştırma.
 - Yazılı sohbet + hızlı mesajlar; yetenek sistemi + ceza/destek; Malikane (büyük harita).

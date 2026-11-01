@@ -4,6 +4,8 @@ extends RefCounted
 const LANGS := ["es", "pt", "de", "fr", "ru"]
 
 const S := {
+	"daily": ["Retos de hoy (+150 XP)", "Desafios de hoje (+150 XP)", "Heutige Aufgaben (+150 XP)", "Défis du jour (+150 XP)", "Задания дня (+150 XP)"],
+	"daily_done": ["¡RETO DIARIO COMPLETADO! +%d XP", "DESAFIO DIÁRIO CONCLUÍDO! +%d XP", "TAGESAUFGABE GESCHAFFT! +%d XP", "DÉFI DU JOUR RÉUSSI ! +%d XP", "ЗАДАНИЕ ДНЯ ВЫПОЛНЕНО! +%d XP"],
 	"achievements": ["Logros", "Conquistas", "Erfolge", "Succès", "Достижения"],
 	"ach_got": ["¡LOGRO!", "CONQUISTA!", "ERFOLG!", "SUCCÈS !", "ДОСТИЖЕНИЕ!"],
 	"twitch_channel": ["tu canal", "seu canal", "dein Kanal", "ta chaîne", "твой канал"],

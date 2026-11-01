@@ -232,6 +232,7 @@ func _ready() -> void:
 	ev.add_child(_btn(I18n.t("to_menu"), func(): get_tree().root.get_node("Main").to_menu()))
 
 	_build_chat()
+	Config.daily_done.connect(func(i): popup(I18n.t("daily_done", [Config.DAILY_XP]), Color("7CFC9A")); Sfx.play("win"))
 	Config.achievement.connect(func(id): popup(I18n.t("ach_got") + "\n" + I18n.t("ach_" + id), Color("ffd60a")); Sfx.play("win"))
 	# pause
 	_pause = _panel()

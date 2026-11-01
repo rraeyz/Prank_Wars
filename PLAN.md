@@ -137,7 +137,7 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [ ] Klip kaydı (tekrarı video/GIF olarak kaydet)
 - [ ] Kurucu ayrılınca maçın devam etmesi (host migration) — zor, Steam testi sonrası
 - [ ] Yeni haritalar: okul, düğün salonu; harita editörü (topluluk içeriği)
-- [ ] Günlük görevler (her gün 3 küçük hedef, XP ödülü)
+- [x] Günlük görevler (her gün 3 küçük hedef, +150 XP)
 
 ## Haftalık
 - [x] Hafta 1 video fikirleri (`marketing/VIDEO_IDEAS.md`)
