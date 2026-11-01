@@ -25,7 +25,7 @@ func _ready() -> void:
 		Config.score_time = 2.0
 	if args.has("rounds"):
 		Config.rounds = int(args["rounds"])
-	if args.has("demo"):
+	if args.has("demo") or OS.has_feature("demo"):
 		Config.demo_mode = true
 	if args.has("shot"):
 		for s in str(args["shot"]).split(","):
@@ -42,6 +42,7 @@ func _ready() -> void:
 	Net.server_gone.connect(to_menu)
 	_make_bg()
 	rebuild_menu()
+	Sfx.play_music()
 	if args.has("sandbox"):
 		Net.start_sandbox.call_deferred()
 	elif args.has("practice"):
@@ -131,7 +132,6 @@ func _free_world() -> void:
 	if world:
 		world.queue_free()
 		world = null
-	Sfx.stop_music()
 	Sfx.pitch_scale = 1.0
 	if bg == null:
 		_make_bg()

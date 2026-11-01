@@ -72,7 +72,7 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [x] Mağaza metinleri ve tanıtım klasörü (`marketing/`)
 - [K] Steamworks hesabı + $100 ödeme
 - [K] Mağaza görselleri / fragman çekimi
-- [ ] Demo yapılandırması (5 şaka)
+- [x] Demo yapılandırması (5 şaka; CI ayrıca PrankWarsDemo-Windows.zip üretiyor)
 
 ## Faz 6 — Eğlence ve klip cilası (prototip testinden bağımsız yapılabilenler)
 - [x] Kum havuzu / Antrenman evi: sınırsız şaka kur, kendin dene, botlar dolaşsın (içerik üreticileri için)

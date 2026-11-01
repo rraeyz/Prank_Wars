@@ -74,7 +74,7 @@ func _btn(t: String, cb: Callable, parent: Node) -> Button:
 
 func _build_main() -> void:
 	var v := _screen("main")
-	v.add_child(_lbl("PRANK WARS", 72, Color("ffe14d")))
+	v.add_child(_lbl("PRANK WARS" + (" — DEMO" if Config.demo_mode else ""), 72, Color("ffe14d")))
 	v.add_child(_lbl(I18n.t("title_sub"), 18))
 	var row := HBoxContainer.new()
 	row.add_child(_lbl(I18n.t("name") + ":", 20))

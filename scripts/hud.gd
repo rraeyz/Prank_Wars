@@ -302,7 +302,7 @@ func on_phase(p: String) -> void:
 		_end_text.text = (I18n.t("draw") if w < 0 else I18n.t("winner", [I18n.t("team_%d" % w)])) + "\n%d — %d" % [sc[0], sc[1]]
 		if w >= 0:
 			_end_text.add_theme_color_override("font_color", Config.TEAM_COLORS[w])
-		_end_lobby.visible = Net.is_host() and Net.mode != "practice"
+		_end_lobby.visible = Net.is_host()
 		Sfx.play("win")
 	if p == "setup":
 		popup(I18n.t("you_trap") if world.local_is_trapper() else I18n.t("you_run"), Color.WHITE)

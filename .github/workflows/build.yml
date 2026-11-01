@@ -66,7 +66,11 @@ jobs:
           echo 480 > build/win/steam_appid.txt
           cp HOW_TO_PLAY.txt build/win/ || true
           ls -la build/win
-          cd build/win && zip -q ../PrankWars-Windows.zip *
+          cd build/win && zip -q ../PrankWars-Windows.zip * && cd ../..
+          mkdir -p build/demo
+          ~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 --headless --path . --export-release "Windows Demo" build/demo/PrankWarsDemo.exe
+          cp build/win/*.dll build/win/steam_appid.txt build/win/HOW_TO_PLAY.txt build/demo/ 2>/dev/null || true
+          cd build/demo && zip -q ../PrankWarsDemo-Windows.zip *
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -81,7 +85,9 @@ jobs:
           name: Prank Wars test build ${{ github.run_number }}
           prerelease: true
           target_commitish: ${{ github.sha }}
-          files: build/PrankWars-Windows.zip
+          files: |
+            build/PrankWars-Windows.zip
+            build/PrankWarsDemo-Windows.zip
           body: |
             Windows test build from commit ${{ github.sha }}.
             Download PrankWars-Windows.zip, extract ALL files into one folder, run PrankWars.exe.

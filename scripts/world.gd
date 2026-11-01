@@ -53,6 +53,9 @@ var selected := 0  # index in Config.enabled_pranks()
 var local_prompt := ["", 0.0]
 var _pending_remote := {}
 var _clock := 0.0
+var _in_acc := 0.0
+var _last_mv := Vector2.ZERO
+var _last_inter := false
 
 
 func _ready() -> void:
@@ -89,7 +92,6 @@ func _ready() -> void:
 	add_child(hud)
 	_build_ghost()
 	Net.players_changed.connect(_on_players_changed)
-	Sfx.play_music()
 	sandbox = Config.sandbox
 	if Net.is_host():
 		if sandbox:
@@ -302,7 +304,13 @@ func _local_input() -> void:
 			me.in_move = mv
 			me.in_interact = inter
 	else:
-		c_input.rpc_id(1, mv, inter)
+		# throttle to ~30 Hz, but send changes at once
+		_in_acc += get_process_delta_time()
+		if _in_acc >= 1.0 / 30.0 or mv != _last_mv or inter != _last_inter:
+			_in_acc = 0.0
+			_last_mv = mv
+			_last_inter = inter
+			c_input.rpc_id(1, mv, inter)
 	if blocked:
 		return
 	if Input.is_action_just_pressed("jump"):
