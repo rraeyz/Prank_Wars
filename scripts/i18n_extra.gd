@@ -4,6 +4,14 @@ extends RefCounted
 const LANGS := ["es", "pt", "de", "fr", "ru"]
 
 const S := {
+	"map_mansion": ["Mansión", "Mansão", "Villa", "Manoir", "Особняк"],
+	"size_medium": ["mediano, 2–6", "médio, 2–6", "mittel, 2–6", "moyen, 2–6", "средняя, 2–6"],
+	"size_large": ["grande, 4–8", "grande, 4–8", "groß, 4–8", "grand, 4–8", "большая, 4–8"],
+	"t_dinner": ["Poner la mesa", "Pôr a mesa", "Tisch decken", "Mettre la table", "Накрыть стол"],
+	"t_books": ["Ordenar libros", "Arrumar os livros", "Bücher einräumen", "Ranger les livres", "Расставить книги"],
+	"s_dining_table": ["Poner la mesa", "Pôr a mesa", "Tisch decken", "Mettre la table", "Накрыть стол"],
+	"s_bookcase": ["Coger libros", "Pegar livros", "Bücher holen", "Prendre les livres", "Взять книги"],
+	"s_library_shelf": ["Colocar en la estantería", "Colocar na estante", "Einräumen", "Ranger", "Поставить на полку"],
 	"perk": ["Tu habilidad", "Sua habilidade", "Dein Perk", "Ton atout", "Твой навык"],
 	"k_nose": ["Nariz", "Nariz", "Spürnase", "Flair", "Нюх"],
 	"kd_nose": ["olfatear se recarga el doble de rápido", "farejar recarrega 2x mais rápido", "Schnüffeln lädt doppelt so schnell", "renifler se recharge 2x plus vite", "нюх перезаряжается вдвое быстрее"],

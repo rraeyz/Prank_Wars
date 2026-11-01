@@ -35,7 +35,7 @@ func _run() -> void:
 	var mus: AudioStreamWAV = Sfx.build_music()
 	check(mus.data.size() > 100000, "music synthesizes")
 	print("== integration tests")
-	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "rules", "rush", "sniff", "awards", "events", "new_pranks", "chaos", "chaos_bots", "office_match", "powerups", "perks", "full_match"]:
+	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "rules", "rush", "sniff", "awards", "events", "new_pranks", "chaos", "chaos_bots", "office_match", "powerups", "perks", "mansion_match", "full_match"]:
 		if only != "" and only != t:
 			continue
 		print("-- ", t)
@@ -71,6 +71,7 @@ func _dispatch(t: String) -> void:
 		"office_match": await it_office_match()
 		"powerups": await it_powerups()
 		"perks": await it_perks()
+		"mansion_match": await it_mansion_match()
 		"full_match": await it_full_match()
 
 
@@ -133,7 +134,20 @@ func test_house() -> void:
 	get_tree().root.add_child(office)
 	office.build("office")
 	check(office.doors.has("front") and office.doors.size() == 6, "office has 6 doors incl. front")
-	var both: Array = h.task_ids() + office.task_ids()
+	var mansion := House.new()
+	get_tree().root.add_child(mansion)
+	mansion.build("mansion")
+	check(mansion.RECT.size.x == 24.0 and mansion.doors.size() == 10, "mansion is large (%d doors)" % mansion.doors.size())
+	check(mansion.task_ids().size() >= 10, "mansion has many chores (%d)" % mansion.task_ids().size())
+	for t in mansion.task_ids():
+		for st in Config.TASKS[t]:
+			if mansion.spots.has(st["at"]):
+				var tgt: Vector3 = mansion.spots[st["at"]]["pos"]
+				var mp: Array = mansion.path(Vector3(-1, 0, 10), tgt)
+				var need := 1 if mansion.room_of(tgt) == "garden" else 2
+				check(mp.size() >= need and mp[-1] == tgt, "mansion path to %s (%d)" % [st["at"], mp.size()])
+	var both: Array = h.task_ids() + office.task_ids() + mansion.task_ids()
+	mansion.free()
 	for t in Config.TASKS:
 		check(t in both, "chore %s exists on at least one map" % t)
 	check(h.task_ids().size() >= 6 and office.task_ids().size() >= 6, "each map has enough chores (%d / %d)" % [h.task_ids().size(), office.task_ids().size()])
@@ -869,3 +883,26 @@ func it_perks() -> void:
 			expected += 3
 	check(w.budget[0] == maxi(6, expected), "leading trappers get -3 budget (%d vs %d)" % [w.budget[0], expected])
 	Config.rule_choice = "random"
+
+
+
+func it_mansion_match() -> void:
+	Config.map = "mansion"
+	var players := {-1: _p("B1", 0, 1, true), -2: _p("B2", 0, 2, true), -3: _p("B3", 1, 3, true), -4: _p("B4", 1, 4, true)}
+	await _make_world(players)
+	Config.setup_time = 30.0
+	Config.run_time = 60.0
+	var t := 0
+	var done := 0
+	while w.phase != "end" and t < 60 * 60 * 6:
+		await get_tree().physics_frame
+		t += 1
+		var d := 0
+		for tk in w.tasks:
+			if tk["done"]:
+				d += 1
+		done = maxi(done, d)
+	check(w.phase == "end", "mansion bot match ends")
+	check(done >= 1, "bots finished chores on the big map (%d)" % done)
+	print("     mansion score ", w.scoring.totals)
+	Config.map = "house"

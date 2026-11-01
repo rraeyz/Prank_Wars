@@ -1305,7 +1305,7 @@ func _host_phase_tick() -> void:
 			else:
 				for s in bots:
 					bots[s].on_setup()
-				_set_phase("setup", Config.setup_time)
+				_set_phase("setup", Config.setup_time * Config.time_scale())
 		"chaos":
 			_end_chaos()
 		"setup":
@@ -1340,7 +1340,7 @@ func _start_run() -> void:
 		var a: Avatar = avatars[s]
 		if a.team == trapper_team:
 			a.park()
-	_set_phase("run", Config.run_time)
+	_set_phase("run", Config.run_time * Config.time_scale())
 
 
 func _end_run() -> void:

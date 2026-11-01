@@ -25,9 +25,14 @@ const CHAOS_START_BUDGET := 6
 const CHAOS_BUDGET_EVERY := 5.0
 
 
+## Bigger maps get longer phases.
+func time_scale() -> float:
+	return 1.3 if map == "mansion" else 1.0
+
+
 ## Chaos is one long round where everybody traps and runs at once.
 func chaos_time() -> float:
-	return run_time * 1.6  # random | off | one of MODIFIERS (every round)
+	return run_time * 1.6 * time_scale()  # random | off | one of MODIFIERS (every round)
 const GHOST_DELAY := 20.0  # trappers become poltergeists this long after chores start
 const GHOST_COOLDOWN := 12.0
 
@@ -38,14 +43,14 @@ const TASKS_PER_ROUND := 3
 
 ## Longer chore phases get one more chore so the round doesn't end early.
 func tasks_per_round() -> int:
-	return TASKS_PER_ROUND + (1 if run_time >= 140.0 else 0) + (1 if run_time >= 190.0 else 0)
+	return TASKS_PER_ROUND + (1 if run_time >= 140.0 else 0) + (1 if run_time >= 190.0 else 0) + (1 if map == "mansion" else 0)
 
 
 ## Rough match length in minutes (intro + setup + chores + replay + score per round).
 func match_minutes() -> float:
 	if mode == "chaos":
 		return (intro_time + chaos_time() + replay_time + score_time) / 60.0
-	return rounds * (intro_time + setup_time + run_time + replay_time + score_time) / 60.0
+	return rounds * (intro_time + (setup_time + run_time) * time_scale() + replay_time + score_time) / 60.0
 const TASK_POINTS := 15
 const PRANK_POINTS := 10
 const DISARM_POINTS := 10
@@ -107,6 +112,8 @@ const TASKS := {
 	"meeting": [{"type": "hold", "at": "whiteboard", "time": 2.5}],
 	"report": [{"type": "pickup", "at": "report"}, {"type": "deliver", "at": "boss_desk"}],
 	"fish": [{"type": "open", "at": "fish_food"}, {"type": "hold", "at": "aquarium", "time": 1.5}],
+	"dinner": [{"type": "hold", "at": "dining_table", "time": 2.5}],
+	"books": [{"type": "open", "at": "bookcase"}, {"type": "hold", "at": "library_shelf", "time": 2.0}],
 	"pizza": [{"type": "pickup", "at": "pizza"}, {"type": "deliver", "at": "counter"}],  # event only
 }
 const EVENT_TASKS := ["pizza"]

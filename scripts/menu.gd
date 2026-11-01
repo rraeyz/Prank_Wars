@@ -259,7 +259,7 @@ func _refresh_lobby() -> void:
 	_rule_btn.visible = host
 	_mode_btn.visible = host
 	_map_btn.visible = host
-	_map_btn.text = "%s: %s" % [I18n.t("map"), I18n.t("map_" + Config.map)]
+	_map_btn.text = "%s: %s (%s)" % [I18n.t("map"), I18n.t("map_" + Config.map), I18n.t("size_" + House.MAP_SIZE.get(Config.map, "medium"))]
 	_mode_btn.text = "%s: %s" % [I18n.t("mode"), I18n.t("mode_" + Config.mode)]
 	_rounds_btn.visible = host and Config.mode == "turns"
 	_setup_btn.visible = host and Config.mode == "turns"
