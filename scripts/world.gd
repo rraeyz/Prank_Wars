@@ -2162,9 +2162,9 @@ func _task_fx(at: String, pos: Vector3) -> void:
 		"coffee_machine":
 			U.cyl(0.06, 0.1, Color.WHITE, pos + Vector3(randf_range(-0.2, 0.2), 0.08, -0.2), _splat_root)
 			Fx.burst(self, pos + Vector3(0, 0.4, -0.3), "flour")
-		"copier", "whiteboard", "boss_desk":
+		"copier", "whiteboard", "boss_desk", "blackboard", "teacher_desk", "hoop":
 			Fx.burst(self, pos + Vector3(0, 1.0, 0), "confetti")
-		"bed":
+		"bed", "gym_mat":
 			Fx.burst(self, pos + Vector3(0, 0.6, 0), "flour")
 		_:
 			Fx.burst(self, pos + Vector3(0, 0.8, 0), "sparkle")

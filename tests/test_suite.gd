@@ -156,8 +156,25 @@ func test_house() -> void:
 				var mp: Array = mansion.path(Vector3(-1, 0, 10), tgt)
 				var need := 1 if mansion.room_of(tgt) == "garden" else 2
 				check(mp.size() >= need and mp[-1] == tgt, "mansion path to %s (%d)" % [st["at"], mp.size()])
-	var both: Array = h.task_ids() + office.task_ids() + mansion.task_ids()
+	var school := House.new()
+	get_tree().root.add_child(school)
+	school.build("school")
+	check(school.doors.has("front") and school.doors.size() == 6, "school has 6 doors incl. front")
+	check(school.task_ids().size() >= 8, "school has enough chores (%d)" % school.task_ids().size())
+	for t in school.task_ids():
+		for st in Config.TASKS[t]:
+			var tgt: Vector3
+			if school.spots.has(st["at"]):
+				tgt = school.spots[st["at"]]["pos"]
+			elif school.cupboards.has(st["at"]):
+				tgt = school.cupboards[st["at"]].position
+			else:
+				tgt = school.props.filter(func(pp): return pp.kind == st["at"])[0].position
+			var sp: Array = school.path(Vector3(-1, 0, 10), tgt)
+			check(sp.size() >= (1 if school.room_of(tgt) == "garden" else 2) and sp[-1] == tgt, "school path to %s (%s)" % [st["at"], school.room_of(tgt)])
+	var both: Array = h.task_ids() + office.task_ids() + mansion.task_ids() + school.task_ids()
 	mansion.free()
+	school.free()
 	for t in Config.TASKS:
 		check(t in both, "chore %s exists on at least one map" % t)
 	check(h.task_ids().size() >= 6 and office.task_ids().size() >= 6, "each map has enough chores (%d / %d)" % [h.task_ids().size(), office.task_ids().size()])

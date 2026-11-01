@@ -224,6 +224,10 @@ const TASKS := {
 	"fish": [{"type": "open", "at": "fish_food"}, {"type": "hold", "at": "aquarium", "time": 1.5}],
 	"dinner": [{"type": "hold", "at": "dining_table", "time": 2.5}],
 	"books": [{"type": "open", "at": "bookcase"}, {"type": "hold", "at": "library_shelf", "time": 2.0}],
+	"homework": [{"type": "pickup", "at": "homework"}, {"type": "deliver", "at": "teacher_desk"}],
+	"lesson": [{"type": "hold", "at": "blackboard", "time": 2.5}],
+	"hoops": [{"type": "pickup", "at": "basketball"}, {"type": "deliver", "at": "hoop"}],
+	"gym_kit": [{"type": "open", "at": "school_locker"}, {"type": "hold", "at": "gym_mat", "time": 2.0}],
 	"pizza": [{"type": "pickup", "at": "pizza"}, {"type": "deliver", "at": "counter"}],  # event only
 }
 const EVENT_TASKS := ["pizza"]
