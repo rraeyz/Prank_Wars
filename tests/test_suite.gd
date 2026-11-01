@@ -34,7 +34,7 @@ func _run() -> void:
 	var mus: AudioStreamWAV = Sfx.build_music()
 	check(mus.data.size() > 100000, "music synthesizes")
 	print("== integration tests")
-	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "rules", "rush", "sniff", "awards", "events", "full_match"]:
+	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "rules", "rush", "sniff", "awards", "events", "new_pranks", "full_match"]:
 		if only != "" and only != t:
 			continue
 		print("-- ", t)
@@ -64,6 +64,7 @@ func _dispatch(t: String) -> void:
 		"sniff": await it_sniff()
 		"awards": await it_awards()
 		"events": await it_events()
+		"new_pranks": await it_new_pranks()
 		"full_match": await it_full_match()
 
 
@@ -288,9 +289,9 @@ func it_paint_fridge() -> void:
 
 func it_spring() -> void:
 	await _make_world(_two_players())
-	await _setup_run([["spring", Vector3(4, 0, -3), ""]])
+	await _setup_run([["spring", Vector3(1.5, 0, -3.5), ""]])
 	var a := _runner(2)
-	a.respawn(Vector3(4, 0.8, -1.5))
+	a.respawn(Vector3(1.5, 0.8, -1.5))
 	_runner(3).respawn(Vector3(6.5, 0.8, 4))
 	await _frames(5)
 	var max_y := 0.0
@@ -391,9 +392,9 @@ func it_sandbox() -> void:
 	await _make_world({5: _p("Me", 0, 1), -1: _p("B1", 1, 2, true)}, true)
 	check(w.phase == "sandbox", "sandbox phase")
 	var me := _runner(1)
-	me.respawn(Vector3(3, 0.8, -1.5))
+	me.respawn(Vector3(1.5, 0.8, -1.5))
 	await _frames(5)
-	check(w.host_place(1, "banana", Vector3(3, 0, -3), 0.0, ""), "free placement in sandbox")
+	check(w.host_place(1, "banana", Vector3(1.5, 0, -3), 0.0, ""), "free placement in sandbox")
 	check(w.budget[0] == 999, "no budget cost")
 	await _walk(me, Vector2(0, -1), 1.0)
 	check(w.scoring.totals[0] == 10, "you can prank yourself in sandbox (got %d)" % w.scoring.totals[0])
@@ -636,3 +637,39 @@ func it_events() -> void:
 	pz.freeze = true
 	await _frames(10)
 	check(w.tasks.back()["done"], "pizza delivered to the kitchen counter")
+
+
+func it_new_pranks() -> void:
+	await _make_world(_two_players())
+	await _setup_run([["trampoline", Vector3(2.6, 0, 2.2), ""], ["cake", Vector3(-5.3, 0.8, -2.6), ""]])
+	var r := _runner(2)
+	_runner(3).respawn(Vector3(6.5, 0.8, 5))
+	r.respawn(Vector3(1.6, 0.8, 2.2))
+	await _frames(3)
+	var max_h := 0.0
+	var max_x := 0.0
+	for i in 80:
+		r.in_move = Vector2(1, 0)
+		await get_tree().physics_frame
+		max_h = maxf(max_h, r.global_position.y)
+		max_x = maxf(max_x, r.global_position.x)
+	r.in_move = Vector2.ZERO
+	check(max_h > 1.5 and max_x > 5.5, "trampoline throws the runner forward (h %.1f, x %.1f)" % [max_h, max_x])
+	var cake: Prank = null
+	for id in w.pranks:
+		if w.pranks[id].type == "cake":
+			cake = w.pranks[id]
+	check(cake.global_position.y > 0.5, "cake sits on the kitchen table")
+	await _seconds(3.0)
+	r.respawn(cake.global_position + Vector3(0, 0.1, 0.9))
+	await _frames(10)
+	var t0: int = w.scoring.totals[0]
+	var t1: int = w.scoring.totals[1]
+	r.in_interact = true
+	await _seconds(1.5)
+	r.in_interact = false
+	if not cake.used:
+		print("     debug cake: r=", r.global_position, " cake=", cake.global_position, " act=", r.can_act(), " best=", w._best_interaction(r).get("key", "-"), " armed=", cake.armed)
+	check(cake.used, "runner ate the bait cake")
+	check(w.scoring.totals[1] - t1 == Config.CAKE_BONUS and w.scoring.totals[0] - t0 >= 10, "cake: runners +5, trappers +10")
+	check(r.mess > 0.0, "cream on the face")

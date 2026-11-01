@@ -70,9 +70,13 @@ const PRANKS := {
 	"alarm": {"cost": 1, "place": "surface", "trigger": "timed", "reveal": false},
 	"fake_remote": {"cost": 3, "place": "task", "trigger": "task", "reveal": false},
 	"vacuum": {"cost": 4, "place": "floor", "trigger": "always", "reveal": true},
+	"trampoline": {"cost": 2, "place": "floor", "trigger": "step", "reveal": true},
+	"cake": {"cost": 2, "place": "surface", "trigger": "eat", "reveal": true, "bait": true},
 }
 const PRANK_ORDER := ["banana", "bucket", "paint", "oil", "flour", "whoopee", "glove",
-	"tape", "spring", "marbles", "confetti", "alarm", "fake_remote", "vacuum"]
+	"tape", "spring", "marbles", "confetti", "alarm", "fake_remote", "vacuum", "trampoline", "cake"]
+const CAKE_BONUS := 5  # eating the bait cake still pays the runners a little
+const HATS := ["none", "party", "crown", "cap", "chef", "propeller", "horns"]
 const DEMO_PRANKS := ["banana", "bucket", "paint", "spring", "flour"]
 var demo_mode := false
 var sandbox := false
@@ -97,7 +101,7 @@ var now := 0.0
 
 var settings := {
 	"name": "", "lang": "", "master": 0.8, "music": 0.5, "sfx": 0.9,
-	"fullscreen": false, "last_ip": "127.0.0.1", "keys": {},
+	"fullscreen": false, "last_ip": "127.0.0.1", "keys": {}, "hat": 1,
 }
 const REBINDABLE := ["move_up", "move_down", "move_left", "move_right", "jump", "interact", "dive", "action", "prev_item", "next_item", "cam_next", "reveal", "taunt", "ghost", "trigger_all"]
 const SETTINGS_PATH := "user://settings.cfg"

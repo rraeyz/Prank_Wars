@@ -847,6 +847,10 @@ func _best_interaction(a: Avatar) -> Dictionary:
 				continue
 			if p.type == "alarm" and not p.ringing:
 				continue
+			if p.type == "cake":
+				if U.dist_xz(p.net_pos(), pos) < 1.3:
+					return {"key": "cake%d" % id, "label": I18n.t("eat_cake", [Config.CAKE_BONUS]), "time": 1.0, "do": p.fire.bind(a)}
+				continue
 			if U.dist_xz(p.net_pos(), pos) < 1.3:
 				return {"key": "disarm%d" % id, "label": I18n.t("act_disarm") + ": " + I18n.t("p_" + p.type), "time": 1.2,
 					"do": _do_disarm.bind(a, p)}
@@ -1504,6 +1508,8 @@ func _prank_particles(p: Prank) -> void:
 			Fx.burst(self, at + Vector3(0, 0.4, 0), "confetti")
 		"whoopee":
 			Fx.burst(self, at + Vector3(0, 0.3, 0), "fart")
+		"cake":
+			Fx.burst(self, at + Vector3(0, 0.3, 0), "paint", Color("ffc2d4"))
 		_:
 			Fx.burst(self, at + Vector3(0, 0.2, 0), "dust")
 

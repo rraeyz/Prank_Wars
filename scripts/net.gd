@@ -109,7 +109,7 @@ func leave() -> void:
 
 
 func _on_connected() -> void:
-	_register.rpc_id(1, str(Config.settings["name"]))
+	_register.rpc_id(1, str(Config.settings["name"]), int(Config.settings.get("hat", 0)))
 	connected_ok.emit()
 
 
@@ -125,7 +125,7 @@ func _on_peer_disconnected(id: int) -> void:
 
 
 @rpc("any_peer", "reliable")
-func _register(pname: String) -> void:
+func _register(pname: String, hat: int = 0) -> void:
 	if not is_host():
 		return
 	var id := multiplayer.get_remote_sender_id()
@@ -140,6 +140,7 @@ func _register(pname: String) -> void:
 	if pname == "":
 		pname = "Player"
 	_add_player(id, pname, false)
+	players[id]["hat"] = clampi(hat, 0, Config.HATS.size() - 1)
 	_broadcast()
 
 
@@ -193,7 +194,8 @@ func _add_player(id: int, pname: String, bot: bool, team := -1) -> void:
 		var c := _team_counts()
 		team = 0 if c[0] <= c[1] else 1
 	var slot := _free_slot()
-	players[id] = {"name": pname, "team": team, "color": (slot - 1) % Config.PLAYER_COLORS.size(), "bot": bot, "slot": slot}
+	var hat := randi_range(1, Config.HATS.size() - 1) if bot else clampi(int(Config.settings.get("hat", 0)), 0, Config.HATS.size() - 1)
+	players[id] = {"name": pname, "team": team, "color": (slot - 1) % Config.PLAYER_COLORS.size(), "bot": bot, "slot": slot, "hat": hat}
 
 
 func add_bot(team: int) -> void:

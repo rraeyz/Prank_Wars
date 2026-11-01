@@ -537,8 +537,11 @@ func _update_palette() -> void:
 			pc.custom_minimum_size = Vector2(78, 48)
 			_palette.add_child(pc)
 	var budget: int = world.budget[world.local_team()]
+	# only 12 cards fit on screen: slide the window with the selection
+	var first := clampi(world.selected - 6, 0, maxi(0, list.size() - 12))
 	for i in list.size():
 		var pc: PanelContainer = _palette.get_child(i)
+		pc.visible = i >= first and i < first + 12
 		var t: String = list[i]
 		var def: Dictionary = Config.PRANKS[t]
 		var v: VBoxContainer = pc.get_child(0)

@@ -140,6 +140,18 @@ func _build_visual() -> void:
 			U.sphere(0.03, Color("ff2222"), Vector3(0, 0.07, -0.1), v)
 		"vacuum":
 			_make_vacuum()
+		"trampoline":
+			var mat := U.cyl(0.45, 0.06, Color("2b9eff"), Vector3(0, 0.22, 0), v)
+			mat.name = "Mat"
+			U.cyl(0.5, 0.05, Color("222831"), Vector3(0, 0.2, 0), v)
+			for i in 4:
+				var a := TAU * i / 4.0 + 0.4
+				U.cyl(0.03, 0.2, Color("222831"), Vector3(cos(a) * 0.42, 0.1, sin(a) * 0.42), v)
+		"cake":
+			U.cyl(0.22, 0.18, Color("fff0f5"), Vector3(0, 0.09, 0), v)
+			U.cyl(0.23, 0.03, Color("ff8fab"), Vector3(0, 0.19, 0), v)
+			U.sphere(0.05, Color("d00000"), Vector3(0, 0.24, 0), v, 8)
+			U.cyl(0.012, 0.1, Color("ffe14d"), Vector3(0.08, 0.26, 0), v)
 
 
 func _make_marbles() -> void:
@@ -199,7 +211,7 @@ func _process(delta: float) -> void:
 					Sfx.play("uhoh", global_position, -6.0)
 		elif used and type in ["banana", "oil", "tape", "spring", "flour", "bucket", "confetti", "whoopee"]:
 			show = true
-	if type == "vacuum":
+	if type == "vacuum" or (def.get("bait", false) and not used):
 		show = true
 	visual.visible = show
 	if _tag:
@@ -236,8 +248,10 @@ func play_trigger() -> void:
 			Sfx.play("slip", global_position)
 		"bucket":
 			Sfx.play("splash", global_position)
-		"spring":
-			Sfx.play("boing", global_position)
+		"spring", "trampoline":
+			Sfx.play("boing", global_position, 0.0, 1.0 if type == "spring" else 1.4)
+		"cake":
+			Sfx.play("paint", global_position, 0.0, 1.3)
 		"whoopee":
 			Sfx.play("fart", global_position, 3.0)
 		"tape":
@@ -269,6 +283,10 @@ func _animate_trigger() -> void:
 			visual.rotation.x = minf(a * 6.0, PI)
 			if a > 0.35:
 				visual.visible = false
+		"trampoline":
+			var tm := visual.get_node_or_null("Mat")
+			if tm:
+				tm.position.y = 0.22 - sin(minf(a * 10.0, PI)) * 0.12
 		"spring":
 			var plate := visual.get_node_or_null("Plate")
 			if plate:
@@ -279,7 +297,7 @@ func _animate_trigger() -> void:
 			visual.position.z = minf(a * 12.0, 1.0) * (1.0 - clampf((a - 0.4) * 3.0, 0.0, 1.0))
 		"whoopee":
 			visual.scale = Vector3(1.0, maxf(0.3, 1.0 - a * 3.0), 1.0)
-		"paint", "fake_remote", "confetti":
+		"paint", "fake_remote", "confetti", "cake":
 			if a > 0.05:
 				visual.visible = false
 	if a > 3.0:
@@ -371,6 +389,24 @@ func fire(cause: Node3D) -> void:
 				m.linear_velocity = Vector3(cos(ang), 0.2, sin(ang)) * randf_range(4.0, 7.0)
 				m.chain_id = ch6
 				m.chain_until = now + 7.0
+		"trampoline":
+			if _hit_cd.get(victim.slot, 0.0) > now:
+				return
+			_hit_cd[victim.slot] = now + 2.0
+			uses += 1
+			if uses >= 3:
+				used = true
+			var tch: int = world.prank_hit(self, victim, cause)
+			var td := victim.move_dir()
+			victim.knock(td * 11.0 + Vector3.UP * 7.0, td.cross(Vector3.UP) * -12.0, 2.2, tch)
+		"cake":
+			used = true
+			world.scoring.bonus(1 - team, Config.CAKE_BONUS * world.scoring.mult, "cake", now)
+			var cch: int = world.prank_hit(self, victim, cause)
+			victim.knock(-victim.forward() * 4.0 + Vector3.UP * 3.0, victim.forward().cross(Vector3.UP) * 8.0, 1.5, cch)
+			world.add_mess(victim, 30.0, Color("ffc2d4"), "cream")
+			world.fx_all("blind", [victim.slot, "flour", 1.5])
+			world.fx_all("splats", [global_position, Color("ffc2d4"), 1.0])
 		"bucket":
 			used = true
 			var ch7: int = world.prank_hit(self, victim, cause)

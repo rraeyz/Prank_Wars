@@ -39,6 +39,8 @@ func _ready() -> void:
 		add_child(np)
 	if args.has("countprobe"):
 		add_child(load("res://tests/count_probe.gd").new())
+	if args.has("posprobe"):
+		add_child(load("res://tests/pos_probe.gd").new())
 	if args.has("nanprobe"):
 		add_child(load("res://tests/nan_probe.gd").new())
 	Net.match_begin.connect(_on_match_begin)

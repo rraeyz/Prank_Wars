@@ -4,6 +4,17 @@ extends RefCounted
 const LANGS := ["es", "pt", "de", "fr", "ru"]
 
 const S := {
+	"p_trampoline": ["Trampolín", "Trampolim", "Trampolin", "Trampoline", "Батут"],
+	"p_cake": ["Pastel trampa", "Bolo armadilha", "Köderkuchen", "Gâteau piège", "Торт-ловушка"],
+	"eat_cake": ["Comer pastel (+%d)", "Comer o bolo (+%d)", "Kuchen essen (+%d)", "Manger le gâteau (+%d)", "Съесть торт (+%d)"],
+	"hat": ["Sombrero", "Chapéu", "Hut", "Chapeau", "Шляпа"],
+	"hat_none": ["Ninguno", "Nenhum", "Keiner", "Aucun", "Нет"],
+	"hat_party": ["Fiesta", "Festa", "Party", "Fête", "Праздник"],
+	"hat_crown": ["Corona", "Coroa", "Krone", "Couronne", "Корона"],
+	"hat_cap": ["Gorra", "Boné", "Kappe", "Casquette", "Кепка"],
+	"hat_chef": ["Chef", "Chef", "Koch", "Chef", "Повар"],
+	"hat_propeller": ["Hélice", "Hélice", "Propeller", "Hélice", "Пропеллер"],
+	"hat_horns": ["Cuernos", "Chifres", "Hörner", "Cornes", "Рога"],
 	"ev_cat": ["¡SE ESCAPÓ EL GATO!\nActiva trampas — atrápalo: +10", "O GATO FUGIU!\nEle ativa armadilhas — pegue: +10", "DIE KATZE IST LOS!\nSie löst Fallen aus — fang sie: +10", "LE CHAT S'EST ÉCHAPPÉ !\nIl déclenche les pièges — attrape-le : +10", "КОТ СБЕЖАЛ!\nОн включает ловушки — поймай: +10"],
 	"ev_pizza": ["¡LLEGÓ LA PIZZA!\nLleva la pizza de la puerta a la cocina", "CHEGOU A PIZZA!\nLeve a pizza da porta para a cozinha", "PIZZA IST DA!\nBring die Pizza von der Tür in die Küche", "LA PIZZA EST LÀ !\nApporte la pizza de la porte à la cuisine", "ПИЦЦА ПРИЕХАЛА!\nОтнеси пиццу от двери на кухню"],
 	"catch_cat": ["Atrapar al gato", "Pegar o gato", "Katze fangen", "Attraper le chat", "Поймать кота"],

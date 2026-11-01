@@ -107,6 +107,10 @@ func _build_main() -> void:
 	_name_edit.text_changed.connect(func(t): Config.settings["name"] = t; Config.save_settings())
 	row.add_child(_name_edit)
 	v.add_child(row)
+	var hb := _btn("", Callable(), v)
+	var upd := func(): hb.text = "%s: %s" % [I18n.t("hat"), I18n.t("hat_" + Config.HATS[int(Config.settings["hat"]) % Config.HATS.size()])]
+	upd.call()
+	hb.pressed.connect(func(): Config.settings["hat"] = (int(Config.settings["hat"]) + 1) % Config.HATS.size(); Config.save_settings(); upd.call())
 	var pb := _btn(I18n.t("practice"), func(): Net.start_practice(); show_screen("lobby"), v)
 	pb.add_theme_color_override("font_color", Color("ffe14d"))
 	var sbx := _btn(I18n.t("sandbox"), func(): Net.start_sandbox(), v)

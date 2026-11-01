@@ -109,9 +109,10 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [x] Dans / nanik (V / d-pad aşağı)
 - [x] Maç sonu ödülleri: Muz Kurbanı, En Pis, Tuzak Ustası, Ev Hayaleti, Ev Kuşu, Bomba İmhacı
 - [x] Rastgele raunt olayları: kedi kaçtı (koşar, tuzak tetikler, yakalayana +10), pizza geldi (bonus görev)
-- [ ] Yeni şakalar: trambolin, sahte kapı, su balonu (fırlatılabilir)
+- [x] Yeni şakalar: trambolin (ileri fırlatır, 3 kullanım), tuzaklı pasta (yem: yiyen +5 alır ama suratına krema)
 - [ ] Kaos modu: iki takım aynı anda hem kurar hem koşar (ayrı mod)
-- [ ] Kozmetik: şapkalar, renkler (oyuncunun kendini ifade etmesi, klip için)
+- [x] Kozmetik: 7 şapka (parti, taç, kep, aşçı, pervane, boynuz), ana menüden seçilir
+- [x] BUG: karakterlerde yerçekimi uygulanmıyordu (zıplayan/dalan havada kalıyordu) — düzeltildi
 
 ## Haftalık
 - [x] Hafta 1 video fikirleri (`marketing/VIDEO_IDEAS.md`)
