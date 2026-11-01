@@ -14,6 +14,7 @@ Config="*res://scripts/game_config.gd"
 I18n="*res://scripts/i18n.gd"
 Sfx="*res://scripts/sfx.gd"
 Net="*res://scripts/net.gd"
+SteamNet="*res://scripts/steam_net.gd"
 
 [display]
 

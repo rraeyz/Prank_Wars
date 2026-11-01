@@ -11,6 +11,7 @@ var _lobby_info: Label
 var _host_box: HBoxContainer
 var _start_btn: Button
 var _rounds_btn: Button
+var _invite_btn: Button
 
 
 func _ready() -> void:
@@ -86,6 +87,10 @@ func _build_main() -> void:
 	v.add_child(row)
 	var pb := _btn(I18n.t("practice"), func(): Net.start_practice(); show_screen("lobby"), v)
 	pb.add_theme_color_override("font_color", Color("ffe14d"))
+	if SteamNet.available():
+		var sb := _btn(I18n.t("steam_host"), func(): SteamNet.host_lobby(), v)
+		sb.add_theme_color_override("font_color", Color("9ad0ff"))
+		SteamNet.status.connect(func(t): _status.text = t)
 	_btn(I18n.t("host"), _on_host, v)
 	var jr := HBoxContainer.new()
 	_ip_edit = LineEdit.new()
@@ -136,6 +141,7 @@ func _build_lobby() -> void:
 	_lobby_list.custom_minimum_size = Vector2(520, 220)
 	v.add_child(_lobby_list)
 	_btn(I18n.t("switch_team"), func(): Net.request_switch_team(), v)
+	_invite_btn = _btn(I18n.t("invite"), func(): SteamNet.invite(), v)
 	_host_box = HBoxContainer.new()
 	_host_box.add_theme_constant_override("separation", 8)
 	v.add_child(_host_box)
@@ -187,8 +193,11 @@ func _refresh_lobby() -> void:
 	_host_box.visible = host
 	_start_btn.visible = host
 	_rounds_btn.visible = host
+	_invite_btn.visible = SteamNet.available() and SteamNet.lobby_id != 0
 	_rounds_btn.text = "%s: %d" % [I18n.t("rounds"), Config.rounds]
-	if Net.mode == "host":
+	if Net.mode == "host" and SteamNet.lobby_id != 0:
+		_lobby_info.text = ""
+	elif Net.mode == "host":
 		_lobby_info.text = I18n.t("host_info", [Net.local_ip(), Config.PORT])
 	elif Net.mode == "client":
 		_lobby_info.text = I18n.t("waiting_host")

@@ -73,7 +73,20 @@ func join_game(ip: String, port := Config.PORT) -> Error:
 	return OK
 
 
+func use_peer(peer: MultiplayerPeer, m: String) -> void:
+	## Used by SteamNet: start hosting / joining over an already created peer.
+	multiplayer.multiplayer_peer = peer
+	mode = m
+	players.clear()
+	if m == "host":
+		_add_player(1, str(Config.settings["name"]), false)
+		players_changed.emit()
+		connected_ok.emit()
+
+
 func leave() -> void:
+	if has_node("/root/SteamNet"):
+		get_node("/root/SteamNet").leave()
 	if multiplayer.multiplayer_peer and not (multiplayer.multiplayer_peer is OfflineMultiplayerPeer):
 		multiplayer.multiplayer_peer.close()
 	_reset()

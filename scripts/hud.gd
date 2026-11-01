@@ -346,6 +346,13 @@ func blind(kind: String, dur: float) -> void:
 func _process(delta: float) -> void:
 	if world == null:
 		return
+	var rp: bool = world.replaying
+	_tasks.visible = not rp
+	_feed.visible = not rp
+	_score_l.visible = not rp
+	_score_r.visible = not rp
+	_phase.visible = not rp
+	_sub.visible = not rp
 	var sc: Array = world.scores
 	_score_l.text = "%s\n%d" % [I18n.t("team_0"), sc[0]]
 	_score_r.text = "%s\n%d" % [I18n.t("team_1"), sc[1]]

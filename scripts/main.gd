@@ -31,6 +31,10 @@ func _ready() -> void:
 		for s in str(args["shot"]).split(","):
 			var p := s.split("@")
 			_shots.append([p[0], float(p[1])])
+	if args.has("nettest"):
+		var np: Node = load("res://tests/net_probe.gd").new()
+		np.role = str(args["nettest"])
+		add_child(np)
 	if args.has("nanprobe"):
 		add_child(load("res://tests/nan_probe.gd").new())
 	Net.match_begin.connect(_on_match_begin)

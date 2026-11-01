@@ -10,6 +10,8 @@ const S := {
 	"host": ["Oyun Kur", "Host Game"],
 	"join": ["Katıl", "Join"],
 	"ip": ["Adres (IP)", "Address (IP)"],
+	"steam_host": ["Steam ile Kur (arkadaş davet et)", "Host on Steam (invite friends)"],
+	"invite": ["Arkadaş Davet Et (Steam)", "Invite Friends (Steam)"],
 	"settings": ["Ayarlar", "Settings"],
 	"quit": ["Çıkış", "Quit"],
 	"back": ["Geri", "Back"],

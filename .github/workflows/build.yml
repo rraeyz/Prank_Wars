@@ -43,17 +43,36 @@ jobs:
       - name: Run tests
         run: GODOT=~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 tests/run.sh
 
+      - name: Network test (host + client on localhost)
+        run: GODOT=~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 timeout 150 tests/net_test.sh
+
+      - name: Add GodotSteam (Windows only, MIT) for Steam lobbies
+        run: |
+          curl -sSL -o gs.zip https://codeberg.org/godotsteam/godotsteam/archive/0cea61c303130141e4df5f088a70031d6d2d4dda.zip
+          unzip -q gs.zip -d gs
+          mkdir -p addons/godotsteam
+          cp -r gs/godotsteam/addons/godotsteam/win64 gs/godotsteam/addons/godotsteam/license.md addons/godotsteam/
+          printf '%s\n' '[configuration]' 'entry_symbol = "godotsteam_init"' 'compatibility_minimum = "4.4"' '' '[libraries]' \
+            'windows.debug.x86_64 = "res://addons/godotsteam/win64/libgodotsteam.windows.template_debug.x86_64.dll"' \
+            'windows.release.x86_64 = "res://addons/godotsteam/win64/libgodotsteam.windows.template_release.x86_64.dll"' '' \
+            '[dependencies]' 'windows.x86_64 = { "res://addons/godotsteam/win64/steam_api64.dll": "" }' > addons/godotsteam/godotsteam.gdextension
+          rm -rf gs gs.zip
+
       - name: Export Windows
         run: |
-          mkdir -p build
-          ~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 --headless --path . --export-release "Windows Desktop" build/PrankWars.exe
-          cd build && zip -q PrankWars-Windows.zip PrankWars.exe
+          mkdir -p build/win
+          timeout 300 ~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 --headless --path . --import || true
+          ~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 --headless --path . --export-release "Windows Desktop" build/win/PrankWars.exe
+          echo 480 > build/win/steam_appid.txt
+          cp HOW_TO_PLAY.txt build/win/ || true
+          ls -la build/win
+          cd build/win && zip -q ../PrankWars-Windows.zip *
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: PrankWars-Windows
-          path: build/PrankWars.exe
+          path: build/win/
 
       - name: Publish pre-release (download from the Releases page)
         uses: softprops/action-gh-release@v2
@@ -65,4 +84,4 @@ jobs:
           files: build/PrankWars-Windows.zip
           body: |
             Windows test build from commit ${{ github.sha }}.
-            Download PrankWars-Windows.zip, extract, run PrankWars.exe.
+            Download PrankWars-Windows.zip, extract ALL files into one folder, run PrankWars.exe.

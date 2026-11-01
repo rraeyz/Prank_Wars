@@ -1,0 +1,24 @@
+PRANK WARS - How to play / Nasil oynanir
+========================================
+
+EN
+- Two teams take turns. TRAPPERS rig the house (60 s), RUNNERS then do 3 chores (100 s).
+- Trapper: Q/R or mouse wheel = pick prank, Left click / F = place. Budget: 15 per round.
+- During chores the trappers watch: Tab = change camera, WASD = pan, 1-9 = fire remote pranks.
+- Runner: WASD move, Space jump, Shift dive, hold E = do chore / open / disarm / grab, Left click = throw.
+- One prank knocking into another = CHAIN. Every extra link doubles the points (10, 20, 40, 80...).
+- Esc = menu. Gamepad works too (A jump, X interact, B dive, RB action, LB/RB-dpad pick prank, Y camera).
+- Play with friends: one player clicks "Host Game", the others "Join" with the host's IP
+  (same Wi-Fi: local IP; over the internet: port 24680 UDP forwarding, or a free virtual LAN
+  like Radmin VPN / ZeroTier / Tailscale). If Steam is running, "Host on Steam" lets you invite friends.
+
+TR
+- Iki takim sirayla oynar. KURANLAR evi tuzaklar (60 sn), KOSUCULAR sonra 3 gorev yapar (100 sn).
+- Kuran: Q/R veya fare tekerlegi = saka sec, Sol tik / F = yerlestir. Butce: raunt basina 15.
+- Gorev sirasinda kuranlar izler: Tab = kamera, WASD = kaydir, 1-9 = uzaktan saka tetikle.
+- Kosucu: WASD yuru, Space zipla, Shift dalis, E basili tut = gorev / ac / etkisiz birak / al, Sol tik = firlat.
+- Bir saka digerini tetiklerse ZINCIR olur. Her ek halka puani ikiye katlar (10, 20, 40, 80...).
+- Esc = menu. Gamepad de calisir.
+- Arkadaslarla: biri "Oyun Kur", digerleri kurucunun IP adresiyle "Katil".
+  (Ayni Wi-Fi: yerel IP; internetten: 24680 UDP port yonlendirme ya da ucretsiz sanal LAN:
+  Radmin VPN / ZeroTier / Tailscale). Steam aciksa "Steam ile Kur" ile arkadas davet edebilirsin.

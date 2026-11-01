@@ -22,57 +22,65 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 ## Faz 0 — Altyapı
 - [x] Repo, PLAN.md, PROGRESS.md
 - [x] Godot 4.4.1 ekransız kurulum (bulut ortamı) ve export şablonları
-- [ ] Saatlik devam tetikleyicisi
-- [ ] Proje iskeleti (project.godot, autoload'lar, giriş tuşları)
-- [ ] Ekransız test çalıştırıcı (`tests/run_tests.gd`)
-- [ ] GitHub Actions: testler + Windows .exe derlemesi (artifact)
+- [x] Saatlik devam tetikleyicisi
+- [x] Proje iskeleti (project.godot, autoload'lar, giriş tuşları)
+- [x] Ekransız test çalıştırıcı (`tests/run_tests.gd`)
+- [x] GitHub Actions: testler + Windows .exe derlemesi (artifact)
 
 ## Faz 1 — Oynanabilir prototip
-- [ ] Ev haritası koddan (5 oda + bahçe, kapılar, mobilya, dolaplar)
-- [ ] Karakter: hareket, zıplama, dalış, devrilme/kalkma, sallanan kollar, gözler
-- [ ] Kamera: açılı takip + duvar şeffaflaşması; izleyici (kuran takım) kamerası
-- [ ] Şakalar: muz kabuğu, kapı üstü kova, boya bombası
-- [ ] Hazırlık modu: şaka seçme, hayalet önizleme, bütçe, yerleştirme kuralları
-- [ ] Görevler: etkileşim (E basılı tut), taşıma görevleri
-- [ ] Puanlama + zincir mantığı (saf sınıf, testli)
-- [ ] Raunt / maç akışı (hazırlık → görev → tekrar → skor, roller değişir)
-- [ ] HUD (süre, skor, görevler, bütçe, olay akışı, zincir yazısı)
-- [ ] Botlar (koşucu + kurucu)
-- [ ] Antrenman modu (sen + botlar)
-- [ ] Ana menü + lobi
-- [ ] Testler: puanlama, zincir, şaka tetikleme, botlu tam raunt
-- [ ] İlk Windows .exe
+- [x] Ev haritası koddan (5 oda + bahçe, kapılar, mobilya, dolaplar)
+- [x] Karakter: hareket, zıplama, dalış, devrilme/kalkma, sallanan kollar, gözler
+- [x] Kamera: açılı takip + duvar şeffaflaşması; izleyici (kuran takım) kamerası
+- [x] Şakalar: muz kabuğu, kapı üstü kova, boya bombası
+- [x] Hazırlık modu: şaka seçme, hayalet önizleme, bütçe, yerleştirme kuralları
+- [x] Görevler: etkileşim (E basılı tut), taşıma görevleri
+- [x] Puanlama + zincir mantığı (saf sınıf, testli)
+- [x] Raunt / maç akışı (hazırlık → görev → tekrar → skor, roller değişir)
+- [x] HUD (süre, skor, görevler, bütçe, olay akışı, zincir yazısı)
+- [x] Botlar (koşucu + kurucu)
+- [x] Antrenman modu (sen + botlar)
+- [x] Ana menü + lobi
+- [x] Testler: puanlama, zincir, şaka tetikleme, botlu tam raunt
+- [x] İlk Windows .exe
 - [K] **Kullanıcı testi 1:** oyna, arkadaşla oyna, güldünüz mü? (bkz. PROGRESS.md)
 
 ## Faz 2 — Çok oyunculu sağlamlık
-- [ ] Ev sahibi yetkili model: istemci girdileri → host fizik → durum paketleri (20 Hz) + yumuşatma
-- [ ] Lobi: isim, takım, renk, bot ekle/çıkar, başlat
-- [ ] Bağlantı kopması / oyuncu ayrılması
-- [ ] Ekransız iki süreçli ağ testi (host + istemci aynı makinede)
-- [ ] GodotSteam: Steam lobisi + arkadaş daveti + Steam P2P (uygulama 480 ile test)
+- [x] Ev sahibi yetkili model: istemci girdileri → host fizik → durum paketleri (20 Hz) + yumuşatma
+- [x] Lobi: isim, takım, renk, bot ekle/çıkar, başlat
+- [x] Bağlantı kopması / oyuncu ayrılması
+- [x] Ekransız iki süreçli ağ testi (host + istemci aynı makinede)
+- [~] GodotSteam: Steam lobisi + arkadaş daveti + Steam P2P (kod yazıldı, CI .exe'ye ekliyor; Steam istemcisiyle test edilmedi → Kullanıcı testi 2)
 - [K] **Kullanıcı testi 2:** iki bilgisayarla online test
 
 ## Faz 3 — İçerik
-- [ ] 14 şakanın tamamı (yağlı zemin, un torbası, osuruk minderi, boks eldiveni, bant, yay, bilyeler, konfeti, alarm, sahte kumanda, robot süpürge)
-- [ ] 8 görev
-- [ ] Tekrar kamerası (en iyi zincir, ağır çekim, filigran)
-- [ ] Ses efektleri (sentez) + müzik
-- [ ] Boya / un / su efektleri ve kalıcı lekeler
+- [x] 14 şakanın tamamı (yağlı zemin, un torbası, osuruk minderi, boks eldiveni, bant, yay, bilyeler, konfeti, alarm, sahte kumanda, robot süpürge)
+- [x] 8 görev
+- [x] Tekrar kamerası (en iyi zincir, ağır çekim, filigran)
+- [x] Ses efektleri (sentez) + müzik
+- [x] Boya / un / su efektleri ve kalıcı lekeler
 
 ## Faz 4 — Cila
-- [ ] Türkçe + İngilizce arayüz
-- [ ] Ayarlar (ses, dil, tam ekran)
-- [ ] Gamepad desteği
+- [x] Türkçe + İngilizce arayüz
+- [x] Ayarlar (ses, dil, tam ekran)
+- [x] Gamepad desteği
 - [ ] CC0 mobilya modelleri (Kenney Furniture Kit) — erişim sorunu, bkz. PROGRESS
 - [ ] Performans ve hata düzeltme turu
 - [K] Arkadaş gruplarıyla 4–8 kişilik test
 
 ## Faz 5 — Steam'e hazırlık
 - [ ] Steam sürümü (GodotSteam ile, appID ayarlanabilir)
-- [ ] Mağaza metinleri ve tanıtım klasörü (`marketing/`)
+- [x] Mağaza metinleri ve tanıtım klasörü (`marketing/`)
 - [K] Steamworks hesabı + $100 ödeme
 - [K] Mağaza görselleri / fragman çekimi
 - [ ] Demo yapılandırması (5 şaka)
 
+## Faz 6 — Eğlence ve klip cilası (prototip testinden bağımsız yapılabilenler)
+- [ ] Kum havuzu / Antrenman evi: sınırsız şaka kur, kendin dene, botlar dolaşsın (içerik üreticileri için)
+- [ ] Oyun içi ipuçları (ilk raunt için kısa rehber yazıları)
+- [ ] Tekrar sırasında F9 ile ekran görüntüsü kaydetme
+- [ ] Oyun içi krediler / lisans ekranı
+- [ ] Görsel cila: konturlar, gölgeler, oda süsleri, düşüşte toz/yıldız efekti
+- [ ] Denge: puanlar, şaka maliyetleri, süreler (test sonuçlarına göre)
+
 ## Haftalık
-- [ ] Hafta 1 video fikirleri (`marketing/VIDEO_IDEAS.md`)
+- [x] Hafta 1 video fikirleri (`marketing/VIDEO_IDEAS.md`)
