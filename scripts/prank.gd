@@ -28,6 +28,7 @@ var _anim := -1.0  # trigger animation time
 var _fx_parts: Array = []
 var _tag: Label3D
 var owner_slot := -1  # host: who placed it (for awards)
+var masterful := false  # placed by a "master trapper": can't be sniffed, shows up later
 
 
 func setup(w: Node, pid: int, t: String, tm: int, sock: String) -> void:
@@ -200,11 +201,11 @@ func _process(delta: float) -> void:
 			show = true
 		elif not world.live():
 			show = false
-		elif not used and not disarmed and world.sniffed(global_position):
+		elif not used and not disarmed and not masterful and world.sniffed(global_position):
 			show = true
 		elif def["reveal"] and not used:
 			var me: Node3D = world.local_view_target()
-			if me and U.dist_xz(me.global_position, global_position) < 2.6:
+			if me and U.dist_xz(me.global_position, global_position) < (1.4 if masterful else 2.6):
 				show = true
 				if not _revealed:
 					_revealed = true
@@ -433,6 +434,9 @@ func fire(cause: Node3D) -> void:
 			used = true
 			var floor_p := Vector3(global_position.x, 0.0, global_position.z)
 			var r := 2.2 if type == "flour" else 3.0
+			var owner: Avatar = world.avatars.get(owner_slot)
+			if owner and owner.perk == "remote_pro":
+				r *= 1.4
 			for v in world.avatars_near(floor_p, r, true, team):
 				var ch9: int = world.prank_hit(self, v, cause)
 				var away2 := U.flat_xz(v.global_position - floor_p).normalized()

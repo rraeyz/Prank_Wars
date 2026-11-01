@@ -35,7 +35,7 @@ func _run() -> void:
 	var mus: AudioStreamWAV = Sfx.build_music()
 	check(mus.data.size() > 100000, "music synthesizes")
 	print("== integration tests")
-	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "rules", "rush", "sniff", "awards", "events", "new_pranks", "chaos", "chaos_bots", "office_match", "powerups", "full_match"]:
+	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "rules", "rush", "sniff", "awards", "events", "new_pranks", "chaos", "chaos_bots", "office_match", "powerups", "perks", "full_match"]:
 		if only != "" and only != t:
 			continue
 		print("-- ", t)
@@ -70,6 +70,7 @@ func _dispatch(t: String) -> void:
 		"chaos_bots": await it_chaos_bots()
 		"office_match": await it_office_match()
 		"powerups": await it_powerups()
+		"perks": await it_perks()
 		"full_match": await it_full_match()
 
 
@@ -201,6 +202,9 @@ func _two_players() -> Dictionary:
 
 ## Forces the run phase with the given pranks placed (type, pos, socket).
 func _setup_run(list: Array) -> void:
+	for sl in w.avatars:  # random perks would make single-prank checks flaky
+		w.avatars[sl].perk = ""
+		w.avatars[sl].steady = 0
 	w._set_phase("setup", 999.0)
 	for e in list:
 		var pid: int = w._next_prank_id
@@ -699,6 +703,9 @@ func it_chaos() -> void:
 	check(w.chaos, "chaos mode on")
 	await _seconds(1.0)
 	check(w.phase == "chaos" and w.building() and w.live(), "everyone builds and runs at once")
+	for sl in w.avatars:
+		w.avatars[sl].perk = ""
+		w.avatars[sl].steady = 0
 	var t := _runner(1)  # team 0
 	var r := _runner(2)  # team 1
 	t.respawn(Vector3(3, 0.8, 4.5))
@@ -824,3 +831,41 @@ func test_chat() -> void:
 	Net.chat_received.disconnect(cb)
 	check(got.size() == 2 and got[0] == "hello" and got[1] == I18n.t("q_1"), "chat: relay, rate limit, quick phrase, unknown key dropped (%s)" % str(got))
 	Net.leave()
+
+
+
+func it_perks() -> void:
+	await _make_world(_two_players())
+	for sl in w.avatars:
+		var a: Avatar = w.avatars[sl]
+		var ok: bool = a.perk in (Config.TRAPPER_PERKS if a.team == w.trapper_team else Config.RUNNER_PERKS)
+		check(ok, "%s got a %s perk: %s" % [a.pname, "trapper" if a.team == w.trapper_team else "runner", a.perk])
+	await _setup_run([["banana", Vector3(3, 0, 2), ""], ["paint", w.house.cupboards["fridge"].inside_point(), "fridge"]])
+	var r := _runner(2)
+	_runner(3).respawn(Vector3(6.5, 0.8, 5))
+	r.steady = 1
+	r.respawn(Vector3(3, 0.8, 3.3))
+	r.steady = 1
+	await _frames(3)
+	await _walk(r, Vector2(0, -1), 0.8)
+	check(not r.down and w.scoring.totals[0] == 0 and r.steady == 0, "steady feet ignores the first prank")
+	var paint: Prank = null
+	for id in w.pranks:
+		if w.pranks[id].type == "paint":
+			paint = w.pranks[id]
+	paint.masterful = true
+	w.s_reveal(w.house.cupboards["fridge"].front_point())
+	r.perk = "nose"
+	check(w.reveal_cooldown(r) == Config.REVEAL_COOLDOWN * 0.5, "nose halves the sniff cooldown")
+	# comeback: team 0 far ahead and trapping next round -> budget penalty
+	w.scoring.totals = [200, 0]
+	Config.rule_choice = "off"
+	w._host_start_round(2)
+	await _frames(2)
+	check(w.comeback_leader == 0, "leader detected for the comeback rule")
+	var expected := Config.BUDGET - 3
+	for sl in w.avatars:
+		if w.avatars[sl].perk == "budget" and w.avatars[sl].team == 0:
+			expected += 3
+	check(w.budget[0] == maxi(6, expected), "leading trappers get -3 budget (%d vs %d)" % [w.budget[0], expected])
+	Config.rule_choice = "random"

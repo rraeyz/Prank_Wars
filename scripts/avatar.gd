@@ -43,6 +43,8 @@ var mess := 0.0
 var shield_until := 0.0  # umbrella power-up: blocks the next prank
 var immune_until := 0.0  # set for a moment when the umbrella absorbs a hit
 var fast_until := 0.0  # coffee power-up
+var perk := ""  # this round's perk
+var steady := 0  # "steady feet" perk / comeback bonus: absorbs the next prank
 var interacting := false
 var _bump_cd := {}
 var _air_time := 0.0
@@ -423,6 +425,8 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		spd *= 1.45
 	if now < fast_until:
 		spd *= 1.35
+	if perk == "sprinter":
+		spd *= 1.12
 	if world and world.rush and world.is_runner(self):
 		spd *= 1.15
 	if now < slow_until:

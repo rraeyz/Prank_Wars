@@ -66,6 +66,7 @@ var _taunt_cd := {}
 var _quake_at := 0.0
 var _stats := {}  # host: slot -> {stat: value}
 var awards: Array = []
+var comeback_leader := -1
 var _event := ""
 var _event_at := 0.0
 var cat_zoom_until := 0.0
@@ -361,7 +362,7 @@ func _local_input() -> void:
 	if Input.is_action_just_pressed("taunt") and me.visible:
 		_send_action("taunt", [])
 	if Input.is_action_just_pressed("reveal") and (phase == "run" and not local_is_trapper() or phase == "chaos") and reveal_wait_local() <= 0.0:
-		_reveal_local_ready = _clock + Config.REVEAL_COOLDOWN
+		_reveal_local_ready = _clock + reveal_cooldown(me)
 		_send_action("reveal", [])
 	if Input.is_action_just_pressed("dive"):
 		_send_action("dive", [])
@@ -389,7 +390,7 @@ func _local_input() -> void:
 	if phase == "run" and local_is_trapper() and not me.visible and (Input.is_action_just_pressed("ghost") or Input.is_action_just_pressed("interact")):
 		if ghost_wait_local() <= 0.0:
 			_send_action("ghost", [_ghost_point()])
-			_ghost_local_ready = _clock + Config.GHOST_COOLDOWN
+			_ghost_local_ready = _clock + Config.GHOST_COOLDOWN * (0.5 if me.perk == "haunter" else 1.0)
 	if phase == "run" and local_is_trapper():
 		var rl := remote_pranks(local_team())
 		for i in range(1, 10):
@@ -485,7 +486,7 @@ func _host_action(slot: int, kind: String, args: Array) -> void:
 				fx_all("taunt", [slot])
 		"reveal":
 			if live() and is_runner(a) and _reveal_ready.get(slot, 0.0) <= Config.now:
-				_reveal_ready[slot] = Config.now + Config.REVEAL_COOLDOWN
+				_reveal_ready[slot] = Config.now + reveal_cooldown(a)
 				if a.peer_id == Net.my_id():
 					s_reveal(a.global_position)
 				elif not a.is_bot and Net.mode == "host":
@@ -679,6 +680,8 @@ func host_place(slot: int, type: String, pos: Vector3, yaw: float, socket: Strin
 		s_spawn_prank.rpc(pid, type, a.team, pos, yaw, socket)
 	s_spawn_prank(pid, type, a.team, pos, yaw, socket)
 	pranks[pid].owner_slot = slot
+	if a.perk == "master":
+		fx_all("prank", [pid, "master"])
 	if phase == "sandbox":
 		pranks[pid].arm()
 		_sandbox_log.append([type, a.team, pos, yaw, socket])
@@ -719,6 +722,12 @@ func remote_trigger(team: int, pid: int) -> void:
 ## The umbrella eats one prank: no points, no effect (effects check victim.immune()).
 func _absorbed(victim: Avatar) -> bool:
 	if victim.immune():
+		return true
+	if victim.steady > 0:
+		victim.steady -= 1
+		victim.immune_until = Config.now + 0.4
+		fx_all("burst", [victim.global_position + Vector3(0, 1.0, 0), "sparkle", Color.WHITE])
+		feed_all("feed_steady", [victim.pname], victim.team)
 		return true
 	if victim.shield_until > Config.now:
 		victim.shield_until = 0.0
@@ -955,7 +964,7 @@ func _host_interactions(delta: float) -> void:
 		else:
 			if st["key"] != best["key"]:
 				st = {"key": best["key"], "t": 0.0}
-			st["t"] += delta
+			st["t"] += delta * (1.55 if a.perk == "quick_hands" and str(best["key"]).begins_with("task") else 1.0)
 			if st["t"] >= best["time"]:
 				best["do"].call()
 				st = {"key": "", "t": 0.0}
@@ -1110,6 +1119,7 @@ func _host_start_round(i: int) -> void:
 		p.linear_velocity = Vector3.ZERO
 		p.angular_velocity = Vector3.ZERO
 		p.chain_id = -1
+	_assign_perks()
 	_prop_of_kind("pizza").set_hidden(true)
 	for k in Config.POWERUPS:
 		_prop_of_kind(k).set_hidden(true)
@@ -1521,6 +1531,8 @@ func _apply_fx(kind: String, args: Array, in_replay: bool) -> void:
 						hud.toast(I18n.t("alarm_ring"))
 				"ring_off":
 					p.ringing = false
+				"master":
+					p.masterful = true
 				"disarmed":
 					p.disarmed = true
 					p.ringing = false
@@ -1693,7 +1705,9 @@ var _ghost_local_ready := 0.0
 func ghost_wait_local() -> float:
 	if Net.is_host():
 		return ghost_wait(local_slot())
-	var start := phase_end_local - phase_dur + Config.GHOST_DELAY
+	var me := local_avatar()
+	var k := 0.5 if me and me.perk == "haunter" else 1.0
+	var start := phase_end_local - phase_dur + Config.GHOST_DELAY * k
 	return maxf(0.0, maxf(start, _ghost_local_ready) - _clock)
 
 
@@ -1819,7 +1833,9 @@ var _run_start := 0.0  # slot -> Config.now when the next haunt is allowed
 
 ## How many seconds until this trapper can haunt again (0 = ready). Host-side truth.
 func ghost_wait(slot: int) -> float:
-	var start: float = _run_start + Config.GHOST_DELAY
+	var a: Avatar = avatars.get(slot)
+	var haunter: bool = a != null and a.perk == "haunter"
+	var start: float = _run_start + Config.GHOST_DELAY * (0.5 if haunter else 1.0)
 	return maxf(0.0, maxf(start, float(_ghost_ready.get(slot, 0.0))) - Config.now)
 
 
@@ -1853,7 +1869,7 @@ func ghost_action(slot: int, point: Vector3) -> bool:
 	if target == null:
 		_toast_to(a, "ghost_none")
 		return false
-	_ghost_ready[slot] = Config.now + Config.GHOST_COOLDOWN
+	_ghost_ready[slot] = Config.now + Config.GHOST_COOLDOWN * (0.5 if a.perk == "haunter" else 1.0)
 	if best:
 		var dir := U.flat_xz(target.global_position - best.global_position).normalized()
 		best.linear_velocity = dir * 11.0 + Vector3.UP * 3.5
@@ -2007,6 +2023,7 @@ func _start_chaos() -> void:
 	_run_start = Config.now
 	_quake_at = Config.now + 12.0
 	budget = [Config.CHAOS_START_BUDGET, Config.CHAOS_START_BUDGET]
+	_apply_budget_perks()
 	timeline.clear()
 	var roll := rng.randf()
 	_event = "cat" if roll < 0.45 else ("pizza" if roll < 0.9 else "")
@@ -2112,3 +2129,55 @@ func _task_fx(at: String, pos: Vector3) -> void:
 			Fx.burst(self, pos + Vector3(0, 0.6, 0), "flour")
 		_:
 			Fx.burst(self, pos + Vector3(0, 0.8, 0), "sparkle")
+
+
+# ------------------------------------------------------------------ perks + comeback (host)
+
+func reveal_cooldown(a: Avatar) -> float:
+	return Config.REVEAL_COOLDOWN * (0.5 if a and a.perk == "nose" else 1.0)
+
+
+## Everyone gets one random perk for their role this round; a team far behind gets a boost, the leader a handicap.
+func _assign_perks() -> void:
+	var perks := {}
+	for s in avatars:
+		var a: Avatar = avatars[s]
+		var pool: Array = Config.RUNNER_PERKS + Config.TRAPPER_PERKS if chaos else (Config.TRAPPER_PERKS if a.team == trapper_team else Config.RUNNER_PERKS)
+		a.perk = pool[rng.randi() % pool.size()]
+		a.steady = 1 if a.perk == "steady" else 0
+		perks[s] = a.perk
+	var diff: int = scoring.totals[0] - scoring.totals[1]
+	var leader := -1
+	if round_i > 0 and absi(diff) >= Config.CATCHUP_DIFF:
+		leader = 0 if diff > 0 else 1
+	if Net.mode == "host":
+		s_perks.rpc(perks, leader)
+	s_perks(perks, leader)
+	_apply_budget_perks()
+	if leader >= 0 and not chaos:
+		var trailing := 1 - leader
+		if trapper_team == leader:
+			budget[leader] = maxi(6, budget[leader] - 3)
+		else:
+			budget[trailing] += 3
+		for s in avatars:
+			var av: Avatar = avatars[s]
+			if av.team == trailing and av.team != trapper_team:
+				av.steady += 1
+	_sync_state()
+
+
+func _apply_budget_perks() -> void:
+	for s in avatars:
+		var a: Avatar = avatars[s]
+		if a.perk == "budget" and (chaos or a.team == trapper_team):
+			budget[a.team] += 3
+
+
+@rpc("authority", "reliable")
+func s_perks(perks: Dictionary, leader: int) -> void:
+	for s in perks:
+		var a: Avatar = avatars.get(int(s))
+		if a:
+			a.perk = str(perks[s])
+	comeback_leader = leader

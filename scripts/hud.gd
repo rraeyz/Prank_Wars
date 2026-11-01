@@ -392,6 +392,11 @@ func on_phase(p: String) -> void:
 		var txt := I18n.t("round_n", [world.round_i + 1, Config.rounds]) + "\n" + I18n.t("intro_trap", [I18n.t("team_%d" % world.trapper_team)])
 		if world.modifier != "":
 			txt += "\n" + I18n.t("rule") + ": " + I18n.t("m_" + world.modifier) + " — " + I18n.t("md_" + world.modifier)
+		var me: Avatar = world.local_avatar()
+		if me and me.perk != "":
+			txt += "\n" + I18n.t("perk") + ": " + I18n.t("k_" + me.perk) + " — " + I18n.t("kd_" + me.perk)
+		if world.comeback_leader >= 0:
+			txt += "\n" + I18n.t("comeback", [I18n.t("team_%d" % world.comeback_leader)])
 		popup(txt, Config.TEAM_COLORS[world.trapper_team])
 	if p == "setup":
 		popup(I18n.t("you_trap") if world.local_is_trapper() else I18n.t("you_run"), Color.WHITE)
@@ -533,6 +538,8 @@ func _process(delta: float) -> void:
 		rtext += (I18n.t("sniff_ready") if rw <= 0.0 else I18n.t("sniff_wait", [ceili(rw)])) + "\n"
 	_remote.text = rtext
 	_rule.text = (I18n.t("rule") + ": " + I18n.t("m_" + world.modifier)) if world.modifier != "" else ""
+	if me != null and me.perk != "" and p in ["setup", "run", "chaos", "intro"]:
+		_rule.text += ("   ·   " if _rule.text != "" else "") + I18n.t("perk") + ": " + I18n.t("k_" + me.perk)
 	if world.rush and p == "run":
 		_rule.text = I18n.t("rush_short") + ("   ·   " + _rule.text if _rule.text != "" else "")
 	# help

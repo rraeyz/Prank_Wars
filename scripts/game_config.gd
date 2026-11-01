@@ -111,6 +111,10 @@ const TASKS := {
 }
 const EVENT_TASKS := ["pizza"]
 const POWERUPS := ["umbrella", "coffee"]
+# one random perk per player per round (no pick screen, so the game never slows down)
+const RUNNER_PERKS := ["nose", "steady", "quick_hands", "sprinter"]
+const TRAPPER_PERKS := ["master", "budget", "remote_pro", "haunter"]
+const CATCHUP_DIFF := 60  # a team this far ahead gets a handicap, the other a boost
 const CAT_BONUS := 10
 
 ## Physics-time clock of the running match (seconds). Set by World.
