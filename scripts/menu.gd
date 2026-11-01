@@ -29,6 +29,7 @@ func _ready() -> void:
 	_build_settings()
 	_build_keys()
 	_build_locker()
+	_build_store()
 	_build_browser()
 	var av := _screen("ach")
 	av.add_child(_lbl(I18n.t("achievements"), 36, Color("ffe14d")))
@@ -156,6 +157,8 @@ func _build_main() -> void:
 	g.add_child(jr)
 	var lk := _btn(I18n.t("locker") + "  (" + I18n.t("level_n", [Config.level()]) + ")", func(): show_screen("locker"); _refresh_locker(), g)
 	lk.add_theme_color_override("font_color", Color("9ad0ff"))
+	var st := _btn(I18n.t("store"), func(): _refresh_store(); show_screen("store"), g)
+	st.add_theme_color_override("font_color", Color("ffd166"))
 	_btn(I18n.t("editor"), func(): Config.custom_items = []; Config.custom_name = ""; Net.start_editor(), g)
 	_btn(I18n.t("achievements"), func(): _refresh_ach(); show_screen("ach"), g)
 	_btn(I18n.t("how"), func(): show_screen("how"), g)
@@ -501,6 +504,10 @@ func _refresh_locker() -> void:
 			var u := Cosmetics.unlock_of(id)
 			if u.begins_with("level:"):
 				lock = "  [" + I18n.t("level_n", [u.substr(6).to_int()]) + "]"
+			elif u.begins_with("ach:"):
+				lock = "  [" + I18n.t("unlock_ach", [I18n.t("ach_" + u.substr(4)).split(" — ")[0]]) + "]"
+			elif u.begins_with("matches:"):
+				lock = "  [" + I18n.t("unlock_matches", [u.substr(8).to_int()]) + "]"
 			else:
 				lock = "  [" + I18n.t("store") + "]"
 				_buy_id = id
@@ -523,6 +530,51 @@ func _process(delta: float) -> void:
 	if _preview_av and is_instance_valid(_preview_av) and _screens["locker"].visible:
 		_preview_av.rotation.y = PI + sin(_t_prev) * 0.6
 		_t_prev += delta
+
+
+# ------------------------------------------------------------------ store (paid cosmetics via Steam)
+
+var _store_rows: VBoxContainer
+
+
+func _build_store() -> void:
+	var v := _screen("store")
+	v.add_child(_lbl(I18n.t("store"), 40, Color("ffe14d")))
+	v.add_child(_lbl(I18n.t("store_info"), 15, Color(1, 1, 1, 0.8)))
+	_store_rows = VBoxContainer.new()
+	_store_rows.add_theme_constant_override("separation", 8)
+	v.add_child(_store_rows)
+	_btn(I18n.t("back"), func(): show_screen("main"), v)
+
+
+func _refresh_store() -> void:
+	for c in _store_rows.get_children():
+		c.queue_free()
+	var defs := Cosmetics.store_defs()
+	for d in defs:
+		var items: Array = defs[d]
+		var r := HBoxContainer.new()
+		r.add_theme_constant_override("separation", 10)
+		_store_rows.add_child(r)
+		var name_l := _lbl(I18n.t(Cosmetics.SETS[d]) if Cosmetics.SETS.has(d) else I18n.t("c_" + items[0]), 18)
+		name_l.custom_minimum_size = Vector2(470, 0)
+		name_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		r.add_child(name_l)
+		_btn(I18n.t("try_on"), _try_on.bind(items), r)
+		if SteamNet.owned_items.has(d):
+			r.add_child(_lbl(I18n.t("owned"), 17, Color("7CFC9A")))
+		else:
+			var b := _btn(I18n.t("buy", [""]).rstrip(": "), func(): SteamNet.purchase(d), r)
+			b.disabled = not SteamNet.available()
+			b.tooltip_text = "" if SteamNet.available() else I18n.t("steam_needed")
+
+
+## Shows paid items on the locker preview without equipping them.
+func _try_on(items: Array) -> void:
+	for id in items:
+		_browse[Cosmetics.ITEMS[id][0]] = id
+	show_screen("locker")
+	_refresh_locker()
 
 
 # ------------------------------------------------------------------ Steam room browser

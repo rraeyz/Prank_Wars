@@ -946,12 +946,27 @@ func test_cosmetics() -> void:
 	check(bad["hat"] == "hat_crown" and bad["outfit"] == Cosmetics.DEFAULT["outfit"] and bad["shoes"] == Cosmetics.DEFAULT["shoes"] and bad["skin"] == "skin_none", "look sanitize keeps only valid slot items")
 	check(Cosmetics.owned("hat_party", 1, {}) and not Cosmetics.owned("hat_horns", 1, {}) and Cosmetics.owned("hat_horns", 6, {}), "level unlocks")
 	check(not Cosmetics.owned("skin_dino", 99, {}) and Cosmetics.owned("skin_dino", 1, {105: true}), "store items need the Steam item")
+	var saved_ach = Config.settings["ach"]
+	var saved_counts = Config.settings["counts"]
+	Config.settings["ach"] = {}
+	Config.settings["counts"] = {"matches": 4}
+	check(not Cosmetics.owned("hand_duck", 99, {}) and not Cosmetics.owned("hand_balloon", 99, {}), "achievement / match-count items start locked")
+	Config.settings["ach"] = {"FIRST_PRANK": true}
+	Config.settings["counts"] = {"matches": 5}
+	check(Cosmetics.owned("hand_duck", 1, {}) and Cosmetics.owned("hand_balloon", 1, {}), "achievement and 5 matches unlock their items")
+	Config.settings["ach"] = saved_ach
+	Config.settings["counts"] = saved_counts
+	var pos: Array = Cosmetics.store_defs().get(107, [])
+	check(pos.size() == 4 and "hand_trident" in pos and Cosmetics.owned("hat_poseidon", 1, {107: true}), "Poseidon set: one purchase, four pieces")
 	for slot in Cosmetics.SLOTS:
 		check(Cosmetics.items_for(slot).size() >= 4, "slot %s has items" % slot)
 	var keep: int = int(Config.settings.get("xp", 0))
 	Config.settings["daily"] = {"date": Time.get_date_string_from_system(), "picks": [0, 1, 2], "done": [0, 1, 2], "base": {}}
 	Config.settings["xp"] = Config.XP_PER_LEVEL * 3 - 10
+	var keep_seen = Config.settings.get("seen_items", {})
+	Config.settings["seen_items"] = {}
 	var r: Dictionary = Config.add_match_xp(true, 200, 2)
+	Config.settings["seen_items"] = keep_seen
 	check(r["leveled"] and r["level"] == 4 and "hat_propeller" in r["unlocked"], "XP levels up and unlocks items (%s)" % str(r))
 	Config.settings["xp"] = keep
 	Config.save_settings()

@@ -192,15 +192,18 @@ func add_match_xp(won: bool, team_points: int, played_rounds: int) -> Dictionary
 	var gained := 40 + 15 * played_rounds + (40 if won else 0) + mini(60, team_points / 5)
 	settings["xp"] = int(settings.get("xp", 0)) + gained
 	save_settings()
+	if level() >= 10:
+		unlock_ach("LEVEL_10")
+	# anything earned by level, achievement or match count since the last announcement
+	var seen: Dictionary = settings["seen_items"] if settings.get("seen_items") is Dictionary else {}
 	var unlocked := []
 	for id in Cosmetics.ITEMS:
 		var u := Cosmetics.unlock_of(id)
-		if u.begins_with("level:"):
-			var n := u.substr(6).to_int()
-			if n > before and n <= level():
-				unlocked.append(id)
-	if level() >= 10:
-		unlock_ach("LEVEL_10")
+		if u != "free" and not u.begins_with("steam:") and not seen.has(id) and Cosmetics.owned(id, level(), {}):
+			unlocked.append(id)
+			seen[id] = true
+	settings["seen_items"] = seen
+	save_settings()
 	return {"gained": gained, "level": level(), "leveled": level() > before, "unlocked": unlocked}
 const DEMO_PRANKS := ["banana", "bucket", "paint", "spring", "flour"]
 var demo_mode := false
@@ -251,7 +254,7 @@ var settings := {
 	"name": "", "lang": "", "master": 0.8, "music": 0.5, "sfx": 0.9,
 	"fullscreen": false, "last_ip": "127.0.0.1", "keys": {}, "look": {}, "xp": 0,
 	"brightness": 1.0, "contrast": 1.0, "saturation": 1.0, "quality": 2, "twitch": "", "twitch_on": false,
-	"ach": {}, "counts": {}, "daily": {}, "tutorial_done": false, "clips": true,
+	"ach": {}, "counts": {}, "daily": {}, "tutorial_done": false, "clips": true, "seen_items": {},
 }
 const REBINDABLE := ["move_up", "move_down", "move_left", "move_right", "jump", "interact", "dive", "action", "prev_item", "next_item", "cam_next", "reveal", "taunt", "ghost", "trigger_all"]
 const SETTINGS_PATH := "user://settings.cfg"

@@ -1,12 +1,93 @@
 {
   "appid": 0,
   "items": [
-    {"itemdefid": 101, "type": "item", "name": "Golden Crown", "name_tr": "Altın Taç", "description": "A shiny crown for the prank king.", "price_category": "1;VLV100", "tradable": false, "marketable": false, "store_tags": "hat", "icon_url": "", "store_hidden": false},
-    {"itemdefid": 102, "type": "item", "name": "Tuxedo", "name_tr": "Smokin", "description": "Dress to impress, fall in style.", "price_category": "1;VLV100", "tradable": false, "marketable": false, "store_tags": "outfit"},
-    {"itemdefid": 103, "type": "item", "name": "Hero Cape", "name_tr": "Süper Kahraman Pelerini", "description": "Flies further when launched. (Not really.)", "price_category": "1;VLV100", "tradable": false, "marketable": false, "store_tags": "outfit"},
-    {"itemdefid": 104, "type": "item", "name": "Golden Shoes", "name_tr": "Altın Ayakkabı", "description": "Slip on bananas in luxury.", "price_category": "1;VLV50", "tradable": false, "marketable": false, "store_tags": "shoes"},
-    {"itemdefid": 105, "type": "item", "name": "Dino Costume", "name_tr": "Dinozor Kostümü", "description": "Rawr.", "price_category": "1;VLV200", "tradable": false, "marketable": false, "store_tags": "costume"},
-    {"itemdefid": 106, "type": "item", "name": "Robot Costume", "name_tr": "Robot Kostümü", "description": "Beep boop, pranked.", "price_category": "1;VLV200", "tradable": false, "marketable": false, "store_tags": "costume"},
-    {"itemdefid": 900, "type": "playtimegenerator", "name": "Playtime drop", "bundle": "104x1;101x1", "drop_interval": 600, "drop_max_per_window": 1, "drop_window": 10080}
+    {
+      "itemdefid": 101,
+      "type": "item",
+      "name": "Golden Crown",
+      "name_tr": "Altın Taç",
+      "description": "A shiny crown for the prank king.",
+      "price_category": "1;VLV100",
+      "tradable": false,
+      "marketable": false,
+      "store_tags": "hat",
+      "icon_url": "",
+      "store_hidden": false
+    },
+    {
+      "itemdefid": 102,
+      "type": "item",
+      "name": "Tuxedo",
+      "name_tr": "Smokin",
+      "description": "Dress to impress, fall in style.",
+      "price_category": "1;VLV100",
+      "tradable": false,
+      "marketable": false,
+      "store_tags": "outfit"
+    },
+    {
+      "itemdefid": 103,
+      "type": "item",
+      "name": "Hero Cape",
+      "name_tr": "Süper Kahraman Pelerini",
+      "description": "Flies further when launched. (Not really.)",
+      "price_category": "1;VLV100",
+      "tradable": false,
+      "marketable": false,
+      "store_tags": "outfit"
+    },
+    {
+      "itemdefid": 104,
+      "type": "item",
+      "name": "Golden Shoes",
+      "name_tr": "Altın Ayakkabı",
+      "description": "Slip on bananas in luxury.",
+      "price_category": "1;VLV50",
+      "tradable": false,
+      "marketable": false,
+      "store_tags": "shoes"
+    },
+    {
+      "itemdefid": 105,
+      "type": "item",
+      "name": "Dino Costume",
+      "name_tr": "Dinozor Kostümü",
+      "description": "Rawr.",
+      "price_category": "1;VLV200",
+      "tradable": false,
+      "marketable": false,
+      "store_tags": "costume"
+    },
+    {
+      "itemdefid": 106,
+      "type": "item",
+      "name": "Robot Costume",
+      "name_tr": "Robot Kostümü",
+      "description": "Beep boop, pranked.",
+      "price_category": "1;VLV200",
+      "tradable": false,
+      "marketable": false,
+      "store_tags": "costume"
+    },
+    {
+      "itemdefid": 107,
+      "type": "item",
+      "name": "Poseidon Set",
+      "name_tr": "Poseidon Seti",
+      "description": "Crown, robe with a magnificent beard, sandals and a golden trident in your left hand.",
+      "price_category": "1;VLV300",
+      "tradable": false,
+      "marketable": false,
+      "store_tags": "set"
+    },
+    {
+      "itemdefid": 900,
+      "type": "playtimegenerator",
+      "name": "Playtime drop",
+      "bundle": "104x1;101x1",
+      "drop_interval": 600,
+      "drop_max_per_window": 1,
+      "drop_window": 10080
+    }
   ]
 }

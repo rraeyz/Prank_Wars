@@ -76,6 +76,10 @@ var _brows: Array = []
 var _cheeks: Array = []
 var _mouth: MeshInstance3D
 var _teeth: MeshInstance3D
+var _eye_shape := Vector3.ONE  # face cosmetics (Cosmetics._eyes / _mouth)
+var _mouth_shape := Vector3.ONE
+var _pupil_z := -0.45
+var _teeth_always := false
 var _blink_at := 0.0
 var _skin_base := Color.WHITE
 var _head: Node3D
@@ -600,7 +604,7 @@ func _process(delta: float) -> void:
 		var dt := minf(delta, 1.0 / 30.0)
 		_pupil_v[i] = (_pupil_v[i] + (target - _pupil_off[i]) * 300.0 * dt).limit_length(3.0) * 0.85
 		_pupil_off[i] = (_pupil_off[i] + _pupil_v[i] * dt).limit_length(0.08)
-		var base := Vector3(0.15 * (-1.0 if i == 0 else 1.0), 0.08, -0.45)
+		var base := Vector3(0.15 * (-1.0 if i == 0 else 1.0), 0.08, _pupil_z)
 		_pupils[i].position = base + _pupil_off[i].limit_length(0.06)
 	var rule: String = world.modifier if world else ""
 	var hs := 1.75 if rule == "bighead" else 1.0
@@ -704,8 +708,8 @@ func _update_face(knocked: bool) -> void:
 		br.position.y = lerpf(br.position.y, brow_y, 0.3)
 		var e: MeshInstance3D = _eyes[i]
 		var ey := 0.1 if blinking else eye_s
-		e.scale = e.scale.lerp(Vector3(eye_s, ey, eye_s), 0.4)
+		e.scale = e.scale.lerp(Vector3(eye_s, ey, eye_s) * _eye_shape, 0.4)
 		_pupils[i].visible = not blinking
 		_cheeks[i].visible = blush or mood == "scared"
-	_mouth.scale = _mouth.scale.lerp(mouth_scale, 0.3)
-	_teeth.visible = teeth
+	_mouth.scale = _mouth.scale.lerp(mouth_scale * _mouth_shape, 0.3)
+	_teeth.visible = teeth or _teeth_always
