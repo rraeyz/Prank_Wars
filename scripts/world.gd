@@ -1222,6 +1222,13 @@ func _client_interpolate(delta: float) -> void:
 	else:
 		render_t = lerpf(render_t, target, 0.1)
 	_apply_sample(timeline.sample(render_t))
+	# own bean: much fresher sample (one net tick behind the newest) so controls feel snappier
+	var me := local_avatar()
+	if me:
+		var s := timeline.sample_one(me.slot, timeline.latest_t() - 1.0 / Config.NET_RATE)
+		if not s.is_empty():
+			me.global_transform = Transform3D(Basis(s[1]), s[0])
+			me.flags = int(s[2])
 
 
 func _apply_sample(s: Dictionary) -> void:

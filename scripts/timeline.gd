@@ -81,6 +81,49 @@ func sample(rt: float) -> Dictionary:
 	return out
 
 
+## Stateless sample of one entity (does not move the shared cursor). Used for the local bean,
+## which is shown with less delay than everything else.
+func sample_one(id: int, rt: float) -> Array:
+	var n := frames.size()
+	var a = null
+	var ta := 0.0
+	var b = null
+	var tb := 0.0
+	var i := n - 1
+	var steps := 0
+	while i >= 0 and steps < 90:
+		var f: Dictionary = frames[i]
+		var v = _find(f["d"], id)
+		if v != null:
+			if float(f["t"]) <= rt:
+				a = v
+				ta = f["t"]
+				break
+			b = v
+			tb = f["t"]
+		i -= 1
+		steps += 1
+	if a == null:
+		return [] if b == null else [Vector3(b[0], b[1], b[2]), Quaternion(b[3], b[4], b[5], b[6]).normalized(), b[7]]
+	if b == null:
+		return [Vector3(a[0], a[1], a[2]), Quaternion(a[3], a[4], a[5], a[6]).normalized(), a[7]]
+	var k := clampf((rt - ta) / maxf(tb - ta, 0.0001), 0.0, 1.0)
+	var pa := Vector3(a[0], a[1], a[2])
+	var pb := Vector3(b[0], b[1], b[2])
+	var qa := Quaternion(a[3], a[4], a[5], a[6]).normalized()
+	var qb := Quaternion(b[3], b[4], b[5], b[6]).normalized()
+	return [pa.lerp(pb, k), qa.slerp(qb, k), a[7] if k < 0.5 else b[7]]
+
+
+func _find(d: PackedFloat32Array, id: int):
+	var i := 0
+	while i + STRIDE <= d.size():
+		if int(d[i]) == id:
+			return d.slice(i + 1, i + STRIDE)
+		i += STRIDE
+	return null
+
+
 func add_event(t: float, kind: String, args: Array) -> void:
 	events.append({"t": t, "kind": kind, "args": args})
 

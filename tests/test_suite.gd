@@ -27,6 +27,7 @@ func _run() -> void:
 	test_scoring()
 	test_timeline()
 	test_house()
+	test_sample_one()
 	print("== integration tests")
 	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "full_match"]:
 		if only != "" and only != t:
@@ -413,3 +414,13 @@ func it_full_match() -> void:
 	var total: int = w.scoring.totals[0] + w.scoring.totals[1]
 	check(total > 0, "points were scored (%d - %d)" % [w.scoring.totals[0], w.scoring.totals[1]])
 	print("     replay seen: ", phases.has("replay"), "  score ", w.scoring.totals)
+
+
+func test_sample_one() -> void:
+	var tl := Timeline.new()
+	tl.push(1.0, PackedFloat32Array([5, 0, 0, 0, 0, 0, 0, 1, 0]))
+	tl.push(2.0, PackedFloat32Array([6, 9, 9, 9, 0, 0, 0, 1, 0]))
+	tl.push(3.0, PackedFloat32Array([5, 10, 0, 0, 0, 0, 0, 1, 2]))
+	var s: Array = tl.sample_one(5, 2.0)
+	check(s.size() == 3 and absf(s[0].x - 5.0) < 0.01, "sample_one interpolates across frames missing the entity (%s)" % str(s))
+	check(tl.sample_one(5, 9.0)[0].x == 10.0 and tl.sample_one(7, 2.0).is_empty(), "sample_one holds last / unknown id empty")

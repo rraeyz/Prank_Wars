@@ -86,7 +86,7 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [x] Maç sürerken katılmaya çalışana "maç devam ediyor" mesajı
 - [x] Mağaza görselleri için sahne çekim modu (`tools/keyart.gd`, `-- --keyart=KLASÖR`), 1920x1080
 - [x] Basın kiti + yayıncı mesajları (`marketing/`)
-- [ ] Online his: kendi karakterinde istemci tahmini (gecikmeyi gizler)
+- [x] Online his: kendi karakterin ~100 ms daha taze gösteriliyor, durum paketi 30 Hz (tam istemci tahmini değil; online testte hâlâ gecikmeli hissedilirse tam tahmin eklenecek)
 
 ## Haftalık
 - [x] Hafta 1 video fikirleri (`marketing/VIDEO_IDEAS.md`)

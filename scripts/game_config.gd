@@ -23,8 +23,8 @@ const MESS_DIVISOR := 4.0  # trapper gets mess% / 4 per runner
 
 # --- Network ---
 const PORT := 24680
-const NET_RATE := 20.0
-const INTERP_DELAY := 0.1
+const NET_RATE := 30.0
+const INTERP_DELAY := 0.08
 const MAX_PLAYERS := 8
 
 const TEAM_COLORS := [Color("ff6b3d"), Color("3da5ff")]
