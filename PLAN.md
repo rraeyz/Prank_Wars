@@ -140,6 +140,10 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [x] Yeni harita: Okul (sınıf, spor salonu, öğretmenler odası, koridor, kantin; 4 yeni görev)
 - [x] Yeni harita: Düğün Salonu (salon, dans pisti, mutfak, gelin odası, fuaye, lavabo; 5 yeni görev)
 - [x] Günlük görevler (her gün 3 küçük hedef, +150 XP)
+- [x] Sanat yönü: Forward+ (eski kartlarda otomatik uyumluluk), SSAO/SSIL/glow, pijamalı ifadeli karakterler (göz, kaş, ağız, ruh hâli)
+- [x] Gerçek ses efektleri (CC0 kayıtlar, CREDITS.md)
+- [x] Mağaza: güncel EN/TR metinler, etiketler, gereksinimler, basın kiti
+- [~] Steam kapsül görselleri (`--capsule`) + fragman (`--trailer` + `tools/trailer_edit.py`) — üretiliyor
 
 ## Haftalık
 - [x] Hafta 1 video fikirleri (`marketing/VIDEO_IDEAS.md`)

@@ -5,12 +5,13 @@ extends Node
 ## tools/trailer_edit.py then cuts the best moments into OUT/trailer.mp4.
 
 const FPS := 30.0
-var BEAT_LEN := 24.0
+var BEAT_LEN := 20.0
 const BEATS := [
 	{"map": "house", "card": ["Booby-trap the house.", ""]},
 	{"map": "school", "card": ["Then watch your friends", "walk right into it."]},
 	{"map": "office", "card": ["16 pranks. Chain reactions.", "Every extra link doubles the points."]},
-	{"map": "mansion", "card": ["4 maps + a map editor", "1v1 to 4v4 online · bots · sandbox"]},
+	{"map": "wedding", "card": ["Ghosts, house rules, chaos mode", "and a cat that will not stay put."]},
+	{"map": "mansion", "card": ["5 maps + a map editor", "1v1 to 4v4 online · bots · sandbox"]},
 ]
 
 var out := "user://trailer"
