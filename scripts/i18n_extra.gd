@@ -4,6 +4,11 @@ extends RefCounted
 const LANGS := ["es", "pt", "de", "fr", "ru"]
 
 const S := {
+	"mode": ["Modo", "Modo", "Modus", "Mode", "Режим"],
+	"mode_turns": ["Por turnos (uno pone trampas, otro corre)", "Por turnos (um arma, outro corre)", "Abwechselnd (einer stellt Fallen, einer läuft)", "Chacun son tour (l'un piège, l'autre court)", "По очереди (одни ставят, другие бегут)"],
+	"mode_chaos": ["CAOS (todos ponen trampas y corren a la vez)", "CAOS (todos armam e correm ao mesmo tempo)", "CHAOS (alle stellen Fallen und laufen gleichzeitig)", "CHAOS (tout le monde piège et court en même temps)", "ХАОС (все ставят ловушки и бегают одновременно)"],
+	"phase_chaos": ["CAOS", "CAOS", "CHAOS", "CHAOS", "ХАОС"],
+	"chaos_help": ["[Q/R] elegir  [Clic] colocar (el presupuesto se recarga)  [T] tus bromas remotas  [E] tarea/desactivar  [C] olfatear", "[Q/R] escolher  [Clique] colocar (orçamento recarrega)  [T] suas pegadinhas remotas  [E] tarefa/desarmar  [C] farejar", "[Q/R] wählen  [LMT] platzieren (Budget lädt nach)  [T] deine Fernstreiche  [E] Aufgabe/entschärfen  [C] schnüffeln", "[Q/R] choisir  [Clic] poser (le budget se recharge)  [T] tes blagues à distance  [E] corvée/désamorcer  [C] renifler", "[Q/R] выбрать  [ЛКМ] поставить (бюджет пополняется)  [T] твои дист. приколы  [E] дело/обезвредить  [C] нюх"],
 	"p_trampoline": ["Trampolín", "Trampolim", "Trampolin", "Trampoline", "Батут"],
 	"p_cake": ["Pastel trampa", "Bolo armadilha", "Köderkuchen", "Gâteau piège", "Торт-ловушка"],
 	"eat_cake": ["Comer pastel (+%d)", "Comer o bolo (+%d)", "Kuchen essen (+%d)", "Manger le gâteau (+%d)", "Съесть торт (+%d)"],

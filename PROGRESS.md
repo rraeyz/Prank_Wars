@@ -13,6 +13,15 @@ Sonraki oturum: önce `PLAN.md`, sonra bu dosyanın en üstündeki kaydı oku.
 
 ---
 
+## Oturum 3 — 2026-11-01 (kullanıcı: "tek düze olmasın, özgün şeyler, sürekli eğlence")
+- Ev Kuralları (7 rastgele kural, 2. rauntan itibaren; lobide rastgele/kapalı/sabit), "Annem geliyor!" son 30 sn çifte puan.
+- Raunt olayları: kedi kaçtı (tuzak tetikler, yakala +10), pizza geldi (bonus görev).
+- Koşucu "Kokla" yeteneği, dans/nanik, maç sonu ödülleri, 7 şapka, trambolin + tuzaklı pasta (16 şaka).
+- KAOS modu (lobide Mod): herkes aynı anda kurar ve koşar.
+- KRİTİK BUG düzeltildi: custom_integrator yüzünden karakterlerde yerçekimi yoktu (zıplayan havada kalıyordu).
+- 159 test + ağ testi geçiyor.
+- Sıradaki: kullanıcı testi; Faz 10'da kalanlar yok — yeni fikirler için PLAN'a eklenebilir.
+
 ## Oturum 2 — 2026-11-01 (kullanıcı isteği)
 - İstek: raunt daha uzun, varsayılan maç 8–10 dk, özel ayar; bekleyen takım izlesin ve müdahale etsin; açık/bug kapat.
 - Yapılan: hazırlık 90 sn + görev 150 sn, 2 raunt ≈ 9 dk (lobide değiştirilebilir). Görev uzayınca 4 görev seçiliyor.

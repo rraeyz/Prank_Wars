@@ -18,7 +18,15 @@ const RUSH_TIME := 30.0  # "Mom's coming home!": the last seconds of chores coun
 const REVEAL_COOLDOWN := 25.0
 const REVEAL_RADIUS := 6.0
 var house_rules := true  # random rule each round (from round 2)
-var rule_choice := "random"  # random | off | one of MODIFIERS (every round)
+var rule_choice := "random"
+var mode := "turns"  # turns | chaos
+const CHAOS_START_BUDGET := 6
+const CHAOS_BUDGET_EVERY := 5.0
+
+
+## Chaos is one long round where everybody traps and runs at once.
+func chaos_time() -> float:
+	return run_time * 1.6  # random | off | one of MODIFIERS (every round)
 const GHOST_DELAY := 20.0  # trappers become poltergeists this long after chores start
 const GHOST_COOLDOWN := 12.0
 
@@ -34,6 +42,8 @@ func tasks_per_round() -> int:
 
 ## Rough match length in minutes (intro + setup + chores + replay + score per round).
 func match_minutes() -> float:
+	if mode == "chaos":
+		return (intro_time + chaos_time() + replay_time + score_time) / 60.0
 	return rounds * (intro_time + setup_time + run_time + replay_time + score_time) / 60.0
 const TASK_POINTS := 15
 const PRANK_POINTS := 10

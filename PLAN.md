@@ -110,7 +110,7 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [x] Maç sonu ödülleri: Muz Kurbanı, En Pis, Tuzak Ustası, Ev Hayaleti, Ev Kuşu, Bomba İmhacı
 - [x] Rastgele raunt olayları: kedi kaçtı (koşar, tuzak tetikler, yakalayana +10), pizza geldi (bonus görev)
 - [x] Yeni şakalar: trambolin (ileri fırlatır, 3 kullanım), tuzaklı pasta (yem: yiyen +5 alır ama suratına krema)
-- [ ] Kaos modu: iki takım aynı anda hem kurar hem koşar (ayrı mod)
+- [x] KAOS modu: sıra yok; iki takım aynı anda kurar ve koşar, bütçe 5 sn'de +1 dolar, kendi tuzağın sana zarar vermez, olaylar + annem geliyor dahil (lobide Mod seçimi)
 - [x] Kozmetik: 7 şapka (parti, taç, kep, aşçı, pervane, boynuz), ana menüden seçilir
 - [x] BUG: karakterlerde yerçekimi uygulanmıyordu (zıplayan/dalan havada kalıyordu) — düzeltildi
 

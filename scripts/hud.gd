@@ -117,9 +117,9 @@ func _ready() -> void:
 	_remote = _lbl("", 20, Color.WHITE)
 	_remote.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	_remote.offset_left = -520
-	_remote.offset_top = -220
+	_remote.offset_top = -380
 	_remote.offset_right = -20
-	_remote.offset_bottom = -60
+	_remote.offset_bottom = -190
 	_remote.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	_root.add_child(_remote)
 
@@ -412,11 +412,14 @@ func _process(delta: float) -> void:
 	_phase.text = I18n.t("phase_" + p) if p != "none" else ""
 	var tl: float = world.time_left()
 	_timer.text = "" if p in ["end", "none", "replay", "sandbox"] else "%d" % ceili(tl)
-	if p in ["setup", "run"] and tl <= 5.0 and tl > 0.0 and ceili(tl) != _last_sec:
+	if p in ["setup", "run", "chaos"] and tl <= 5.0 and tl > 0.0 and ceili(tl) != _last_sec:
 		_last_sec = ceili(tl)
 		Sfx.play("tick")
 	_sub.visible = _sub.visible and p != "sandbox"
-	_sub.text = I18n.t("round_n", [world.round_i + 1, Config.rounds]) + "   ·   " + I18n.t("team_%d" % world.trapper_team) + " ⚑"
+	if world.chaos:
+		_sub.text = I18n.t("mode_chaos").split(" ")[0]
+	else:
+		_sub.text = I18n.t("round_n", [world.round_i + 1, Config.rounds]) + "   ·   " + I18n.t("team_%d" % world.trapper_team) + " ⚑"
 	# rotating tips (more of them in the first round)
 	_tip_t += delta
 	var tip_key := ""
@@ -461,14 +464,14 @@ func _process(delta: float) -> void:
 		_update_palette()
 	# remote list
 	var rtext := ""
-	if (p == "run" and world.local_is_trapper()) or p == "sandbox":
+	if (p == "run" and world.local_is_trapper() and not world.chaos) or p == "sandbox" or p == "chaos":
 		var rl: Array = world.remote_pranks(world.local_team())
 		for i in rl.size():
 			rtext += "[%d] %s\n" % [i + 1, I18n.t("p_" + rl[i].type)]
 	if p == "run" and world.local_is_trapper() and me != null and not me.visible:
 		var gw: float = world.ghost_wait_local()
 		rtext += (I18n.t("ghost_ready") if gw <= 0.0 else I18n.t("ghost_wait", [ceili(gw)])) + "\n"
-	if p == "run" and not world.local_is_trapper() and me != null and me.visible:
+	if (p == "run" and not world.local_is_trapper() or p == "chaos") and me != null and me.visible:
 		var rw: float = world.reveal_wait_local()
 		rtext += (I18n.t("sniff_ready") if rw <= 0.0 else I18n.t("sniff_wait", [ceili(rw)])) + "\n"
 	_remote.text = rtext
@@ -484,6 +487,8 @@ func _process(delta: float) -> void:
 			h = I18n.t("run_help_trapper") if world.local_is_trapper() else I18n.t("run_help_runner")
 		"sandbox":
 			h = I18n.t("sandbox_help")
+		"chaos":
+			h = I18n.t("chaos_help")
 	_help.text = h
 	# timers
 	if _popup_t > 0.0:

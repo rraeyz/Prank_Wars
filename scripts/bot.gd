@@ -76,6 +76,8 @@ func tick(delta: float) -> void:
 		"sandbox":
 			if a.team != world.trapper_team:
 				_runner(now, delta)
+		"chaos":
+			_chaos(now, delta)
 		"intro":
 			pass
 	if not a.can_act():
@@ -98,7 +100,7 @@ func _go(target: Vector3, key: String, now: float) -> bool:
 		path.pop_front()
 		return path.is_empty()
 	var dir := to.normalized()
-	if world.phase == "run" and a.team != world.trapper_team:
+	if (world.phase == "run" and a.team != world.trapper_team) or world.phase == "chaos":
 		dir = _avoid_traps(dir)
 	# unstick
 	if now < _strafe_until:
@@ -122,6 +124,8 @@ func _avoid_traps(dir: Vector3) -> Vector3:
 	for id in world.pranks:
 		var p: Prank = world.pranks[id]
 		if p.used or p.disarmed or not p.armed or not p.def["reveal"] or p.def["place"] != "floor":
+			continue
+		if world.chaos and p.team == a.team:
 			continue
 		var to := U.flat_xz(p.global_position - pos)
 		var d := to.length()
@@ -177,7 +181,7 @@ func _runner(now: float, _delta: float) -> void:
 	# ringing alarm or visible prank nearby: maybe disarm
 	for id in world.pranks:
 		var p: Prank = world.pranks[id]
-		if p.used or p.disarmed or not p.armed:
+		if p.used or p.disarmed or not p.armed or (world.chaos and p.team == a.team):
 			continue
 		var visible_to_me: bool = p.ringing or (p.def["reveal"] and p.type != "alarm")
 		if not visible_to_me:
@@ -229,6 +233,19 @@ func _runner(now: float, _delta: float) -> void:
 		a.in_interact = true
 		return
 	_go(best["pos"], key, now)
+
+
+## Chaos: drop a trap where we stand now and then, otherwise do chores like a runner.
+func _chaos(now: float, delta: float) -> void:
+	if a.can_act() and now > _place_try and rng.randf() < 0.02:
+		_place_try = now + rng.randf_range(4.0, 9.0)
+		var types: Array = Config.enabled_pranks().filter(func(t): return int(Config.PRANKS[t]["cost"]) <= int(world.budget[a.team]) and Config.PRANKS[t]["place"] in ["floor", "surface", "door", "container"])
+		if types.size() > 0:
+			var t: String = types[rng.randi() % types.size()]
+			var pl: Dictionary = world.placement_for(t, a.global_position, a.forward())
+			if pl["ok"]:
+				world.host_place(a.slot, t, pl["pos"], pl["yaw"], pl["socket"])
+	_runner(now, delta)
 
 
 func _warmup(now: float) -> void:

@@ -39,6 +39,7 @@ var _chain_victims := {}  # chain id -> [slots]
 var _alarm_fails := 0
 var _sandbox_log: Array = []
 var sandbox := false
+var chaos := false
 
 # replay / client display
 var replaying := false
@@ -111,6 +112,7 @@ func _ready() -> void:
 	_build_ghost()
 	Net.players_changed.connect(_on_players_changed)
 	sandbox = Config.sandbox
+	chaos = Config.mode == "chaos" and not sandbox
 	if Net.is_host():
 		if sandbox:
 			_host_start_sandbox()
@@ -174,11 +176,11 @@ func _spawn_avatar(pid: int) -> Avatar:
 
 
 func _on_door_opened(opener: Node3D, d: HouseDoor) -> void:
-	if not Net.is_host() or not (opener is Avatar) or not is_runner(opener):
+	if not Net.is_host() or not (opener is Avatar):
 		return
 	for id in pranks:
 		var p: Prank = pranks[id]
-		if p.socket == d.door_name and p.def["trigger"] == "door":
+		if p.socket == d.door_name and p.def["trigger"] == "door" and hits(opener, p.team):
 			p.fire(opener)
 
 
@@ -211,7 +213,7 @@ func local_team() -> int:
 
 
 func local_is_trapper() -> bool:
-	return local_team() == trapper_team
+	return chaos or local_team() == trapper_team
 
 
 func local_sees_pranks(prank_team: int) -> bool:
@@ -226,7 +228,7 @@ func local_view_target() -> Node3D:
 
 
 func is_runner(a: Avatar) -> bool:
-	return sandbox or a.team != trapper_team
+	return sandbox or chaos or a.team != trapper_team
 
 
 func runner_avatars() -> Array:
@@ -238,11 +240,13 @@ func runner_avatars() -> Array:
 	return r
 
 
-func avatars_near(p: Vector3, r: float, runners_only: bool) -> Array:
+func avatars_near(p: Vector3, r: float, runners_only: bool, prank_team := -1) -> Array:
 	var out := []
 	for s in avatars:
 		var a: Avatar = avatars[s]
 		if not a.active or (runners_only and not is_runner(a)):
+			continue
+		if chaos and prank_team >= 0 and a.team == prank_team:
 			continue
 		if U.dist_xz(a.global_position, p) <= r and absf(a.global_position.y - p.y) < 3.0:
 			out.append(a)
@@ -250,7 +254,23 @@ func avatars_near(p: Vector3, r: float, runners_only: bool) -> Array:
 
 
 func building() -> bool:
-	return phase == "setup" or phase == "sandbox"
+	return phase == "setup" or phase == "sandbox" or phase == "chaos"
+
+
+## Phases where pranks are live and chores count.
+func live() -> bool:
+	return phase == "run" or phase == "sandbox" or phase == "chaos"
+
+
+## Can a prank of `prank_team` hurt this bean? In chaos mode only the other team.
+func hits(a: Avatar, prank_team: int) -> bool:
+	return a.active and is_runner(a) and not (chaos and a.team == prank_team)
+
+
+## Team that owns a chain (the scorer of the next link).
+func chain_team(ch: int) -> int:
+	var c = scoring.chains.get(ch)
+	return int(c["team"]) if c else trapper_team
 
 
 func ui_blocking() -> bool:
@@ -337,7 +357,7 @@ func _local_input() -> void:
 		_send_action("jump", [])
 	if Input.is_action_just_pressed("taunt") and me.visible:
 		_send_action("taunt", [])
-	if Input.is_action_just_pressed("reveal") and phase == "run" and not local_is_trapper() and reveal_wait_local() <= 0.0:
+	if Input.is_action_just_pressed("reveal") and (phase == "run" and not local_is_trapper() or phase == "chaos") and reveal_wait_local() <= 0.0:
 		_reveal_local_ready = _clock + Config.REVEAL_COOLDOWN
 		_send_action("reveal", [])
 	if Input.is_action_just_pressed("dive"):
@@ -385,6 +405,8 @@ func _local_input() -> void:
 			_send_action("remote", [pick.id])
 	if Input.is_action_just_pressed("cam_next"):
 		cam.cycle()
+	if phase == "chaos" and Input.is_action_just_pressed("trigger_all"):
+		_send_action("remote_all", [])
 	if phase == "sandbox":
 		if Input.is_action_just_pressed("trigger_all"):
 			_send_action("remote_all", [])
@@ -459,7 +481,7 @@ func _host_action(slot: int, kind: String, args: Array) -> void:
 				_taunt_cd[slot] = Config.now + 1.5
 				fx_all("taunt", [slot])
 		"reveal":
-			if phase == "run" and is_runner(a) and _reveal_ready.get(slot, 0.0) <= Config.now:
+			if live() and is_runner(a) and _reveal_ready.get(slot, 0.0) <= Config.now:
 				_reveal_ready[slot] = Config.now + Config.REVEAL_COOLDOWN
 				if a.peer_id == Net.my_id():
 					s_reveal(a.global_position)
@@ -470,6 +492,9 @@ func _host_action(slot: int, kind: String, args: Array) -> void:
 		"remote_all", "rearm", "clear":
 			if phase == "sandbox":
 				_sandbox_action(kind)
+			elif phase == "chaos" and kind == "remote_all":
+				for p in remote_pranks(a.team):
+					p.fire(null)
 
 
 func _is_task_item_locked(_p: Prop) -> bool:
@@ -627,7 +652,7 @@ func canonical_placement(type: String, pos: Vector3, socket: String) -> Dictiona
 
 func host_place(slot: int, type: String, pos: Vector3, yaw: float, socket: String) -> bool:
 	var a: Avatar = avatars.get(slot)
-	if a == null or not building() or a.team != trapper_team or not Config.PRANKS.has(type):
+	if a == null or not building() or (a.team != trapper_team and not chaos) or not Config.PRANKS.has(type):
 		return false
 	if not type in Config.enabled_pranks():
 		return false
@@ -654,6 +679,8 @@ func host_place(slot: int, type: String, pos: Vector3, yaw: float, socket: Strin
 	if phase == "sandbox":
 		pranks[pid].arm()
 		_sandbox_log.append([type, a.team, pos, yaw, socket])
+	elif phase == "chaos":
+		pranks[pid].arm()
 	_sync_state()
 	return true
 
@@ -676,7 +703,7 @@ func s_spawn_prank(pid: int, type: String, team: int, pos: Vector3, yaw: float, 
 
 
 func remote_trigger(team: int, pid: int) -> void:
-	if phase != "run" and phase != "sandbox":
+	if not live():
 		return
 	var p: Prank = pranks.get(pid)
 	if p and p.team == team and p.def["trigger"] == "remote":
@@ -711,15 +738,16 @@ func on_bump(knocked: Avatar, other: Avatar) -> void:
 	## A flying bean knocked over another bean. Counts as a chain link if the flyer was pranked.
 	var v := knocked.pre_vel
 	var ch := -1
-	if phase in ["run", "sandbox"] and knocked.is_chained() and is_runner(other):
-		var r := scoring.prank_hit(knocked.chain_id, trapper_team, "bump", other.pname, Config.now)
+	var bt := chain_team(knocked.chain_id)
+	if live() and knocked.is_chained() and hits(other, bt):
+		var r := scoring.prank_hit(knocked.chain_id, bt, "bump", other.pname, Config.now)
 		ch = r["chain"]
 		if not _chain_victims.has(ch):
 			_chain_victims[ch] = []
 		_chain_victims[ch].append(other.slot)
-		feed_all("feed_prank", ["@p_bump", other.pname, r["delta"]], trapper_team)
+		feed_all("feed_prank", ["@p_bump", other.pname, r["delta"]], bt)
 		if r["links"] >= 2:
-			feed_all("chain", [r["links"], Scoring.chain_value(r["links"])], trapper_team, true)
+			feed_all("chain", [r["links"], Scoring.chain_value(r["links"])], bt, true)
 		_sync_state()
 	other.knock(U.flat_xz(v) * 0.6 + Vector3.UP * 3.5, Vector3(randf_range(-8, 8), 0, randf_range(-8, 8)), 1.6, ch)
 	fx_all("sfx", ["thud", other.global_position])
@@ -736,17 +764,18 @@ func on_prop_hit(p: Prop, body: Node) -> void:
 	if p.kind == "vacuum":
 		for id in pranks:
 			if pranks[id].vac == p:
-				if phase in ["run", "sandbox"] and is_runner(a):
+				if live() and hits(a, pranks[id].team):
 					pranks[id].vacuum_bump(a)
 		return
 	if p.kind == "marble":
-		if phase in ["run", "sandbox"] and is_runner(a) and spd > 1.2 and p.is_chained(now):
-			var r := scoring.prank_hit(p.chain_id, trapper_team, "marbles", a.pname, now)
+		var mt := chain_team(p.chain_id)
+		if live() and hits(a, mt) and spd > 1.2 and p.is_chained(now):
+			var r := scoring.prank_hit(p.chain_id, mt, "marbles", a.pname, now)
 			_chain_victims.get_or_add(r["chain"], []).append(a.slot)
 			p.chain_id = r["chain"]
-			feed_all("feed_prank", ["@p_marbles", a.pname, r["delta"]], trapper_team)
+			feed_all("feed_prank", ["@p_marbles", a.pname, r["delta"]], mt)
 			if r["links"] >= 2:
-				feed_all("chain", [r["links"], Scoring.chain_value(r["links"])], trapper_team, true)
+				feed_all("chain", [r["links"], Scoring.chain_value(r["links"])], mt, true)
 			var d := a.move_dir()
 			a.knock(d * 5.0 + Vector3.UP * 3.0, d.cross(Vector3.UP) * 11.0, 1.8, r["chain"])
 			fx_all("sfx", ["slip", a.global_position])
@@ -762,10 +791,11 @@ func on_prop_hit(p: Prop, body: Node) -> void:
 		return
 	if spd < 5.0:
 		return
-	if p.is_chained(now) and phase in ["run", "sandbox"] and is_runner(a):
-		var r2 := scoring.prank_hit(p.chain_id, trapper_team, "bump", a.pname, now)
+	var pt := chain_team(p.chain_id)
+	if p.is_chained(now) and live() and hits(a, pt):
+		var r2 := scoring.prank_hit(p.chain_id, pt, "bump", a.pname, now)
 		_chain_victims.get_or_add(r2["chain"], []).append(a.slot)
-		feed_all("feed_prank", ["@p_bump", a.pname, r2["delta"]], trapper_team)
+		feed_all("feed_prank", ["@p_bump", a.pname, r2["delta"]], pt)
 		a.knock(p.linear_velocity * 0.5 + Vector3.UP * 3.0, Vector3(randf_range(-8, 8), 0, randf_range(-8, 8)), 1.5, r2["chain"])
 		_sync_state()
 	elif now < p.thrown_until and p.thrown_by != a:
@@ -838,10 +868,10 @@ func _prop_of_kind(k: String) -> Prop:
 ## Best thing this avatar can do with E right now -> {"key", "label", "time", "do": Callable} or {}.
 func _best_interaction(a: Avatar) -> Dictionary:
 	var pos := a.global_position
-	if (phase == "run" or phase == "sandbox") and is_runner(a):
+	if live() and is_runner(a):
 		for id in pranks:
 			var p: Prank = pranks[id]
-			if p.used or p.disarmed or not p.armed:
+			if p.used or p.disarmed or not p.armed or (chaos and p.team == a.team):
 				continue
 			if not (p.def["reveal"] or p.ringing):
 				continue
@@ -864,11 +894,11 @@ func _best_interaction(a: Avatar) -> Dictionary:
 			var lbl := I18n.t("s_" + str(e["at"]))
 			return {"key": "task_%s_%s" % [e["task"], e["at"]], "label": lbl, "time": e["time"],
 				"do": _do_task_step.bind(a, e)}
-	if phase == "run" and is_runner(a) and cat_zoom_until > Config.now:
+	if live() and is_runner(a) and cat_zoom_until > Config.now:
 		var cat := _prop_of_kind("cat")
 		if U.dist_xz(cat.global_position, pos) < 1.3:
 			return {"key": "cat", "label": I18n.t("catch_cat"), "time": 0.25, "do": _catch_cat.bind(a)}
-	if phase in ["setup", "run", "intro", "sandbox"] and not a.carrying:
+	if phase in ["setup", "run", "intro", "sandbox", "chaos"] and not a.carrying:
 		var best: Prop = null
 		var bd := 1.3
 		for p in house.props:
@@ -906,7 +936,7 @@ func _host_interactions(delta: float) -> void:
 			prompt = [best["label"], clampf(st["t"] / maxf(best["time"], 0.01), 0.0, 1.0)]
 		_send_prompt(a, prompt)
 		# deliveries happen automatically
-		if a.carrying and phase in ["run", "sandbox"] and is_runner(a):
+		if a.carrying and live() and is_runner(a):
 			for e in _task_targets():
 				if e["type"] == "deliver" and U.dist_xz(e["pos"], a.global_position) < e["radius"]:
 					var item_kind: String = Config.TASKS[e["task"]][0]["at"]
@@ -950,7 +980,7 @@ func _do_grab(a: Avatar, p: Prop) -> void:
 	a.pick_up(p)
 	fx_all("sfx", ["pop", a.global_position])
 	# picking up a pickup-step item completes that step
-	if phase in ["run", "sandbox"] and is_runner(a):
+	if live() and is_runner(a):
 		for e in _task_targets():
 			if e["type"] == "pickup" and e.get("prop") == p:
 				_advance_task(e["task"], a)
@@ -978,7 +1008,7 @@ func open_cupboard(c: Cupboard, a: Avatar) -> void:
 	fx_all("cup_open", [c.cup_name])
 	if c.prank and is_instance_valid(c.prank):
 		var p: Prank = c.prank
-		if p.armed and not p.used and is_runner(a):
+		if p.armed and not p.used and hits(a, p.team):
 			p.fire(a)
 
 
@@ -1037,7 +1067,10 @@ func _host_start_round(i: int) -> void:
 	for s in avatars:
 		var a: Avatar = avatars[s]
 		var idx: int = s % 8
-		a.respawn(house.spawn_house[idx] if a.team == trapper_team else house.spawn_garden[idx])
+		if chaos:
+			a.respawn(house.spawn_garden[idx] + Vector3(-3.0 if a.team == 0 else 3.0, 0, 0))
+		else:
+			a.respawn(house.spawn_house[idx] if a.team == trapper_team else house.spawn_garden[idx])
 	for p in house.props:
 		p.carrier = null
 		p.set_hidden(false)
@@ -1169,8 +1202,10 @@ func s_phase(p: String, dur: float) -> void:
 	phase_dur = dur
 	phase_end_local = _clock + dur
 	var front: HouseDoor = house.doors["front"]
-	front.locked = p in ["intro", "setup"]
+	front.locked = p in ["intro", "setup"] and not chaos
 	house.set_front_locked(front.locked)
+	if p == "chaos":
+		Sfx.play("go")
 	if p == "run":
 		# replays only show the chores: start recording fresh so long setups can't push run frames out
 		timeline.clear()
@@ -1187,6 +1222,8 @@ func s_phase(p: String, dur: float) -> void:
 func _host_phase_tick() -> void:
 	var now := Config.now
 	match phase:
+		"chaos":
+			_chaos_tick(now)
 		"sandbox":
 			var done_all := tasks.size() > 0
 			for t in tasks:
@@ -1218,9 +1255,14 @@ func _host_phase_tick() -> void:
 		return
 	match phase:
 		"intro":
-			for s in bots:
-				bots[s].on_setup()
-			_set_phase("setup", Config.setup_time)
+			if chaos:
+				_start_chaos()
+			else:
+				for s in bots:
+					bots[s].on_setup()
+				_set_phase("setup", Config.setup_time)
+		"chaos":
+			_end_chaos()
 		"setup":
 			_start_run()
 		"run":
@@ -1265,6 +1307,10 @@ func _end_run() -> void:
 	var mp := scoring.mess_points(trapper_team, mess, Config.now)
 	if mp > 0:
 		feed_all("feed_mess", [mp], trapper_team)
+	_end_run_replay()
+
+
+func _end_run_replay() -> void:
 	_sync_state()
 	var best := scoring.best_chain()
 	if best.is_empty() or timeline.frames.size() < 4:
@@ -1819,7 +1865,7 @@ func sniffed(p: Vector3) -> bool:
 
 
 func stat(slot: int, key: String, v: float) -> void:
-	if not Net.is_host() or phase not in ["run", "sandbox"]:
+	if not Net.is_host() or not live():
 		return
 	var d: Dictionary = _stats.get_or_add(slot, {})
 	d[key] = float(d.get(key, 0.0)) + v
@@ -1901,3 +1947,59 @@ func _catch_cat(a: Avatar) -> void:
 	feed_all("feed_cat_caught", [a.pname, Config.CAT_BONUS * scoring.mult], a.team)
 	fx_all("sfx", ["meow", cat.global_position])
 	_sync_state()
+
+
+# ------------------------------------------------------------------ chaos mode (no turns: everyone traps and runs)
+
+var _budget_tick := 0.0
+
+
+func _start_chaos() -> void:
+	_run_start = Config.now
+	_quake_at = Config.now + 12.0
+	budget = [Config.CHAOS_START_BUDGET, Config.CHAOS_START_BUDGET]
+	timeline.clear()
+	var roll := rng.randf()
+	_event = "cat" if roll < 0.45 else ("pizza" if roll < 0.9 else "")
+	_event_at = Config.now + Config.chaos_time() * rng.randf_range(0.3, 0.6)
+	_set_phase("chaos", Config.chaos_time())
+
+
+func _chaos_tick(now: float) -> void:
+	if now >= _budget_tick:
+		_budget_tick = now + Config.CHAOS_BUDGET_EVERY
+		for t in 2:
+			budget[t] = mini(budget[t] + 1, Config.BUDGET)
+		_sync_state()
+	var done_all := tasks.size() > 0
+	for t in tasks:
+		if not t["done"]:
+			done_all = false
+	if done_all:
+		_sync_tasks_new()
+	if modifier == "quake" and now >= _quake_at:
+		_quake_at = now + rng.randf_range(14.0, 22.0)
+		_quake()
+	if _event != "" and now >= _event_at:
+		_start_event(_event)
+		_event = ""
+	if cat_zoom_until > now:
+		_cat_tick()
+	if not rush and _phase_end - now <= minf(Config.RUSH_TIME, Config.chaos_time() * 0.25) and _phase_end - now > 3.0:
+		scoring.mult *= 2
+		fx_all("rush", [])
+
+
+## Chaos ends: each team scores the mess on the other team, then replay + final scores.
+func _end_chaos() -> void:
+	for id in pranks:
+		pranks[id].armed = false
+	for t in 2:
+		var mess := []
+		for s in avatars:
+			if avatars[s].team != t:
+				mess.append(avatars[s].mess)
+		var mp := scoring.mess_points(t, mess, Config.now)
+		if mp > 0:
+			feed_all("feed_mess", [mp], t)
+	_end_run_replay()

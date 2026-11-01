@@ -14,6 +14,7 @@ var _rounds_btn: Button
 var _setup_btn: Button
 var _run_btn: Button
 var _rule_btn: Button
+var _mode_btn: Button
 var _invite_btn: Button
 
 
@@ -186,6 +187,7 @@ func _build_lobby() -> void:
 	rb.custom_minimum_size = Vector2(150, 42)
 	rb.pressed.connect(func(): Net.remove_bot())
 	_host_box.add_child(rb)
+	_mode_btn = _btn("", func(): Config.mode = "chaos" if Config.mode == "turns" else "turns"; _changed(), v)
 	_rounds_btn = _btn("", _cycle_rounds, v)
 	_setup_btn = _btn("", func(): Config.setup_time = _next_of(Config.SETUP_CHOICES, Config.setup_time); _changed(), v)
 	_run_btn = _btn("", func(): Config.run_time = _next_of(Config.RUN_CHOICES, Config.run_time); _changed(), v)
@@ -239,6 +241,10 @@ func _refresh_lobby() -> void:
 	_setup_btn.visible = host
 	_run_btn.visible = host
 	_rule_btn.visible = host
+	_mode_btn.visible = host
+	_mode_btn.text = "%s: %s" % [I18n.t("mode"), I18n.t("mode_" + Config.mode)]
+	_rounds_btn.visible = host and Config.mode == "turns"
+	_setup_btn.visible = host and Config.mode == "turns"
 	var rname: String = I18n.t("rule_" + Config.rule_choice) if Config.rule_choice in ["random", "off"] else I18n.t("m_" + Config.rule_choice)
 	_rule_btn.text = "%s: %s" % [I18n.t("rule"), rname]
 	_setup_btn.text = "%s: %d %s" % [I18n.t("phase_setup").capitalize(), Config.setup_time, I18n.t("sec")]

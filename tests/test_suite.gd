@@ -34,7 +34,7 @@ func _run() -> void:
 	var mus: AudioStreamWAV = Sfx.build_music()
 	check(mus.data.size() > 100000, "music synthesizes")
 	print("== integration tests")
-	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "rules", "rush", "sniff", "awards", "events", "new_pranks", "full_match"]:
+	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "rules", "rush", "sniff", "awards", "events", "new_pranks", "chaos", "chaos_bots", "full_match"]:
 		if only != "" and only != t:
 			continue
 		print("-- ", t)
@@ -65,6 +65,8 @@ func _dispatch(t: String) -> void:
 		"awards": await it_awards()
 		"events": await it_events()
 		"new_pranks": await it_new_pranks()
+		"chaos": await it_chaos()
+		"chaos_bots": await it_chaos_bots()
 		"full_match": await it_full_match()
 
 
@@ -673,3 +675,67 @@ func it_new_pranks() -> void:
 	check(cake.used, "runner ate the bait cake")
 	check(w.scoring.totals[1] - t1 == Config.CAKE_BONUS and w.scoring.totals[0] - t0 >= 10, "cake: runners +5, trappers +10")
 	check(r.mess > 0.0, "cream on the face")
+
+
+func it_chaos() -> void:
+	Config.mode = "chaos"
+	Net.leave()
+	Config.mode = "chaos"
+	Net.mode = "practice"
+	Net.players = {5: _p("Trap", 0, 1), 6: _p("Run", 1, 2), 3: _p("Run2", 1, 3)}  # no local bean: the test drives them
+	Config.intro_time = 0.5
+	Config.run_time = 15.0
+	Config.score_time = 1.0
+	w = World.new()
+	get_tree().root.add_child(w)
+	await _frames(3)
+	check(w.chaos, "chaos mode on")
+	await _seconds(1.0)
+	check(w.phase == "chaos" and w.building() and w.live(), "everyone builds and runs at once")
+	var t := _runner(1)  # team 0
+	var r := _runner(2)  # team 1
+	t.respawn(Vector3(3, 0.8, 4.5))
+	r.respawn(Vector3(5.0, 0.8, 5.4))
+	_runner(3).respawn(Vector3(-5, 0.8, 4))
+	await _frames(3)
+	check(w.host_place(1, "banana", Vector3(3, 0, 2.5), 0.0, ""), "team 0 places in chaos")
+	check(w.host_place(2, "banana", Vector3(4.6, 0, 2.0), 0.0, ""), "team 1 places too")
+	await _walk(t, Vector2(0, -1), 0.6)
+	check(not t.down and w.scoring.totals[1] == 0, "own banana is harmless (team 0 walked over its own)")
+	t.respawn(Vector3(4.6, 0.8, 3.7))
+	await _frames(3)
+	await _walk(t, Vector2(0, -1), 0.6)
+	check(w.scoring.totals[1] == 10, "enemy banana hits: team 1 +10 (got %d)" % w.scoring.totals[1])
+	var b0: int = w.budget[0]
+	await _seconds(Config.CHAOS_BUDGET_EVERY + 0.5)
+	check(w.budget[0] > b0, "budget refills over time")
+	var tt := 0
+	while w.phase != "end" and tt < 60 * 60:
+		await get_tree().physics_frame
+		tt += 1
+	check(w.phase == "end", "chaos match ends")
+	Config.mode = "turns"
+
+
+func it_chaos_bots() -> void:
+	Config.mode = "chaos"
+	var players := {-1: _p("B1", 0, 1, true), -2: _p("B2", 0, 2, true), -3: _p("B3", 1, 3, true), -4: _p("B4", 1, 4, true)}
+	Net.leave()
+	Config.mode = "chaos"
+	Net.mode = "practice"
+	Net.players = players
+	Config.intro_time = 0.5
+	Config.run_time = 40.0
+	Config.rounds = 1
+	w = World.new()
+	get_tree().root.add_child(w)
+	var tt := 0
+	var most := 0
+	while w.phase != "end" and tt < 60 * 120:
+		await get_tree().physics_frame
+		tt += 1
+		most = maxi(most, w.pranks.size())
+	check(w.phase == "end", "bot chaos match ends (%.0f s)" % (tt / 60.0))
+	check(most >= 2, "bots placed pranks in chaos (%d)" % most)
+	print("     chaos score ", w.scoring.totals)
+	Config.mode = "turns"

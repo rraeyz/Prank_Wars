@@ -198,7 +198,7 @@ func _process(delta: float) -> void:
 		show = false
 		if ringing:
 			show = true
-		elif world.phase != "run" and world.phase != "sandbox":
+		elif not world.live():
 			show = false
 		elif not used and not disarmed and world.sniffed(global_position):
 			show = true
@@ -216,7 +216,7 @@ func _process(delta: float) -> void:
 	visual.visible = show
 	if _tag:
 		_tag.visible = false
-		if (world.phase == "run" or world.phase == "sandbox") and not used and world.local_team() == team and not world.replaying:
+		if world.live() and not used and world.local_team() == team and not world.replaying:
 			var idx: int = world.remote_pranks(team).find(self)
 			if idx >= 0:
 				_tag.visible = true
@@ -317,7 +317,7 @@ func _on_step(body: Node) -> void:
 		return
 	if body is Avatar:
 		var a: Avatar = body
-		if world.is_runner(a) and a.active:
+		if world.hits(a, team):
 			fire(a)
 	elif body is Prop:
 		var p: Prop = body
@@ -361,7 +361,7 @@ func fire(cause: Node3D) -> void:
 			victim.stick(3.0, ch4)
 		"spring":
 			used = true
-			var vs: Array = world.avatars_near(global_position, 0.9, true)
+			var vs: Array = world.avatars_near(global_position, 0.9, true, team)
 			if victim and not vs.has(victim):
 				vs.append(victim)
 			for v in vs:
@@ -415,7 +415,7 @@ func fire(cause: Node3D) -> void:
 		"paint", "fake_remote", "glove":
 			used = true
 			var center := global_position
-			var vs2: Array = world.avatars_near(center, 2.6 if type == "paint" else 1.6, true)
+			var vs2: Array = world.avatars_near(center, 2.6 if type == "paint" else 1.6, true, team)
 			if victim and not vs2.has(victim):
 				vs2.append(victim)
 			for v in vs2:
@@ -433,7 +433,7 @@ func fire(cause: Node3D) -> void:
 			used = true
 			var floor_p := Vector3(global_position.x, 0.0, global_position.z)
 			var r := 2.2 if type == "flour" else 3.0
-			for v in world.avatars_near(floor_p, r, true):
+			for v in world.avatars_near(floor_p, r, true, team):
 				var ch9: int = world.prank_hit(self, v, cause)
 				var away2 := U.flat_xz(v.global_position - floor_p).normalized()
 				if type == "flour":
