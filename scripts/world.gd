@@ -1497,7 +1497,8 @@ func _apply_fx(kind: String, args: Array, in_replay: bool) -> void:
 		"yell":
 			var a: Avatar = avatars.get(int(args[0]))
 			if a:
-				Sfx.play("yell", a.global_position, -2.0, 0.85 + (a.slot % 4) * 0.12)
+				Sfx.play("yell", a.global_position, -4.0, 0.85 + (a.slot % 4) * 0.12)
+				Sfx.play("grunt", a.global_position, 0.0, 0.9 + (a.slot % 4) * 0.1)
 				if not headless:
 					Fx.burst(self, a.global_position, "dust")
 		"sfx":
@@ -1581,7 +1582,7 @@ func _apply_fx(kind: String, args: Array, in_replay: bool) -> void:
 			var cup: Cupboard = house.cupboards.get(str(args[0]))
 			if cup:
 				cup.open()
-				Sfx.play("pop", cup.global_position, -6.0, 0.6)
+				Sfx.play("door", cup.global_position, -3.0)
 
 
 func _prank_particles(p: Prank) -> void:

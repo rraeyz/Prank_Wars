@@ -109,6 +109,32 @@ func build_all() -> void:
 	sounds["meow"] = [_meow(1.0), _meow(1.2)]
 	sounds["doorbell"] = [_doorbell()]
 	sounds["ding_pu"] = [_arp([1047.0, 1319.0, 1568.0], 0.05)]
+	_load_recordings()
+
+
+## Real CC0 recordings (audio/, see CREDITS.md) replace or join the synthesized sounds.
+const RECORDINGS := {
+	"splash": ["splash_1", "splash_2", "splash_3"], "paint": ["splat_1", "splat_2", "splat_3"],
+	"boing": ["spring_1", "spring_2", "boing_1"], "pop": ["pop_1", "pop_2"], "thud": ["thud_1", "thud_2", "thud_3"],
+	"punch": ["punch_1"], "fart": ["fart_1", "fart_2", "fart_3", "fart_4"], "task": ["bell_1"], "doorbell": ["bell_2"],
+	"confetti": ["cannon_1"], "tape": ["splat_2"], "door": ["door_open"],
+}
+const MIX_WITH_SYNTH := ["yell"]  # keep the synthesized voice, add grunts on top
+
+
+func _load_recordings() -> void:
+	for key in RECORDINGS:
+		var list := []
+		for f in RECORDINGS[key]:
+			var path := "res://audio/%s.ogg" % f
+			if ResourceLoader.exists(path):
+				list.append(load(path))
+		if list.size() > 0:
+			sounds[key] = list
+	for f in ["grunt_1", "grunt_2", "grunt_3"]:
+		var gp := "res://audio/%s.ogg" % f
+		if ResourceLoader.exists(gp):
+			sounds.get_or_add("grunt", []).append(load(gp))
 
 
 func _buf(dur: float) -> PackedFloat32Array:

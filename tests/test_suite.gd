@@ -36,6 +36,7 @@ func _run() -> void:
 	test_daily()
 	Sfx.build_all()
 	check(Sfx.sounds.has("meow") and Sfx.sounds.has("doorbell") and Sfx.sounds.size() >= 26, "all sounds synthesize (%d)" % Sfx.sounds.size())
+	check(Sfx.sounds["fart"].size() == 4 and Sfx.sounds["fart"][0] is AudioStreamOggVorbis and Sfx.sounds.has("grunt"), "real CC0 recordings loaded")
 	var mus: AudioStreamWAV = Sfx.build_music()
 	check(mus.data.size() > 100000, "music synthesizes")
 	print("== integration tests")
