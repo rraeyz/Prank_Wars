@@ -63,6 +63,7 @@ func _ready() -> void:
 	_root.add_child(top)
 	_score_l = _lbl("0", 44, Config.TEAM_COLORS[0])
 	_score_l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_score_l.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	top.add_child(_score_l)
 	var mid := VBoxContainer.new()
 	mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -80,10 +81,16 @@ func _ready() -> void:
 	_tip = _lbl("", 17, Color("bfe9ff"))
 	_tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	mid.add_child(_tip)
+	_tip.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_tip.offset_left = -330
+	_tip.offset_right = 330
+	_tip.offset_top = 150
+	_tip.offset_bottom = 200
+	_root.add_child(_tip)
 	_score_r = _lbl("0", 44, Config.TEAM_COLORS[1])
 	_score_r.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_score_r.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_score_r.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	top.add_child(_score_r)
 
 	# tasks (left)

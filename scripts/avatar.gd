@@ -112,6 +112,7 @@ func _build_visual() -> void:
 	_mat = StandardMaterial3D.new()
 	_mat.albedo_color = color
 	_mat.roughness = 0.6
+	U.outline(_mat, 0.03)
 	var torso := U.capsule(0.31, 0.95, color, Vector3(0, -0.22, 0), body_root)
 	torso.material_override = _mat
 	var head := U.sphere(0.4, color, Vector3(0, 0.32, 0), body_root, 18)

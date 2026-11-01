@@ -27,6 +27,21 @@ static func mat(c: Color, rough := 0.85, metal := 0.0, unshaded := false) -> Sta
 	return m
 
 
+static var _outline: StandardMaterial3D
+
+
+## Inverted-hull outline for a cartoon look (works on the Compatibility renderer).
+static func outline(m: StandardMaterial3D, amount := 0.025) -> StandardMaterial3D:
+	var o := StandardMaterial3D.new()
+	o.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	o.albedo_color = Color(0.1, 0.07, 0.12)
+	o.cull_mode = BaseMaterial3D.CULL_FRONT
+	o.grow = true
+	o.grow_amount = amount
+	m.next_pass = o
+	return m
+
+
 static func box(size: Vector3, c: Color, pos := Vector3.ZERO, parent: Node = null) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	var bm := BoxMesh.new()

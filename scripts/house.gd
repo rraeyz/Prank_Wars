@@ -344,6 +344,19 @@ func _garden() -> void:
 		U.solid(self, Vector3(0.1, 1.9, 0.1), Vector3(x, 0.95, 11.0), Color("8d99ae"))
 	U.box(Vector3(3.0, 0.02, 0.02), Color("eeeeee"), Vector3(-6.5, 1.8, 11.0), self)
 	_spot("clothesline", Vector3(-6.5, 0, 11.0), 1.8)
+	# flowers and bushes
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 42
+	for i in 26:
+		var x := rng.randf_range(-10.3, 10.3)
+		var z := rng.randf_range(6.6, 15.4)
+		if absf(x + 1.0) < 1.4 or (x > 5.5 and x < 8.5 and z < 11.5) or (x < -4.5 and z > 10 and z < 12):
+			continue
+		if i % 3 == 0:
+			U.sphere(rng.randf_range(0.35, 0.55), Color("3f9e3a"), Vector3(x, 0.2, z), self, 10)
+		else:
+			U.cyl(0.02, 0.3, Color("2e7d32"), Vector3(x, 0.15, z), self)
+			U.sphere(0.09, Color.from_hsv(rng.randf(), 0.6, 1.0), Vector3(x, 0.32, z), self, 8)
 	# tree
 	U.solid(self, Vector3(0.4, 2.0, 0.4), Vector3(8.5, 1.0, 14.0), C_DARK_WOOD)
 	U.sphere(1.3, Color("4caf50"), Vector3(8.5, 2.6, 14.0), self)
