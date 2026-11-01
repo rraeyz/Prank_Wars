@@ -27,6 +27,7 @@ var _revealed := false
 var _anim := -1.0  # trigger animation time
 var _fx_parts: Array = []
 var _tag: Label3D
+var owner_slot := -1  # host: who placed it (for awards)
 
 
 func setup(w: Node, pid: int, t: String, tm: int, sock: String) -> void:
@@ -187,6 +188,8 @@ func _process(delta: float) -> void:
 			show = true
 		elif world.phase != "run" and world.phase != "sandbox":
 			show = false
+		elif not used and not disarmed and world.sniffed(global_position):
+			show = true
 		elif def["reveal"] and not used:
 			var me: Node3D = world.local_view_target()
 			if me and U.dist_xz(me.global_position, global_position) < 2.6:

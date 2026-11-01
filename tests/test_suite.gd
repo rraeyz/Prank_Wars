@@ -30,7 +30,7 @@ func _run() -> void:
 	test_sample_one()
 	test_i18n()
 	print("== integration tests")
-	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "full_match"]:
+	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "rules", "rush", "sniff", "awards", "full_match"]:
 		if only != "" and only != t:
 			continue
 		print("-- ", t)
@@ -55,6 +55,10 @@ func _dispatch(t: String) -> void:
 		"sandbox": await it_sandbox()
 		"ghost": await it_ghost()
 		"security": await it_security()
+		"rules": await it_rules()
+		"rush": await it_rush()
+		"sniff": await it_sniff()
+		"awards": await it_awards()
 		"full_match": await it_full_match()
 
 
@@ -487,3 +491,102 @@ func it_security() -> void:
 	Net._switch_team(2)
 	check(Net.players[2]["team"] == team_before, "can't switch teams mid-match")
 	Net.in_match = false
+
+
+
+func it_rules() -> void:
+	await _make_world(_two_players())
+	check(w.modifier == "", "round 1 has no house rule")
+	Config.house_rules = true
+	w._host_start_round(1)
+	await _frames(2)
+	check(w.modifier in Config.MODIFIERS, "round 2 gets a house rule (%s)" % w.modifier)
+	for m in Config.MODIFIERS:
+		w.s_round_reset(1, 1, ["shower"], m)
+		await _frames(2)
+	w.s_round_reset(1, 1, ["shower"], "hacked_rule")
+	check(w.modifier == "", "unknown rule from the network is ignored")
+	# double points rule doubles a prank hit
+	w._host_start_round(1)
+	w.s_round_reset(1, 1, ["shower"], "double")
+	w.scoring.mult = 2
+	await _setup_run([["banana", Vector3(3, 0, 2), ""]])
+	var r := _runner(1)
+	r.respawn(Vector3(3, 0.8, 3.2))
+	_runner(3).respawn(Vector3(6.5, 0.8, 5))
+	w.trapper_team = 1
+	_runner(2).park()
+	var before: int = w.scoring.totals[0]
+	var p: Prank = w.pranks.values()[0]
+	p.team = 0
+	w.trapper_team = 0
+	r.team = 1
+	p.fire(r)
+	check(w.scoring.totals[0] - before == 20, "double points: banana = 20 (got %d)" % (w.scoring.totals[0] - before))
+	# quake knocks things around without errors
+	w.modifier = "quake"
+	w._quake()
+	await _frames(10)
+	check(true, "quake ran")
+
+
+func it_rush() -> void:
+	await _make_world(_two_players())
+	w.tasks = [{"id": "shower", "step": 0, "done": false}, {"id": "bed", "step": 0, "done": false}]
+	Config.run_time = 150.0
+	await _setup_run([])
+	w._phase_end = Config.now + Config.RUSH_TIME - 1.0
+	await _frames(3)
+	check(w.rush and w.scoring.mult == 2, "final 30 s: mom's coming home, points x2")
+	var r := _runner(3)
+	r.respawn(Vector3(-7.2, 0.8, 5.2))
+	_runner(2).respawn(Vector3(6.5, 0.8, 5))
+	await _frames(5)
+	r.in_interact = true
+	await _seconds(3.5)
+	check(w.scoring.totals[1] == 30, "chore during the rush = 30 (got %d)" % w.scoring.totals[1])
+	w._host_start_round(1)
+	check(not w.rush and w.scoring.mult == 1, "rush resets next round")
+
+
+func it_sniff() -> void:
+	await _make_world({5: _p("Trap", 0, 1), 6: _p("Run", 1, 2), 3: _p("Run2", 1, 3)})
+	var fridge: Cupboard = w.house.cupboards["fridge"]
+	await _setup_run([["paint", fridge.inside_point(), "fridge"]])
+	var r := _runner(2)
+	r.respawn(fridge.front_point() + Vector3(0, 0.8, 1.0))
+	await _frames(3)
+	w._host_action(2, "reveal", [])
+	check(float(w._reveal_ready.get(2, 0.0)) > Config.now, "sniff starts its cooldown")
+	w._host_action(2, "reveal", [])
+	w.s_reveal(r.global_position)
+	check(w.sniffed(fridge.global_position), "the paint bomb in the fridge is sniffed out")
+	check(not w.sniffed(Vector3(7, 0, 5)), "far traps are not")
+	w._host_action(1, "reveal", [])
+	check(not w._reveal_ready.has(1), "trappers can't sniff")
+	w._host_action(2, "taunt", [])
+	w._host_action(2, "taunt", [])
+	check(float(w._taunt_cd.get(2, 0.0)) > Config.now, "taunt has a cooldown")
+
+
+func it_awards() -> void:
+	await _make_world(_two_players())
+	await _setup_run([["banana", Vector3(3, 0, 2), ""], ["bucket", w.house.doors["hall_bed"].bucket_slot.global_position, "hall_bed"]])
+	for id in w.pranks:
+		w.pranks[id].owner_slot = 1
+	var r := _runner(2)
+	r.respawn(Vector3(3, 0.8, 3.2))
+	_runner(3).respawn(Vector3(6.5, 0.8, 5))
+	await _frames(3)
+	w.pranks.values()[0].fire(r)
+	await _frames(3)
+	var aw: Array = w.compute_awards()
+	var keys := aw.map(func(x): return x[0])
+	check("falls" in keys and "trap" in keys, "awards: falls + trap master (%s)" % str(keys))
+	for x in aw:
+		if x[0] == "falls":
+			check(x[1] == "Run", "banana victim award goes to the runner")
+		if x[0] == "trap":
+			check(x[1] == "Trap" and x[2] == 10, "trap master gets the prank points")
+	w.s_awards(aw)
+	check(w.awards.size() == aw.size(), "awards reach the HUD")

@@ -53,6 +53,18 @@ var selected := 0  # index in Config.enabled_pranks()
 var local_prompt := ["", 0.0]
 var _pending_remote := {}
 var _clock := 0.0
+var _sun: DirectionalLight3D
+var _env: Environment
+var modifier := ""  # this round's house rule
+var rush := false  # "Mom's coming home!" final seconds
+var reveal_until := 0.0  # local clock: sniffed traps stay visible until then
+var reveal_pos := Vector3.ZERO
+var _reveal_local_ready := 0.0
+var _reveal_ready := {}  # host: slot -> Config.now
+var _taunt_cd := {}
+var _quake_at := 0.0
+var _stats := {}  # host: slot -> {stat: value}
+var awards: Array = []
 var _in_acc := 0.0
 var _mouse_mode := false
 var _last_mv := Vector2.ZERO
@@ -103,6 +115,7 @@ func _ready() -> void:
 
 func _lights() -> void:
 	var sun := DirectionalLight3D.new()
+	_sun = sun
 	sun.rotation_degrees = Vector3(-58, -28, 0)
 	sun.shadow_enabled = true
 	sun.light_energy = 0.8
@@ -118,6 +131,7 @@ func _lights() -> void:
 	e.ambient_light_energy = 0.42
 	env.environment = e
 	add_child(env)
+	_env = e
 
 
 func _make_client_body(b: RigidBody3D) -> void:
@@ -316,6 +330,11 @@ func _local_input() -> void:
 		return
 	if Input.is_action_just_pressed("jump"):
 		_send_action("jump", [])
+	if Input.is_action_just_pressed("taunt") and me.visible:
+		_send_action("taunt", [])
+	if Input.is_action_just_pressed("reveal") and phase == "run" and not local_is_trapper() and reveal_wait_local() <= 0.0:
+		_reveal_local_ready = _clock + Config.REVEAL_COOLDOWN
+		_send_action("reveal", [])
 	if Input.is_action_just_pressed("dive"):
 		_send_action("dive", [])
 	var list := Config.enabled_pranks()
@@ -430,6 +449,19 @@ func _host_action(slot: int, kind: String, args: Array) -> void:
 		"remote":
 			if args.size() == 1 and args[0] is int and a.team == trapper_team:
 				remote_trigger(a.team, args[0])
+		"taunt":
+			if _taunt_cd.get(slot, 0.0) <= Config.now:
+				_taunt_cd[slot] = Config.now + 1.5
+				fx_all("taunt", [slot])
+		"reveal":
+			if phase == "run" and is_runner(a) and _reveal_ready.get(slot, 0.0) <= Config.now:
+				_reveal_ready[slot] = Config.now + Config.REVEAL_COOLDOWN
+				if a.peer_id == Net.my_id():
+					s_reveal(a.global_position)
+				elif not a.is_bot and Net.mode == "host":
+					s_reveal.rpc_id(a.peer_id, a.global_position)
+				fx_all("burst", [a.global_position + Vector3(0, 0.3, 0), "sniff", Color.WHITE])
+				fx_all("sfx", ["uhoh", a.global_position])
 		"remote_all", "rearm", "clear":
 			if phase == "sandbox":
 				_sandbox_action(kind)
@@ -613,6 +645,7 @@ func host_place(slot: int, type: String, pos: Vector3, yaw: float, socket: Strin
 	if Net.mode == "host":
 		s_spawn_prank.rpc(pid, type, a.team, pos, yaw, socket)
 	s_spawn_prank(pid, type, a.team, pos, yaw, socket)
+	pranks[pid].owner_slot = slot
 	if phase == "sandbox":
 		pranks[pid].arm()
 		_sandbox_log.append([type, a.team, pos, yaw, socket])
@@ -657,6 +690,7 @@ func prank_hit(p: Prank, victim: Avatar, cause: Node3D) -> int:
 	elif victim.is_chained():
 		ch = victim.chain_id
 	var r := scoring.prank_hit(ch, p.team, p.type, victim.pname, Config.now)
+	stat(p.owner_slot, "trap", r["delta"])
 	if not _chain_victims.has(r["chain"]):
 		_chain_victims[r["chain"]] = []
 	_chain_victims[r["chain"]].append(victim.slot)
@@ -715,7 +749,7 @@ func on_prop_hit(p: Prop, body: Node) -> void:
 		return
 	if now < p.ghost_until and phase == "run" and is_runner(a) and spd > 3.0:
 		p.ghost_until = 0.0
-		var gch: int = _ghost_hit(p.ghost_team, a)
+		var gch: int = _ghost_hit(p.ghost_team, a, p.ghost_slot)
 		a.knock(p.linear_velocity * 0.5 + Vector3.UP * 3.0, Vector3(randf_range(-8, 8), 0, randf_range(-8, 8)), 1.5, gch)
 		p.chain_id = gch
 		p.chain_until = now + 2.0
@@ -735,6 +769,7 @@ func on_prop_hit(p: Prop, body: Node) -> void:
 
 
 func add_mess(a: Avatar, amount: float, c: Color, kind: String) -> void:
+	stat(a.slot, "mess", amount)
 	fx_all("mess", [a.slot, amount, c, kind])
 
 
@@ -892,7 +927,8 @@ func _do_disarm(a: Avatar, p: Prank) -> void:
 		return
 	p.disarm()
 	scoring.disarmed(a.team, p.type, Config.now)
-	feed_all("feed_disarm", [a.pname, "@p_" + p.type, Config.DISARM_POINTS], a.team)
+	stat(a.slot, "disarms", 1)
+	feed_all("feed_disarm", [a.pname, "@p_" + p.type, Config.DISARM_POINTS * scoring.mult], a.team)
 	fx_all("prank", [p.id, "disarmed"])
 	_sync_state()
 
@@ -940,8 +976,9 @@ func _advance_task(task_id: String, a: Avatar) -> void:
 		t["step"] += 1
 		if t["step"] >= Config.TASKS[task_id].size():
 			t["done"] = true
-			scoring.task_done(a.team, task_id, Config.now)
-			feed_all("feed_task", ["@t_" + task_id, Config.TASK_POINTS], a.team)
+			var tp := scoring.task_done(a.team, task_id, Config.now)
+			stat(a.slot, "tasks", 1)
+			feed_all("feed_task", ["@t_" + task_id, tp], a.team)
 			fx_all("sfx", ["task", a.global_position])
 			fx_all("burst", [a.global_position + Vector3(0, 1, 0), "sparkle", Color.WHITE])
 		else:
@@ -970,9 +1007,20 @@ func _host_start_round(i: int) -> void:
 	scoring.start_round()
 	_chain_victims.clear()
 	var picked: Array = _pick_tasks()
+	# first round is always plain so new players learn the basics
+	var mod := ""
+	if Config.rule_choice in Config.MODIFIERS:
+		mod = Config.rule_choice
+	elif Config.rule_choice == "random" and Config.house_rules and i > 0:
+		mod = Config.MODIFIERS[rng.randi() % Config.MODIFIERS.size()]
 	if Net.mode == "host":
-		s_round_reset.rpc(i, trapper_team, picked)
-	s_round_reset(i, trapper_team, picked)
+		s_round_reset.rpc(i, trapper_team, picked, mod)
+	s_round_reset(i, trapper_team, picked, mod)
+	scoring.mult = 2 if mod == "double" else 1
+	for s in avatars:
+		avatars[s].gravity_scale = 0.8 if mod == "moon" else 2.2
+	for p in house.props:
+		p.gravity_scale = 0.3 if mod == "moon" else 1.0
 	for s in avatars:
 		var a: Avatar = avatars[s]
 		var idx: int = s % 8
@@ -991,7 +1039,15 @@ func _host_start_round(i: int) -> void:
 
 
 @rpc("authority", "reliable")
-func s_round_reset(i: int, ttm: int, picked: Array) -> void:
+func s_round_reset(i: int, ttm: int, picked: Array, mod: String) -> void:
+	modifier = mod if mod in Config.MODIFIERS else ""
+	rush = false
+	reveal_until = 0.0
+	_reveal_local_ready = 0.0
+	if _sun:
+		_sun.light_energy = 0.04 if modifier == "blackout" else 0.8
+		_env.ambient_light_energy = 0.07 if modifier == "blackout" else 0.42
+		_env.background_color = Color("10142a") if modifier == "blackout" else Color("9fd8ff")
 	round_i = i
 	trapper_team = ttm
 	replaying = false
@@ -1041,7 +1097,7 @@ func _sync_tasks_new() -> void:
 func _host_start_sandbox() -> void:
 	trapper_team = 0
 	var picked := _pick_tasks()
-	s_round_reset(0, 0, picked)
+	s_round_reset(0, 0, picked, "")
 	for s in avatars:
 		var a: Avatar = avatars[s]
 		a.respawn(house.spawn_house[s % 8] if a.team == 0 else house.spawn_garden[s % 8])
@@ -1057,8 +1113,8 @@ func _sandbox_action(kind: String) -> void:
 		"rearm", "clear":
 			var saved := _sandbox_log.duplicate()
 			if Net.mode == "host":
-				s_round_reset.rpc(0, 0, tasks.map(func(t): return t["id"]))
-			s_round_reset(0, 0, tasks.map(func(t): return t["id"]))
+				s_round_reset.rpc(0, 0, tasks.map(func(t): return t["id"]), "")
+			s_round_reset(0, 0, tasks.map(func(t): return t["id"]), "")
 			_sandbox_log.clear()
 			budget = [999, 999]
 			for s in avatars:
@@ -1130,6 +1186,13 @@ func _host_phase_tick() -> void:
 					all_done = false
 			if all_done and now < _phase_end - 1.0:
 				_phase_end = now + 1.0
+			elif not rush and _phase_end - now <= minf(Config.RUSH_TIME, Config.run_time * 0.25) and _phase_end - now > 3.0:
+				scoring.mult *= 2
+				fx_all("rush", [])
+			if modifier == "quake" and now >= _quake_at:
+				_quake_at = now + rng.randf_range(14.0, 22.0)
+				if now - _run_start > 8.0:
+					_quake()
 	if now < _phase_end:
 		return
 	match phase:
@@ -1148,12 +1211,17 @@ func _host_phase_tick() -> void:
 			if round_i + 1 < Config.rounds:
 				_host_start_round(round_i + 1)
 			else:
+				var aw := compute_awards()
+				if Net.mode == "host":
+					s_awards.rpc(aw)
+				s_awards(aw)
 				_set_phase("end", 9999.0)
 				fx_all("sfx", ["win", Vector3.ZERO])
 
 
 func _start_run() -> void:
 	_run_start = Config.now
+	_quake_at = Config.now + 12.0
 	for id in pranks:
 		pranks[id].arm()
 	for s in avatars:
@@ -1369,6 +1437,27 @@ func _apply_fx(kind: String, args: Array, in_replay: bool) -> void:
 				Fx.splat(_splat_root, c + o, args[1], randf_range(0.15, 0.45))
 			while _splat_root.get_child_count() > 160:
 				_splat_root.get_child(0).free()
+		"taunt":
+			var ta: Avatar = avatars.get(int(args[0]))
+			if ta:
+				ta.taunt_until = Time.get_ticks_msec() * 0.001 + 1.3
+				Sfx.play("go", ta.global_position, -4.0, 1.3 + (ta.slot % 3) * 0.15)
+		"rush":
+			rush = true
+			if not in_replay:
+				Sfx.play("alarm", null, 0.0, 0.8)
+				if hud:
+					hud.popup(I18n.t("rush"), Color("ff4d6d"))
+				if cam:
+					cam.shake(0.8)
+		"quake":
+			if not in_replay:
+				Sfx.play("thud", null, 4.0, 0.5)
+				Sfx.play("thud", null, 4.0, 0.4)
+				if hud:
+					hud.toast(I18n.t("quake"))
+			if cam:
+				cam.shake(2.0)
 		"cup_open":
 			var cup: Cupboard = house.cupboards.get(str(args[0]))
 			if cup:
@@ -1647,17 +1736,19 @@ func ghost_action(slot: int, point: Vector3) -> bool:
 		best.angular_velocity = Vector3(randf_range(-8, 8), randf_range(-8, 8), randf_range(-8, 8))
 		best.ghost_until = Config.now + 2.0
 		best.ghost_team = a.team
+		best.ghost_slot = slot
 		fx_all("burst", [best.global_position, "ghost", Color("b98cff")])
 	else:
-		var ch: int = _ghost_hit(a.team, target)
+		var ch: int = _ghost_hit(a.team, target, slot)
 		target.panic(1.0, ch)
 		fx_all("burst", [target.global_position + Vector3(0, 1, 0), "ghost", Color("b98cff")])
 	fx_all("sfx", ["whoosh", origin])
 	return true
 
 
-func _ghost_hit(team: int, victim: Avatar) -> int:
+func _ghost_hit(team: int, victim: Avatar, ghost_slot := -1) -> int:
 	var r := scoring.prank_hit(victim.chain_id if victim.is_chained() else -1, team, "ghost", victim.pname, Config.now)
+	stat(ghost_slot, "ghost", 1)
 	_chain_victims.get_or_add(r["chain"], []).append(victim.slot)
 	victim.set_chain(r["chain"], Config.now + 2.5)
 	feed_all("feed_prank", ["@p_ghost", victim.pname, r["delta"]], team)
@@ -1665,3 +1756,62 @@ func _ghost_hit(team: int, victim: Avatar) -> int:
 		feed_all("chain", [r["links"], Scoring.chain_value(r["links"])], team, true)
 	_sync_state()
 	return r["chain"]
+
+
+# ------------------------------------------------------------------ rules, sniffing, stats
+
+## Host: the house shakes. Loose objects jump, some runners lose their footing.
+func _quake() -> void:
+	for p in house.props:
+		if p.hidden_prop or p.carrier or p.freeze:
+			continue
+		p.linear_velocity += Vector3(rng.randf_range(-3, 3), rng.randf_range(2.0, 4.0), rng.randf_range(-3, 3))
+	for a in runner_avatars():
+		if a.active and a.can_act() and rng.randf() < 0.4:
+			a.knock(Vector3(rng.randf_range(-3, 3), 3.0, rng.randf_range(-3, 3)), Vector3(rng.randf_range(-6, 6), 0, rng.randf_range(-6, 6)), 1.2)
+	fx_all("quake", [])
+
+
+@rpc("authority", "reliable")
+func s_reveal(pos: Vector3) -> void:
+	reveal_pos = pos
+	reveal_until = _clock + 3.5
+
+
+func reveal_wait_local() -> float:
+	return maxf(0.0, _reveal_local_ready - _clock)
+
+
+## Is a prank at `p` currently sniffed out by the local runner?
+func sniffed(p: Vector3) -> bool:
+	return _clock < reveal_until and U.dist_xz(p, reveal_pos) <= Config.REVEAL_RADIUS
+
+
+func stat(slot: int, key: String, v: float) -> void:
+	if not Net.is_host() or phase not in ["run", "sandbox"]:
+		return
+	var d: Dictionary = _stats.get_or_add(slot, {})
+	d[key] = float(d.get(key, 0.0)) + v
+
+
+## End-of-match awards: the top player in each funny category.
+func compute_awards() -> Array:
+	var out := []
+	for key in ["falls", "mess", "trap", "ghost", "tasks", "disarms"]:
+		var best := -1
+		var bv := 0.0
+		for slot in _stats:
+			var v: float = _stats[slot].get(key, 0.0)
+			if v > bv:
+				bv = v
+				best = slot
+		if best >= 0 and avatars.has(best):
+			out.append([key, avatars[best].pname, int(round(bv))])
+	return out
+
+
+@rpc("authority", "reliable")
+func s_awards(list: Array) -> void:
+	awards = list
+	if hud:
+		hud.show_awards(list)

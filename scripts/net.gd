@@ -156,11 +156,13 @@ func _sync(p: Dictionary, cfg: Dictionary) -> void:
 	Config.rounds = clampi(int(cfg.get("rounds", Config.rounds)), 1, 12)
 	Config.setup_time = clampf(float(cfg.get("setup", Config.setup_time)), 10.0, 600.0)
 	Config.run_time = clampf(float(cfg.get("run", Config.run_time)), 10.0, 600.0)
+	var rc := str(cfg.get("rule", "random"))
+	Config.rule_choice = rc if rc in ["random", "off"] or rc in Config.MODIFIERS else "random"
 	players_changed.emit()
 
 
 func lobby_cfg() -> Dictionary:
-	return {"rounds": Config.rounds, "setup": Config.setup_time, "run": Config.run_time}
+	return {"rounds": Config.rounds, "setup": Config.setup_time, "run": Config.run_time, "rule": Config.rule_choice}
 
 
 func _broadcast() -> void:
@@ -242,7 +244,7 @@ func start_match() -> void:
 	if not is_host() or not can_start():
 		return
 	var cfg := {"rounds": Config.rounds, "seed": randi(), "demo": Config.demo_mode, "sandbox": Config.sandbox,
-		"setup": Config.setup_time, "run": Config.run_time}
+		"setup": Config.setup_time, "run": Config.run_time, "rule": Config.rule_choice}
 	if mode == "host":
 		_begin.rpc(players, cfg)
 	_begin(players, cfg)
@@ -256,6 +258,8 @@ func _begin(p: Dictionary, cfg: Dictionary) -> void:
 	Config.sandbox = bool(cfg.get("sandbox", false))
 	Config.setup_time = float(cfg["setup"])
 	Config.run_time = float(cfg["run"])
+	var rc := str(cfg.get("rule", "random"))
+	Config.rule_choice = rc if rc in ["random", "off"] or rc in Config.MODIFIERS else "random"
 	match_begin.emit(cfg)
 
 

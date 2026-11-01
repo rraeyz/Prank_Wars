@@ -7,6 +7,7 @@ var totals := [0, 0]
 var round_pts := [0, 0]
 var chains := {}  # id -> {"team", "links": [{"prank","victim","t"}], "points"}
 var _next_chain := 1
+var mult := 1  # "double points" rule and the final rush multiply prank, chore and disarm points
 var history := []  # [{t, team, pts, reason}]
 
 
@@ -39,20 +40,20 @@ func prank_hit(chain_id: int, trapper_team: int, prank: String, victim: String, 
 	c["links"].append({"prank": prank, "victim": victim, "t": t})
 	var n: int = c["links"].size()
 	var newv := chain_value(n)
-	var delta: int = newv - int(c["points"])
+	var delta: int = (newv - int(c["points"])) * mult
 	c["points"] = newv
 	_add(trapper_team, delta, "prank:" + prank, t)
 	return {"chain": chain_id, "links": n, "delta": delta}
 
 
 func task_done(runner_team: int, task: String, t: float) -> int:
-	_add(runner_team, Config.TASK_POINTS, "task:" + task, t)
-	return Config.TASK_POINTS
+	_add(runner_team, Config.TASK_POINTS * mult, "task:" + task, t)
+	return Config.TASK_POINTS * mult
 
 
 func disarmed(runner_team: int, prank: String, t: float) -> int:
-	_add(runner_team, Config.DISARM_POINTS, "disarm:" + prank, t)
-	return Config.DISARM_POINTS
+	_add(runner_team, Config.DISARM_POINTS * mult, "disarm:" + prank, t)
+	return Config.DISARM_POINTS * mult
 
 
 func bonus(team: int, pts: int, reason: String, t: float) -> void:

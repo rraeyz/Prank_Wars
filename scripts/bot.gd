@@ -223,6 +223,8 @@ func _runner(now: float, _delta: float) -> void:
 func _warmup(now: float) -> void:
 	if not a.can_act():
 		return
+	if rng.randf() < 0.002:
+		world._host_action(a.slot, "taunt", [])
 	_dive_cd -= 1.0 / 60.0
 	for s in world.avatars:
 		var o: Avatar = world.avatars[s]

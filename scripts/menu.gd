@@ -13,6 +13,7 @@ var _start_btn: Button
 var _rounds_btn: Button
 var _setup_btn: Button
 var _run_btn: Button
+var _rule_btn: Button
 var _invite_btn: Button
 
 
@@ -184,6 +185,7 @@ func _build_lobby() -> void:
 	_rounds_btn = _btn("", _cycle_rounds, v)
 	_setup_btn = _btn("", func(): Config.setup_time = _next_of(Config.SETUP_CHOICES, Config.setup_time); _changed(), v)
 	_run_btn = _btn("", func(): Config.run_time = _next_of(Config.RUN_CHOICES, Config.run_time); _changed(), v)
+	_rule_btn = _btn("", func(): var opts := ["random", "off"] + Config.MODIFIERS; Config.rule_choice = opts[(opts.find(Config.rule_choice) + 1) % opts.size()]; _changed(), v)
 	_start_btn = _btn(I18n.t("start"), _on_start, v)
 	_start_btn.add_theme_color_override("font_color", Color("7CFC9A"))
 	_btn(I18n.t("leave"), func(): Net.leave(); show_screen("main"), v)
@@ -232,6 +234,9 @@ func _refresh_lobby() -> void:
 	_rounds_btn.visible = host
 	_setup_btn.visible = host
 	_run_btn.visible = host
+	_rule_btn.visible = host
+	var rname: String = I18n.t("rule_" + Config.rule_choice) if Config.rule_choice in ["random", "off"] else I18n.t("m_" + Config.rule_choice)
+	_rule_btn.text = "%s: %s" % [I18n.t("rule"), rname]
 	_setup_btn.text = "%s: %d %s" % [I18n.t("phase_setup").capitalize(), Config.setup_time, I18n.t("sec")]
 	_run_btn.text = "%s: %d %s" % [I18n.t("phase_run").capitalize(), Config.run_time, I18n.t("sec")]
 	_invite_btn.visible = SteamNet.available() and SteamNet.lobby_id != 0

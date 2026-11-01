@@ -102,5 +102,16 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [x] Güvenlik: yerleştirme host'ta yeniden hesaplanıyor (NaN, yanlış yuva, yuva/tip uyuşmazlığı), istemci eylemlerinde tip kontrolü, maç sırasında takım değiştirme ve çift kayıt engeli, isim temizleme
 - [x] Testler: hayalet + güvenlik testleri (116 kontrol)
 
+## Faz 10 — Çeşitlilik ve sürekli eğlence (oturum 3)
+- [x] Ev Kuralları: her raunt rastgele kural (Ay Çekimi, Buz Pisti, Koca Kafalar, Elektrik Kesik, Turbo, Deprem, Çifte Puan); lobide rastgele/kapalı/sabit seçim
+- [x] "Annem geliyor!": görevin son 30 sn'si çifte puan, koşucular biraz hızlanır
+- [x] Koşucu yeteneği "Kokla" (C / LB): 6 m içindeki gizli tuzakları 3,5 sn gösterir, 25 sn bekleme
+- [x] Dans / nanik (V / d-pad aşağı)
+- [x] Maç sonu ödülleri: Muz Kurbanı, En Pis, Tuzak Ustası, Ev Hayaleti, Ev Kuşu, Bomba İmhacı
+- [ ] Rastgele raunt olayları: kedi kaçtı (kedi koşar, tuzakları tetikler), kapı zili / pizza (bonus görev)
+- [ ] Yeni şakalar: trambolin, sahte kapı, su balonu (fırlatılabilir)
+- [ ] Kaos modu: iki takım aynı anda hem kurar hem koşar (ayrı mod)
+- [ ] Kozmetik: şapkalar, renkler (oyuncunun kendini ifade etmesi, klip için)
+
 ## Haftalık
 - [x] Hafta 1 video fikirleri (`marketing/VIDEO_IDEAS.md`)

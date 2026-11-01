@@ -64,6 +64,9 @@ var _pupil_v := [Vector3.ZERO, Vector3.ZERO]
 var _mess_color := Color.WHITE
 var _flour := 0.0
 var _stars: Node3D
+var _head: Node3D
+var _lamp: OmniLight3D
+var taunt_until := 0.0  # local clock (Time) for the dance
 var _dizzy := 0.0
 
 
@@ -115,11 +118,15 @@ func _build_visual() -> void:
 	U.outline(_mat, 0.03)
 	var torso := U.capsule(0.31, 0.95, color, Vector3(0, -0.22, 0), body_root)
 	torso.material_override = _mat
-	var head := U.sphere(0.4, color, Vector3(0, 0.32, 0), body_root, 18)
+	# head pivot: eyes, mouth, hat and stars ride on it so the "big heads" rule can scale it
+	_head = Node3D.new()
+	_head.position = Vector3(0, 0.32, 0)
+	body_root.add_child(_head)
+	var head := U.sphere(0.4, color, Vector3.ZERO, _head, 18)
 	head.material_override = _mat
 	for sx in [-1.0, 1.0]:
-		U.sphere(0.12, Color.WHITE, Vector3(0.15 * sx, 0.42, -0.31), body_root)
-		var pupil := U.sphere(0.06, Color("111111"), Vector3(0.15 * sx, 0.42, -0.41), body_root)
+		U.sphere(0.12, Color.WHITE, Vector3(0.15 * sx, 0.10, -0.31), _head)
+		var pupil := U.sphere(0.06, Color("111111"), Vector3(0.15 * sx, 0.10, -0.41), _head)
 		_pupils.append(pupil)
 		var arm := Node3D.new()
 		arm.position = Vector3(0.33 * sx, -0.12, 0)
@@ -130,12 +137,12 @@ func _build_visual() -> void:
 		_arms.append(arm)
 		var foot := U.box(Vector3(0.18, 0.1, 0.28), Color("333344"), Vector3(0.15 * sx, -0.66, -0.04), body_root)
 		_feet.append(foot)
-	U.box(Vector3(0.16, 0.035, 0.02), Color("111111"), Vector3(0, 0.22, -0.39), body_root)  # mouth
+	U.box(Vector3(0.16, 0.035, 0.02), Color("111111"), Vector3(0, -0.10, -0.39), _head)  # mouth
 	_splats = Node3D.new()
 	body_root.add_child(_splats)
 	_hat = Node3D.new()
-	_hat.position = Vector3(0, 0.62, 0)
-	body_root.add_child(_hat)
+	_hat.position = Vector3(0, 0.30, 0)
+	_head.add_child(_hat)
 	var b := U.cyl(0.3, 0.42, Color("8fa3b8"), Vector3(0, 0, 0), _hat, 0.24)
 	b.rotation.x = PI
 	_hat.visible = false
@@ -147,8 +154,15 @@ func _build_visual() -> void:
 	_tape.visible = false
 	_label = U.label3d(pname, 40, color.lightened(0.3), Vector3(0, 1.05, 0), self)
 	_stars = Node3D.new()
-	_stars.position = Vector3(0, 0.85, 0)
-	body_root.add_child(_stars)
+	_stars.position = Vector3(0, 0.53, 0)
+	_head.add_child(_stars)
+	_lamp = OmniLight3D.new()
+	_lamp.position = Vector3(0, 0.9, 0)
+	_lamp.omni_range = 5.5
+	_lamp.light_energy = 1.6
+	_lamp.light_color = Color("ffe9b0")
+	_lamp.visible = false
+	add_child(_lamp)
 	for i in 3:
 		var a := TAU * i / 3.0
 		U.sphere(0.07, Color("ffe14d"), Vector3(cos(a) * 0.32, 0, sin(a) * 0.32), _stars, 6)
@@ -199,6 +213,7 @@ func knock(vel: Vector3, spin: Vector3, dur: float, chain := -1, by_self := fals
 	drop_carry()
 	if not by_self and world:
 		world.fx_all("yell", [slot])
+		world.stat(slot, "falls", 1)
 
 
 func panic(dur: float, chain: int) -> void:
@@ -334,13 +349,18 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	if now < stuck_until:
 		dir = Vector3.ZERO
 	var spd := SPEED
+	var rule: String = world.modifier if world else ""
+	if rule == "turbo":
+		spd *= 1.45
+	if world and world.rush and world.is_runner(self):
+		spd *= 1.15
 	if now < slow_until:
 		spd *= 0.45
 	if carrying:
 		spd *= 0.85
 	var lv := state.linear_velocity
 	var target := dir * spd
-	var accel := 45.0 if grounded else 14.0
+	var accel := (6.0 if rule == "ice" else 45.0) if grounded else 14.0
 	var h := Vector2(lv.x, lv.z).move_toward(Vector2(target.x, target.z), accel * dt)
 	lv.x = h.x
 	lv.z = h.y
@@ -462,8 +482,23 @@ func _process(delta: float) -> void:
 		var dt := minf(delta, 1.0 / 30.0)
 		_pupil_v[i] = (_pupil_v[i] + (target - _pupil_off[i]) * 300.0 * dt).limit_length(3.0) * 0.85
 		_pupil_off[i] = (_pupil_off[i] + _pupil_v[i] * dt).limit_length(0.08)
-		var base := Vector3(0.15 * (-1.0 if i == 0 else 1.0), 0.42, -0.41)
+		var base := Vector3(0.15 * (-1.0 if i == 0 else 1.0), 0.10, -0.41)
 		_pupils[i].position = base + _pupil_off[i].limit_length(0.06)
+	var rule: String = world.modifier if world else ""
+	var hs := 1.75 if rule == "bighead" else 1.0
+	_head.scale = _head.scale.lerp(Vector3(hs, hs, hs), minf(1.0, delta * 6.0))
+	_lamp.visible = rule == "blackout"
+	var now_t := Time.get_ticks_msec() * 0.001
+	if now_t < taunt_until and not knocked:
+		var k := taunt_until - now_t
+		body_root.position.y = absf(sin(k * 14.0)) * 0.25
+		body_root.rotation.y = sin(k * 9.0) * 0.6
+		for i in 2:
+			_arms[i].rotation.x = -2.8 + sin(k * 20.0 + i * PI) * 0.5
+			_arms[i].rotation.z = (0.9 if i == 1 else -0.9)
+	else:
+		body_root.position.y = 0.0
+		body_root.rotation.y = 0.0
 	_dizzy = 1.2 if knocked else maxf(0.0, _dizzy - delta)
 	_stars.visible = _dizzy > 0.0 and not knocked
 	if _stars.visible:

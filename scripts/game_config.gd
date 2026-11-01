@@ -13,6 +13,12 @@ var score_time := 6.0
 var rounds := 2  # default match: each team traps once, ~9 minutes
 const SETUP_CHOICES := [60.0, 90.0, 120.0]
 const RUN_CHOICES := [100.0, 150.0, 200.0]
+const MODIFIERS := ["moon", "ice", "bighead", "blackout", "turbo", "quake", "double"]
+const RUSH_TIME := 30.0  # "Mom's coming home!": the last seconds of chores count double
+const REVEAL_COOLDOWN := 25.0
+const REVEAL_RADIUS := 6.0
+var house_rules := true  # random rule each round (from round 2)
+var rule_choice := "random"  # random | off | one of MODIFIERS (every round)
 const GHOST_DELAY := 20.0  # trappers become poltergeists this long after chores start
 const GHOST_COOLDOWN := 12.0
 
@@ -90,7 +96,7 @@ var settings := {
 	"name": "", "lang": "", "master": 0.8, "music": 0.5, "sfx": 0.9,
 	"fullscreen": false, "last_ip": "127.0.0.1", "keys": {},
 }
-const REBINDABLE := ["move_up", "move_down", "move_left", "move_right", "jump", "interact", "dive", "action", "prev_item", "next_item", "cam_next", "trigger_all"]
+const REBINDABLE := ["move_up", "move_down", "move_left", "move_right", "jump", "interact", "dive", "action", "prev_item", "next_item", "cam_next", "reveal", "taunt", "ghost", "trigger_all"]
 const SETTINGS_PATH := "user://settings.cfg"
 
 
@@ -147,8 +153,9 @@ func _setup_input() -> void:
 		"prev_item": [_key(KEY_Q), _mouse(MOUSE_BUTTON_WHEEL_UP), _joy(JOY_BUTTON_DPAD_LEFT), _joy(JOY_BUTTON_LEFT_SHOULDER)],
 		"cam_next": [_key(KEY_TAB), _joy(JOY_BUTTON_Y)],
 		"menu": [_key(KEY_ESCAPE), _joy(JOY_BUTTON_START)],
-		"scoreboard": [_key(KEY_C)],
 		"screenshot": [_key(KEY_F9)],
+		"taunt": [_key(KEY_V), _joy(JOY_BUTTON_DPAD_DOWN)],
+		"reveal": [_key(KEY_C), _joy(JOY_BUTTON_LEFT_SHOULDER)],
 		"ghost": [_key(KEY_G), _mouse(MOUSE_BUTTON_RIGHT)],
 		"trigger_all": [_key(KEY_T), _joy(JOY_BUTTON_DPAD_UP)],
 		"rearm": [_key(KEY_BACKSPACE), _joy(JOY_BUTTON_BACK)],

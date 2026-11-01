@@ -34,6 +34,8 @@ var _blind_t := 0.0
 var _blind_max := 1.0
 var _last_sec := -1
 var _tip: Label
+var _awards: Label
+var _rule: Label
 var _tip_t := 0.0
 
 
@@ -78,14 +80,17 @@ func _ready() -> void:
 	_sub = _lbl("", 18, Color(1, 1, 1, 0.9))
 	_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	mid.add_child(_sub)
+	_rule = _lbl("", 18, Color("ffb3e6"))
+	_rule.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mid.add_child(_rule)
 	_tip = _lbl("", 17, Color("bfe9ff"))
 	_tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_tip.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	_tip.offset_left = -330
 	_tip.offset_right = 330
-	_tip.offset_top = 150
-	_tip.offset_bottom = 200
+	_tip.offset_top = 182
+	_tip.offset_bottom = 232
 	_root.add_child(_tip)
 	_score_r = _lbl("0", 44, Config.TEAM_COLORS[1])
 	_score_r.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -219,6 +224,9 @@ func _ready() -> void:
 	_end_text = _lbl("", 40, Color("ffe14d"))
 	_end_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	ev.add_child(_end_text)
+	_awards = _lbl("", 20, Color.WHITE)
+	_awards.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	ev.add_child(_awards)
 	_end_lobby = _btn(I18n.t("back_to_lobby"), func(): Net.back_to_lobby())
 	ev.add_child(_end_lobby)
 	ev.add_child(_btn(I18n.t("to_menu"), func(): get_tree().root.get_node("Main").to_menu()))
@@ -324,11 +332,21 @@ func on_phase(p: String) -> void:
 		_focus_in.call_deferred(_end)
 		Sfx.play("win")
 	if p == "intro":
-		popup(I18n.t("round_n", [world.round_i + 1, Config.rounds]) + "\n" + I18n.t("intro_trap", [I18n.t("team_%d" % world.trapper_team)]), Config.TEAM_COLORS[world.trapper_team])
+		var txt := I18n.t("round_n", [world.round_i + 1, Config.rounds]) + "\n" + I18n.t("intro_trap", [I18n.t("team_%d" % world.trapper_team)])
+		if world.modifier != "":
+			txt += "\n" + I18n.t("rule") + ": " + I18n.t("m_" + world.modifier) + " — " + I18n.t("md_" + world.modifier)
+		popup(txt, Config.TEAM_COLORS[world.trapper_team])
 	if p == "setup":
 		popup(I18n.t("you_trap") if world.local_is_trapper() else I18n.t("you_run"), Color.WHITE)
 	if p == "run":
 		popup(I18n.t("runners_enter"), Color("ffe14d"))
+
+
+func show_awards(list: Array) -> void:
+	var t := ""
+	for a in list:
+		t += "%s:  %s  (%d)\n" % [I18n.t("aw_" + str(a[0])), a[1], a[2]]
+	_awards.text = t
 
 
 func on_replay(on: bool, links: int, pts: int) -> void:
@@ -450,7 +468,13 @@ func _process(delta: float) -> void:
 	if p == "run" and world.local_is_trapper() and me != null and not me.visible:
 		var gw: float = world.ghost_wait_local()
 		rtext += (I18n.t("ghost_ready") if gw <= 0.0 else I18n.t("ghost_wait", [ceili(gw)])) + "\n"
+	if p == "run" and not world.local_is_trapper() and me != null and me.visible:
+		var rw: float = world.reveal_wait_local()
+		rtext += (I18n.t("sniff_ready") if rw <= 0.0 else I18n.t("sniff_wait", [ceili(rw)])) + "\n"
 	_remote.text = rtext
+	_rule.text = (I18n.t("rule") + ": " + I18n.t("m_" + world.modifier)) if world.modifier != "" else ""
+	if world.rush and p == "run":
+		_rule.text = I18n.t("rush_short") + ("   ·   " + _rule.text if _rule.text != "" else "")
 	# help
 	var h := ""
 	match p:
