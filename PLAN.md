@@ -71,7 +71,7 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [~] Steam sürümü (GodotSteam ile; appID `steam_appid.txt`'den okunuyor, şimdilik 480) — gerçek appID için Steamworks hesabı gerekli
 - [x] Mağaza metinleri ve tanıtım klasörü (`marketing/`)
 - [K] Steamworks hesabı + $100 ödeme
-- [K] Mağaza görselleri / fragman çekimi
+- [x] Mağaza görselleri / fragman çekimi (`--capsule`, `--trailer`; bkz. Faz 12)
 - [x] Demo yapılandırması (5 şaka; CI ayrıca PrankWarsDemo-Windows.zip üretiyor)
 
 ## Faz 6 — Eğlence ve klip cilası (prototip testinden bağımsız yapılabilenler)
@@ -93,7 +93,7 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [x] Yeni diller: İspanyolca, Portekizce (BR), Almanca, Fransızca, Rusça (arayüz metinleri; ipuçları İngilizce kalıyor)
 - [x] Tuş atama ekranı (klavye)
 - [x] Botlar bazen görünen tuzaktan kaçsın (daha inandırıcı antrenman)
-- [-] İkinci harita (ofis) — ertelendi: rapora göre çıkıştan sonra, önce ilk evin test sonucu
+- [x] İkinci harita (ofis) — sonradan yapıldı; şu an 5 harita
 
 ## Faz 9 — Kullanıcı isteği (oturum 2)
 - [x] Daha uzun raunt: hazırlık 90 sn, görev 150 sn; varsayılan maç 2 raunt ≈ 9 dk
