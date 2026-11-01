@@ -399,6 +399,7 @@ var _preview_av: Node3D
 var _locker_info: Label
 var _buy_btn: Button
 var _buy_id := ""
+var _t_prev := 0.0
 
 
 func _build_locker() -> void:
@@ -419,7 +420,7 @@ func _build_locker() -> void:
 	_preview_vp.size = Vector2i(240, 300)
 	svc.add_child(_preview_vp)
 	var cam := Camera3D.new()
-	cam.position = Vector3(0, 0.9, 2.6)
+	cam.position = Vector3(0, 1.0, 3.0)
 	cam.fov = 40.0
 	_preview_vp.add_child(cam)
 	cam.look_at.call_deferred(Vector3(0, 0.75, 0))
@@ -498,13 +499,14 @@ func _refresh_locker() -> void:
 	a.setup(null, {"name": "", "team": 0, "bot": true, "color": 0, "look": shown}, 1, 0)
 	a.freeze = true
 	a.position = Vector3(0, 0.75, 0)
-	a.rotation.y = PI + 0.5
+	a.rotation.y = PI
 	_preview_av = a
 
 
 func _process(delta: float) -> void:
 	if _preview_av and is_instance_valid(_preview_av) and _screens["locker"].visible:
-		_preview_av.rotation.y += delta * 0.8
+		_preview_av.rotation.y = PI + sin(_t_prev) * 0.6
+		_t_prev += delta
 
 
 # ------------------------------------------------------------------ Steam room browser

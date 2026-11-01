@@ -69,6 +69,15 @@ var _pupil_v := [Vector3.ZERO, Vector3.ZERO]
 var _mess_color := Color.WHITE
 var _flour := 0.0
 var _stars: Node3D
+var _skin_mat: StandardMaterial3D
+var _hair: Node3D
+var _eyes: Array = []
+var _brows: Array = []
+var _cheeks: Array = []
+var _mouth: MeshInstance3D
+var _teeth: MeshInstance3D
+var _blink_at := 0.0
+var _skin_base := Color.WHITE
 var _head: Node3D
 var _lamp: OmniLight3D
 var _umbrella: Node3D
@@ -120,35 +129,102 @@ func setup(w: Node, info: Dictionary, s: int, pid: int) -> void:
 		collision_mask = 0
 
 
+const SKIN_TONES := [Color("f6d2b8"), Color("e8b48f"), Color("c68863"), Color("8d5a3b"), Color("f1c27d"), Color("5c3b28")]
+const HAIR_COLORS := [Color("3b2417"), Color("e8c15a"), Color("b5462b"), Color("1a1a1a"), Color("7a4b2a"), Color("d9d9d9")]
+static var _pattern_cache := {}
+
+
+## Pajama fabric: the player's color with dots / stripes / checks (made in code, no image files).
+static func _pajama_tex(c: Color, kind: int) -> ImageTexture:
+	var key := "%s%d" % [c.to_html(), kind]
+	if _pattern_cache.has(key):
+		return _pattern_cache[key]
+	var img := Image.create(64, 64, false, Image.FORMAT_RGB8)
+	var light := Color.WHITE
+	for y in 64:
+		for x in 64:
+			var on := false
+			match kind:
+				0:
+					on = Vector2(x % 16 - 8, y % 16 - 8).length() < 3.5
+				1:
+					on = (y / 8) % 2 == 0
+				2:
+					on = ((x / 8) + (y / 8)) % 2 == 0
+			img.set_pixel(x, y, light if on else c)
+	var t := ImageTexture.create_from_image(img)
+	_pattern_cache[key] = t
+	return t
+
+
 func _build_visual() -> void:
 	body_root = Node3D.new()
 	add_child(body_root)
+	var skin: Color = SKIN_TONES[(slot * 7) % SKIN_TONES.size()]
+	# pajama body: pear-shaped, patterned fabric, white cuffs
 	_mat = StandardMaterial3D.new()
 	_mat.albedo_color = color
-	_mat.roughness = 0.6
+	_mat.albedo_texture = _pajama_tex(Color(0.74, 0.74, 0.74), slot % 3)
+	_mat.uv1_scale = Vector3(3, 2, 1)
+	_mat.roughness = 0.85
 	U.outline(_mat, 0.03)
-	var torso := U.capsule(0.31, 0.95, color, Vector3(0, -0.22, 0), body_root)
+	var torso := U.capsule(0.33, 0.9, color, Vector3(0, -0.24, 0), body_root)
 	torso.material_override = _mat
+	var belly := U.sphere(0.37, color, Vector3(0, -0.42, 0), body_root, 16)
+	belly.material_override = _mat
+	U.cyl(0.2, 0.06, Color.WHITE, Vector3(0, 0.08, 0), body_root)  # collar
 	# head pivot: eyes, mouth, hat and stars ride on it so the "big heads" rule can scale it
 	_head = Node3D.new()
-	_head.position = Vector3(0, 0.32, 0)
+	_head.position = Vector3(0, 0.36, 0)
 	body_root.add_child(_head)
-	var head := U.sphere(0.4, color, Vector3.ZERO, _head, 18)
-	head.material_override = _mat
+	_skin_mat = StandardMaterial3D.new()
+	_skin_mat.albedo_color = skin
+	_skin_base = skin
+	_skin_mat.roughness = 0.7
+	U.outline(_skin_mat, 0.025)
+	var head := U.sphere(0.43, skin, Vector3.ZERO, _head, 20)
+	head.material_override = _skin_mat
 	for sx in [-1.0, 1.0]:
-		U.sphere(0.12, Color.WHITE, Vector3(0.15 * sx, 0.10, -0.31), _head)
-		var pupil := U.sphere(0.06, Color("111111"), Vector3(0.15 * sx, 0.10, -0.41), _head)
+		var ear := U.sphere(0.09, skin, Vector3(0.42 * sx, 0.0, 0.02), _head, 8)
+		ear.material_override = _skin_mat
+	# hair tuft
+	_hair = Node3D.new()
+	_head.add_child(_hair)
+	var hc: Color = HAIR_COLORS[(slot * 3) % HAIR_COLORS.size()]
+	for k in 4:
+		var tuft := U.sphere(0.13 - k * 0.012, hc, Vector3(-0.12 + k * 0.08, 0.36 - absf(k - 1.5) * 0.03, -0.08 - k * 0.02), _hair, 8)
+		tuft.scale = Vector3(1, 0.8, 1)
+	# face
+	for sx in [-1.0, 1.0]:
+		var eye := U.sphere(0.13, Color.WHITE, Vector3(0.15 * sx, 0.08, -0.34), _head, 12)
+		_eyes.append(eye)
+		var pupil := U.sphere(0.065, Color("111111"), Vector3(0.15 * sx, 0.08, -0.45), _head)
 		_pupils.append(pupil)
+		var brow := Node3D.new()
+		brow.position = Vector3(0.15 * sx, 0.25, -0.38)
+		_head.add_child(brow)
+		U.box(Vector3(0.14, 0.035, 0.03), hc.darkened(0.2), Vector3.ZERO, brow)
+		_brows.append(brow)
+		var cheek := U.sphere(0.06, Color("ff8fa3"), Vector3(0.26 * sx, -0.08, -0.33), _head, 8)
+		cheek.scale = Vector3(1, 0.6, 0.4)
+		_cheeks.append(cheek)
+	_mouth = U.capsule(0.03, 0.16, Color("3a0f0f"), Vector3(0, -0.14, -0.41), _head)
+	_mouth.rotation.z = PI / 2.0
+	_teeth = U.box(Vector3(0.1, 0.03, 0.02), Color.WHITE, Vector3(0, -0.125, -0.43), _head)
+	# arms with big mitten hands, slippers
+	for sx in [-1.0, 1.0]:
 		var arm := Node3D.new()
-		arm.position = Vector3(0.33 * sx, -0.12, 0)
+		arm.position = Vector3(0.34 * sx, -0.1, 0)
 		body_root.add_child(arm)
-		var am := U.capsule(0.08, 0.5, color.darkened(0.15), Vector3(0, -0.22, 0), arm)
+		var am := U.capsule(0.09, 0.48, color, Vector3(0, -0.2, 0), arm)
+		am.material_override = _mat
 		am.name = "Arm"
-		U.sphere(0.1, Color("fff1e0"), Vector3(0, -0.47, 0), arm)
+		var hand := U.sphere(0.13, skin, Vector3(0, -0.46, 0), arm, 10)
+		hand.material_override = _skin_mat
 		_arms.append(arm)
-		var foot := U.box(Vector3(0.18, 0.1, 0.28), Color("333344"), Vector3(0.15 * sx, -0.66, -0.04), body_root)
+		var foot := U.capsule(0.1, 0.34, color.darkened(0.45).lerp(Color("f7e1c6"), 0.5), Vector3(0.16 * sx, -0.66, -0.05), body_root)
+		foot.rotation.x = PI / 2.0
 		_feet.append(foot)
-	U.box(Vector3(0.16, 0.035, 0.02), Color("111111"), Vector3(0, -0.10, -0.39), _head)  # mouth
 	_splats = Node3D.new()
 	body_root.add_child(_splats)
 	_hat = Node3D.new()
@@ -524,7 +600,7 @@ func _process(delta: float) -> void:
 		var dt := minf(delta, 1.0 / 30.0)
 		_pupil_v[i] = (_pupil_v[i] + (target - _pupil_off[i]) * 300.0 * dt).limit_length(3.0) * 0.85
 		_pupil_off[i] = (_pupil_off[i] + _pupil_v[i] * dt).limit_length(0.08)
-		var base := Vector3(0.15 * (-1.0 if i == 0 else 1.0), 0.10, -0.41)
+		var base := Vector3(0.15 * (-1.0 if i == 0 else 1.0), 0.08, -0.45)
 		_pupils[i].position = base + _pupil_off[i].limit_length(0.06)
 	var rule: String = world.modifier if world else ""
 	var hs := 1.75 if rule == "bighead" else 1.0
@@ -558,11 +634,78 @@ func _process(delta: float) -> void:
 	_tape.visible = (flags & F.STUCK) != 0
 	if _tape.visible:
 		_tape.global_position = Vector3(p.x, maxf(p.y - HALF_H, 0.0) + HALF_H, p.z)
-	var c := color
+	var c := color.lightened(0.15)
 	if mess > 0.0:
 		c = c.lerp(_mess_color, clampf(mess / 160.0, 0.0, 0.45))
 	c = c.lerp(Color.WHITE, _flour)
 	if (flags & F.WET) != 0:
 		c = c.darkened(0.25)
 	_mat.albedo_color = c
+	if _skin_mat and _flour > 0.0:
+		_skin_mat.albedo_color = _skin_base.lerp(Color.WHITE, _flour)
+	_update_face(knocked)
+	if _skin_mat and _flour > 0.0:
+		_skin_mat.albedo_color = _skin_base.lerp(Color.WHITE, _flour)
+	_update_face(knocked)
 	_label.visible = world == null or world.show_names
+
+
+## Cartoon face: brows + mouth + eye size tell how the bean feels (readable in clips).
+func _update_face(knocked: bool) -> void:
+	var now := Time.get_ticks_msec() * 0.001
+	var mood := "neutral"
+	if knocked or (flags & F.PANIC) != 0:
+		mood = "scared"
+	elif (flags & (F.WET | F.STUCK | F.HAT)) != 0:
+		mood = "grumpy"
+	elif now < taunt_until:
+		mood = "smug"
+	elif (flags & F.ACT) != 0:
+		mood = "focus"
+	elif world and world.phase == "setup" and team == world.trapper_team:
+		mood = "sneaky"
+	var brow_rot := 0.0
+	var brow_y := 0.25
+	var mouth_scale := Vector3(1, 1, 1)
+	var eye_s := 1.0
+	var teeth := false
+	var blush := false
+	match mood:
+		"scared":
+			brow_rot = -0.35
+			brow_y = 0.31
+			mouth_scale = Vector3(2.2, 2.6, 1)
+			eye_s = 1.25
+		"grumpy":
+			brow_rot = 0.4
+			brow_y = 0.22
+			mouth_scale = Vector3(0.7, 0.6, 1)
+		"smug":
+			brow_rot = 0.25
+			mouth_scale = Vector3(1.4, 1.0, 1)
+			teeth = true
+			blush = true
+		"sneaky":
+			brow_rot = 0.3
+			brow_y = 0.23
+			mouth_scale = Vector3(1.2, 0.8, 1)
+			eye_s = 0.85
+			teeth = true
+		"focus":
+			brow_rot = 0.15
+			mouth_scale = Vector3(0.5, 0.5, 1)
+	if now > _blink_at:
+		_blink_at = now + randf_range(2.5, 5.0)
+	var blinking := now > _blink_at - 0.12 and mood != "scared"
+	for i in 2:
+		var sx := -1.0 if i == 0 else 1.0
+		var br: Node3D = _brows[i]
+		br.rotation.z = lerp_angle(br.rotation.z, brow_rot * sx, 0.3)
+		br.position.y = lerpf(br.position.y, brow_y, 0.3)
+		var e: MeshInstance3D = _eyes[i]
+		var ey := 0.1 if blinking else eye_s
+		e.scale = e.scale.lerp(Vector3(eye_s, ey, eye_s), 0.4)
+		_pupils[i].visible = not blinking
+		_cheeks[i].visible = blush or mood == "scared"
+	_mouth.scale = _mouth.scale.lerp(mouth_scale, 0.3)
+	_teeth.visible = teeth

@@ -101,11 +101,17 @@ static func _skin(a: Node, id: String) -> void:
 		_:
 			return
 	m.albedo_color = Color(a.color, 0.55) if id == "skin_ghost" else a.color
+	m.albedo_texture = null
+	a._skin_mat.albedo_color = m.albedo_color
+	a._skin_base = m.albedo_color
+	if id == "skin_ghost":
+		a._skin_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	a._hair.visible = false
 
 
 static func _hat(a: Node, id: String) -> void:
 	var h := Node3D.new()
-	h.position = Vector3(0, 0.36, 0)
+	h.position = Vector3(0, 0.4, 0)
 	a._head.add_child(h)
 	match id:
 		"hat_party":
@@ -145,23 +151,23 @@ static func _outfit(a: Node, id: String) -> void:
 	match id:
 		"outfit_stripes":
 			for k in 3:
-				U.cyl(0.322, 0.06, Color.WHITE, Vector3(0, -0.12 - k * 0.15, 0), b)
+				U.cyl(0.345, 0.06, Color.WHITE, Vector3(0, -0.12 - k * 0.15, 0), b)
 		"outfit_overalls":
-			U.capsule(0.318, 0.55, Color("3a5ba0"), Vector3(0, -0.42, 0), b)
+			U.capsule(0.38, 0.6, Color("3a5ba0"), Vector3(0, -0.42, 0), b)
 			for sx in [-1.0, 1.0]:
-				U.box(Vector3(0.06, 0.35, 0.62), Color("3a5ba0"), Vector3(0.14 * sx, -0.08, 0), b)
+				U.box(Vector3(0.06, 0.35, 0.7), Color("3a5ba0"), Vector3(0.14 * sx, -0.08, 0), b)
 		"outfit_hoodie":
-			U.capsule(0.322, 0.8, Color("7b2cbf"), Vector3(0, -0.28, 0), b)
+			U.capsule(0.35, 0.8, Color("7b2cbf"), Vector3(0, -0.28, 0), b)
 			var hood := U.sphere(0.3, Color("6a1fb0"), Vector3(0, 0.2, 0.22), b, 10)
 			hood.scale = Vector3(1.1, 0.8, 0.6)
 		"outfit_tuxedo":
-			U.capsule(0.322, 0.8, Color("1d1d22"), Vector3(0, -0.28, 0), b)
-			U.box(Vector3(0.2, 0.5, 0.05), Color.WHITE, Vector3(0, -0.2, -0.31), b)
-			U.box(Vector3(0.18, 0.06, 0.05), Color("d00000"), Vector3(0, 0.02, -0.34), b)
+			U.capsule(0.35, 0.8, Color("1d1d22"), Vector3(0, -0.28, 0), b)
+			U.box(Vector3(0.2, 0.5, 0.05), Color.WHITE, Vector3(0, -0.2, -0.345), b)
+			U.box(Vector3(0.18, 0.06, 0.05), Color("d00000"), Vector3(0, 0.02, -0.37), b)
 		"outfit_hero":
-			var cape := U.box(Vector3(0.6, 0.95, 0.04), Color("d00000"), Vector3(0, -0.3, 0.33), b)
+			var cape := U.box(Vector3(0.6, 0.95, 0.04), Color("d00000"), Vector3(0, -0.3, 0.38), b)
 			cape.rotation.x = 0.12
-			var emblem := U.cyl(0.1, 0.02, Color("ffd60a"), Vector3(0, -0.1, -0.32), b)
+			var emblem := U.cyl(0.1, 0.02, Color("ffd60a"), Vector3(0, -0.1, -0.35), b)
 			emblem.rotation.x = PI / 2.0
 
 
