@@ -1144,6 +1144,8 @@ func s_round_reset(i: int, ttm: int, picked: Array, mod: String) -> void:
 		_env.ambient_light_energy = 0.08 if dark else 1.0
 		_env.background_mode = Environment.BG_COLOR if dark else Environment.BG_SKY
 		_env.background_color = Color("10142a")
+		for l in house.lights:
+			l.visible = not dark
 	round_i = i
 	trapper_team = ttm
 	replaying = false

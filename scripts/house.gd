@@ -35,6 +35,8 @@ var spawn_house: Array = []
 var _front_block: StaticBody3D
 var map := "house"
 var custom_nodes: Array = []
+var lights: Array = []  # warm room lights (switched off by the Blackout rule)
+const ART := [Color("e76f51"), Color("2a9d8f"), Color("e9c46a"), Color("264653"), Color("f4a261"), Color("8ecae6"), Color("b5838d")]
 const MAPS := ["house", "office", "school", "wedding", "mansion"]
 const MAP_SIZE := {"house": "medium", "office": "medium", "school": "medium", "wedding": "medium", "mansion": "large"}
 var _nav_centers := {"kitchen": Vector3(-3.4, 0, -3.0), "living": Vector3(1.6, 0, -2.6),
@@ -93,6 +95,7 @@ func build(map_name := "house", custom: Array = []) -> void:
 		custom_nodes.append(build_item(it[0], Vector3(it[1], 0, it[2]), it[3]))
 	_garden()
 	_roof()
+	_room_lights()
 	_nav()
 	_front_block = U.invisible_wall(self, Vector3(DOOR_W + 0.2, 3.0, 0.3), Vector3(-1.0, 1.5, 6.0))
 	for i in 8:
@@ -162,8 +165,8 @@ static var _tex_cache := {}
 
 
 ## Soft procedural noise so floors and grass aren't flat colors (no image files needed).
-func _noise_tex(freq: float, planks := false) -> Texture2D:
-	var key := "%f%s" % [freq, planks]
+func _noise_tex(freq: float, planks := false, lo := 0.82) -> Texture2D:
+	var key := "%f%s%f" % [freq, planks, lo]
 	if _tex_cache.has(key):
 		return _tex_cache[key]
 	var n := FastNoiseLite.new()
@@ -179,7 +182,7 @@ func _noise_tex(freq: float, planks := false) -> Texture2D:
 		t.width = 64
 		t.height = 512
 	var g := Gradient.new()
-	g.colors = PackedColorArray([Color(0.82, 0.82, 0.82), Color(1, 1, 1)])
+	g.colors = PackedColorArray([Color(lo, lo, lo), Color(1, 1, 1)])
 	t.color_ramp = g
 	_tex_cache[key] = t
 	return t
@@ -251,7 +254,61 @@ func _wall_mat() -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = C_WALL
 	m.roughness = 0.9
+	m.albedo_texture = _noise_tex(0.2, false, 0.95)  # faint plaster
+	m.uv1_triplanar = true
 	return m
+
+
+## Wall decoration with its own material, so the camera fade can make it see-through with its wall.
+func _deco(size: Vector3, pos: Vector3, c: Color, parent: Node, nodes: Array) -> MeshInstance3D:
+	var mi := U.box(size, c, pos, parent)
+	var m := StandardMaterial3D.new()
+	m.albedo_color = c
+	m.roughness = 0.7
+	mi.material_override = m
+	nodes.append(mi)
+	return mi
+
+
+func _door_frame(p: Vector3, horiz: bool, nodes: Array) -> void:
+	var c := Color("8a6f5a")
+	var th := T + 0.07
+	for sd in [-1.0, 1.0]:
+		var off: float = (DOOR_W / 2.0 + 0.04) * sd
+		if horiz:
+			_deco(Vector3(0.08, DOOR_H, th), p + Vector3(off, DOOR_H / 2.0, 0), c, self, nodes)
+		else:
+			_deco(Vector3(th, DOOR_H, 0.08), p + Vector3(0, DOOR_H / 2.0, off), c, self, nodes)
+	_deco(Vector3(DOOR_W + 0.16, 0.08, th) if horiz else Vector3(th, 0.08, DOOR_W + 0.16), p + Vector3(0, DOOR_H + 0.04, 0), c, self, nodes)
+
+
+## A framed little landscape on both faces of an interior wall.
+func _painting(p: Vector3, horiz: bool, nodes: Array) -> void:
+	var k := int(absf(p.x * 7.0 + p.z * 13.0))
+	for sd in [-1.0, 1.0]:
+		var n := Vector3(0, 0, sd) if horiz else Vector3(sd, 0, 0)
+		var q: Vector3 = p + n * (T / 2.0 + 0.02)
+		var flip := func(v: Vector3) -> Vector3: return v if horiz else Vector3(v.z, v.y, v.x)
+		var j := k + (1 if sd > 0.0 else 0)
+		_deco(flip.call(Vector3(0.82, 0.62, 0.03)), q, Color("5d4037"), self, nodes)
+		_deco(flip.call(Vector3(0.7, 0.5, 0.03)), q + n * 0.006, ART[j % ART.size()].lightened(0.35), self, nodes)
+		_deco(flip.call(Vector3(0.7, 0.2, 0.03)), q + n * 0.012 + Vector3(0, -0.15, 0), ART[(j + 3) % ART.size()], self, nodes)
+		_deco(flip.call(Vector3(0.12, 0.12, 0.03)), q + n * 0.012 + flip.call(Vector3(0.18, 0.1, 0)), Color("ffe066"), self, nodes)
+
+
+func _room_lights() -> void:
+	for r in rooms:
+		if r == "garden":
+			continue
+		var rc: Rect2 = rooms[r]
+		var l := OmniLight3D.new()
+		l.position = Vector3(rc.get_center().x, 2.35, rc.get_center().y)
+		l.light_color = Color(1.0, 0.86, 0.7)
+		l.light_energy = 0.55
+		l.omni_range = maxf(rc.size.x, rc.size.y) * 0.8
+		l.shadow_enabled = false
+		add_child(l)
+		lights.append(l)
 
 
 func _wall_piece(size: Vector3, pos: Vector3, m: StandardMaterial3D, nodes: Array) -> void:
@@ -264,6 +321,9 @@ func _wall_piece(size: Vector3, pos: Vector3, m: StandardMaterial3D, nodes: Arra
 	cm.albedo_color = C_WALL_TOP
 	cap.material_override = cm
 	nodes.append(cap)
+	if size.y > 1.0:  # skirting board
+		var grow := Vector3(0.04 if size.x <= T + 0.01 else 0.0, 0.0, 0.04 if size.z <= T + 0.01 else 0.0)
+		_deco(Vector3(size.x, 0.12, size.z) + grow, Vector3(0, -size.y / 2.0 + 0.06, 0), Color("b08968"), sb, nodes)
 
 
 func _segments(a0: float, a1: float, gaps: Array) -> Array:
@@ -281,12 +341,16 @@ func _segments(a0: float, a1: float, gaps: Array) -> Array:
 func _wall_x(z: float, x0: float, x1: float, door_xs: Array, names: Array = []) -> void:
 	var m := _wall_mat()
 	var nodes := []
+	var interior := z > RECT.position.y + 0.1 and z < RECT.end.y - 0.1
 	for s in _segments(x0 - T / 2.0, x1 + T / 2.0, door_xs):
 		var l: float = s[1] - s[0]
 		if l > 0.01:
 			_wall_piece(Vector3(l, H, T), Vector3((s[0] + s[1]) / 2.0, H / 2.0, z), m, nodes)
+		if interior and l > 2.4 and int(absf(s[0] * 3.0 + z)) % 3 != 0:
+			_painting(Vector3((s[0] + s[1]) / 2.0, 1.55, z), true, nodes)
 	for i in door_xs.size():
 		_wall_piece(Vector3(DOOR_W, H - DOOR_H, T), Vector3(door_xs[i], (H + DOOR_H) / 2.0, z), m, nodes)
+		_door_frame(Vector3(door_xs[i], 0, z), true, nodes)
 		if i < names.size():
 			_door(names[i], Vector3(door_xs[i], 0, z), true)
 	walls.append({"nodes": nodes, "mat": m, "x0": x0, "x1": x1, "z": z, "a": 1.0})
@@ -295,12 +359,16 @@ func _wall_x(z: float, x0: float, x1: float, door_xs: Array, names: Array = []) 
 func _wall_z(x: float, z0: float, z1: float, door_zs: Array, names: Array = []) -> void:
 	var m := _wall_mat()
 	var nodes := []
+	var interior := x > RECT.position.x + 0.1 and x < RECT.end.x - 0.1
 	for s in _segments(z0 + T / 2.0, z1 - T / 2.0, door_zs):
 		var l: float = s[1] - s[0]
 		if l > 0.01:
 			_wall_piece(Vector3(T, H, l), Vector3(x, H / 2.0, (s[0] + s[1]) / 2.0), m, nodes)
+		if interior and l > 2.4 and int(absf(s[0] * 3.0 + x)) % 3 != 0:
+			_painting(Vector3(x, 1.55, (s[0] + s[1]) / 2.0), false, nodes)
 	for i in door_zs.size():
 		_wall_piece(Vector3(T, H - DOOR_H, DOOR_W), Vector3(x, (H + DOOR_H) / 2.0, door_zs[i]), m, nodes)
+		_door_frame(Vector3(x, 0, door_zs[i]), false, nodes)
 		if i < names.size():
 			_door(names[i], Vector3(x, 0, door_zs[i]), false)
 

@@ -146,5 +146,14 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [x] Steam kapsül görselleri (`--capsule`, `marketing/steam_art/`) + 63 sn fragman (`--trailer` + `tools/trailer_edit.py`; mp4 repoda değil, kullanıcıya gönderildi)
 - [K] Görselleri/fragmanı GPU'lu bilgisayarda yeniden üret (yazılım render ile üretildi; daha keskin olur)
 
+## Faz 13 — Oturum 6 (kullanıcı istekleri)
+- [x] Yüz özelleştirme: göz (5), kaş (5), ağız (5) — ruh hâli animasyonlarıyla birlikte çalışır
+- [x] Sol el eşyası slotu (spatula, ördek, balon, pompa, Poseidon mızrağı)
+- [x] Kademeli açılım: seviye + başarım + maç sayısı; maç sonunda "Açıldı" bildirimi
+- [x] Mağaza ekranı: ücretli setler (Steam envanteri), "Dene" ile önizleme; Poseidon seti (taç, cübbe+sakal, sandalet, mızrak)
+- [x] Tüm metinler 7 dilde (eğitim dahil) + eksik çeviri testi
+- [x] Harita gerçekçiliği: süpürgelik, kapı kasaları, tablolar, sıva dokusu, sıcak oda ışıkları (Elektrik Kesik'te kapanır)
+- [K] Steam'de ücretli eşyaları tanımla (steam/itemdefs.json → Steamworks Inventory Service), fiyatları onayla
+
 ## Haftalık
 - [x] Hafta 1 video fikirleri (`marketing/VIDEO_IDEAS.md`)

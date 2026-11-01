@@ -32,7 +32,7 @@ A cosy house, an office, a school, a wedding hall and a big mansion — or build
 Twitch chat can vote on the next house rule. Every replay is saved as a landscape *and* a vertical video, ready for TikTok / Shorts.
 
 **Make it yours**
-Pajamas, hats, slippers and faces to unlock just by playing. Daily challenges, achievements, levels.
+Pick your eyes, brows and mouth, then unlock pajamas, hats, slippers and silly things to hold just by playing — levels, achievements and match milestones. Optional cosmetic sets (like Poseidon, trident included) are looks only. Daily challenges, achievements, levels.
 
 - 2–8 players online (1v1 to 4v4), Steam lobbies & invites — no servers, no subscriptions
 - Practice with bots, a 1-minute interactive tutorial and a sandbox to build ridiculous chains
