@@ -27,6 +27,8 @@ func _ready() -> void:
 	_build_lobby()
 	_build_settings()
 	_build_keys()
+	_build_locker()
+	_build_browser()
 	var hv := _screen("how")
 	hv.add_child(_lbl(I18n.t("how"), 40, Color("ffe14d")))
 	var ht := _lbl(I18n.t("how_text"), 18)
@@ -111,17 +113,19 @@ func _build_main() -> void:
 	_name_edit.text_changed.connect(func(t): Config.settings["name"] = t; Config.save_settings())
 	row.add_child(_name_edit)
 	v.add_child(row)
-	var hb := _btn("", Callable(), v)
-	var upd := func(): hb.text = "%s: %s" % [I18n.t("hat"), I18n.t("hat_" + Config.HATS[int(Config.settings["hat"]) % Config.HATS.size()])]
-	upd.call()
-	hb.pressed.connect(func(): Config.settings["hat"] = (int(Config.settings["hat"]) + 1) % Config.HATS.size(); Config.save_settings(); upd.call())
+	var lk := _btn(I18n.t("locker") + "  (" + I18n.t("level_n", [Config.level()]) + ")", func(): show_screen("locker"); _refresh_locker(), v)
+	lk.add_theme_color_override("font_color", Color("9ad0ff"))
 	var pb := _btn(I18n.t("practice"), func(): Net.start_practice(); show_screen("lobby"), v)
 	pb.add_theme_color_override("font_color", Color("ffe14d"))
 	var sbx := _btn(I18n.t("sandbox"), func(): Net.start_sandbox(), v)
 	sbx.add_theme_color_override("font_color", Color("ffb3e6"))
 	if SteamNet.available():
-		var sb := _btn(I18n.t("steam_host"), func(): SteamNet.host_lobby(), v)
+		var sb := _btn(I18n.t("steam_host"), func(): SteamNet.host_lobby(false), v)
 		sb.add_theme_color_override("font_color", Color("9ad0ff"))
+		var pub := _btn(I18n.t("steam_public"), func(): SteamNet.host_lobby(true), v)
+		pub.add_theme_color_override("font_color", Color("9ad0ff"))
+		var fb := _btn(I18n.t("find_rooms"), func(): show_screen("browser"); SteamNet.find_lobbies(), v)
+		fb.add_theme_color_override("font_color", Color("9ad0ff"))
 		SteamNet.status.connect(func(t): _status.text = t)
 	_btn(I18n.t("host"), _on_host, v)
 	var jr := HBoxContainer.new()
@@ -352,3 +356,151 @@ func _build_settings() -> void:
 	_btn(I18n.t("credits"), func(): cr.text = I18n.t("credits_text"); cr.visible = not cr.visible, v)
 	v.add_child(cr)
 	_btn(I18n.t("back"), func(): show_screen("main"), v)
+
+
+# ------------------------------------------------------------------ locker (cosmetics)
+
+var _locker_rows := {}
+var _preview_vp: SubViewport
+var _preview_av: Node3D
+var _locker_info: Label
+var _buy_btn: Button
+var _buy_id := ""
+
+
+func _build_locker() -> void:
+	var v := _screen("locker")
+	v.add_child(_lbl(I18n.t("locker"), 40, Color("ffe14d")))
+	_locker_info = _lbl("", 16, Color(1, 1, 1, 0.85))
+	v.add_child(_locker_info)
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 16)
+	v.add_child(h)
+	var svc := SubViewportContainer.new()
+	svc.custom_minimum_size = Vector2(240, 300)
+	svc.stretch = true
+	h.add_child(svc)
+	_preview_vp = SubViewport.new()
+	_preview_vp.own_world_3d = true
+	_preview_vp.transparent_bg = true
+	_preview_vp.size = Vector2i(240, 300)
+	svc.add_child(_preview_vp)
+	var cam := Camera3D.new()
+	cam.position = Vector3(0, 0.9, 2.6)
+	cam.fov = 40.0
+	_preview_vp.add_child(cam)
+	cam.look_at.call_deferred(Vector3(0, 0.75, 0))
+	var light := DirectionalLight3D.new()
+	light.rotation_degrees = Vector3(-35, 25, 0)
+	_preview_vp.add_child(light)
+	var rows := VBoxContainer.new()
+	rows.add_theme_constant_override("separation", 10)
+	h.add_child(rows)
+	for slot in Cosmetics.SLOTS:
+		var r := HBoxContainer.new()
+		var l := _lbl(I18n.t("slot_" + slot), 18)
+		l.custom_minimum_size = Vector2(110, 0)
+		r.add_child(l)
+		var prev := Button.new()
+		prev.text = "<"
+		prev.custom_minimum_size = Vector2(40, 36)
+		prev.pressed.connect(_cycle_item.bind(slot, -1))
+		r.add_child(prev)
+		var name_l := _lbl("", 17)
+		name_l.custom_minimum_size = Vector2(230, 0)
+		r.add_child(name_l)
+		var nxt := Button.new()
+		nxt.text = ">"
+		nxt.custom_minimum_size = Vector2(40, 36)
+		nxt.pressed.connect(_cycle_item.bind(slot, 1))
+		r.add_child(nxt)
+		rows.add_child(r)
+		_locker_rows[slot] = name_l
+	_buy_btn = _btn("", func(): SteamNet.purchase(Cosmetics.steam_def(_buy_id)), rows)
+	_buy_btn.visible = false
+	_btn(I18n.t("back"), func(): show_screen("main"), v)
+
+
+var _browse := {}  # slot -> item id being looked at (may be locked)
+
+
+func _cycle_item(slot: String, dir: int) -> void:
+	var list: Array = Cosmetics.items_for(slot)
+	var cur: String = _browse.get(slot, Cosmetics.sanitize(Config.settings.get("look", {}))[slot])
+	var i := (list.find(cur) + dir + list.size()) % list.size()
+	_browse[slot] = list[i]
+	if Cosmetics.owned(list[i], Config.level(), SteamNet.owned_items):
+		var look := Cosmetics.sanitize(Config.settings.get("look", {}))
+		look[slot] = list[i]
+		Config.settings["look"] = look
+		Config.save_settings()
+	_refresh_locker()
+
+
+func _refresh_locker() -> void:
+	if _preview_vp == null:
+		return
+	var look := Cosmetics.sanitize(Config.settings.get("look", {}))
+	var shown := look.duplicate()
+	_buy_btn.visible = false
+	for slot in Cosmetics.SLOTS:
+		var id: String = _browse.get(slot, look[slot])
+		shown[slot] = id
+		var lock := ""
+		if not Cosmetics.owned(id, Config.level(), SteamNet.owned_items):
+			var u := Cosmetics.unlock_of(id)
+			if u.begins_with("level:"):
+				lock = "  [" + I18n.t("level_n", [u.substr(6).to_int()]) + "]"
+			else:
+				lock = "  [" + I18n.t("store") + "]"
+				_buy_id = id
+				_buy_btn.text = I18n.t("buy", [I18n.t("c_" + id)])
+				_buy_btn.visible = SteamNet.available()
+		_locker_rows[slot].text = I18n.t("c_" + id) + lock
+	_locker_info.text = I18n.t("level_n", [Config.level()]) + "  ·  XP %d / %d" % [int(Config.settings.get("xp", 0)) % Config.XP_PER_LEVEL, Config.XP_PER_LEVEL]
+	if _preview_av:
+		_preview_av.queue_free()
+	var a := Avatar.new()
+	_preview_vp.add_child(a)
+	a.setup(null, {"name": "", "team": 0, "bot": true, "color": 0, "look": shown}, 1, 0)
+	a.freeze = true
+	a.position = Vector3(0, 0.75, 0)
+	a.rotation.y = PI + 0.5
+	_preview_av = a
+
+
+func _process(delta: float) -> void:
+	if _preview_av and is_instance_valid(_preview_av) and _screens["locker"].visible:
+		_preview_av.rotation.y += delta * 0.8
+
+
+# ------------------------------------------------------------------ Steam room browser
+
+var _rooms: VBoxContainer
+
+
+func _build_browser() -> void:
+	var v := _screen("browser")
+	v.add_child(_lbl(I18n.t("find_rooms"), 36, Color("ffe14d")))
+	_rooms = VBoxContainer.new()
+	_rooms.custom_minimum_size = Vector2(560, 260)
+	v.add_child(_rooms)
+	_btn(I18n.t("refresh"), func(): SteamNet.find_lobbies(), v)
+	_btn(I18n.t("back"), func(): show_screen("main"), v)
+	SteamNet.lobbies_found.connect(_show_rooms)
+
+
+func _show_rooms(list: Array) -> void:
+	for c in _rooms.get_children():
+		c.queue_free()
+	if list.is_empty():
+		_rooms.add_child(_lbl(I18n.t("no_rooms"), 18))
+		return
+	for r in list:
+		var b := Button.new()
+		var info := "%s   %d/%d   %s · %s" % [r["name"], r["players"], Config.MAX_PLAYERS, I18n.t("map_" + r["map"]) if r["map"] != "" else "", I18n.t("mode_" + r["mode"]).split(" ")[0] if r["mode"] != "" else ""]
+		b.text = info + ("   (" + I18n.t("in_game") + ")" if r["busy"] else "")
+		b.disabled = r["busy"] or r["players"] >= Config.MAX_PLAYERS
+		b.custom_minimum_size = Vector2(560, 40)
+		b.pressed.connect(func(): SteamNet.join_lobby(r["id"]))
+		_rooms.add_child(b)

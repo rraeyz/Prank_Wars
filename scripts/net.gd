@@ -113,7 +113,7 @@ func leave() -> void:
 
 
 func _on_connected() -> void:
-	_register.rpc_id(1, str(Config.settings["name"]), int(Config.settings.get("hat", 0)))
+	_register.rpc_id(1, str(Config.settings["name"]), Cosmetics.sanitize(Config.settings.get("look", {})))
 	connected_ok.emit()
 
 
@@ -129,7 +129,7 @@ func _on_peer_disconnected(id: int) -> void:
 
 
 @rpc("any_peer", "reliable")
-func _register(pname: String, hat: int = 0) -> void:
+func _register(pname: String, look = {}) -> void:
 	if not is_host():
 		return
 	var id := multiplayer.get_remote_sender_id()
@@ -144,7 +144,8 @@ func _register(pname: String, hat: int = 0) -> void:
 	if pname == "":
 		pname = "Player"
 	_add_player(id, pname, false)
-	players[id]["hat"] = clampi(hat, 0, Config.HATS.size() - 1)
+	# shortcut: paid items are trusted from the client (cosmetic only); verify with Steam inventory serialization later
+	players[id]["look"] = Cosmetics.sanitize(look)
 	_broadcast()
 
 
@@ -174,6 +175,8 @@ func lobby_cfg() -> Dictionary:
 
 func _broadcast() -> void:
 	players_changed.emit()
+	if has_node("/root/SteamNet"):
+		get_node("/root/SteamNet").update_lobby_info()
 	if mode == "host":
 		_sync.rpc(players, lobby_cfg())
 
@@ -200,8 +203,10 @@ func _add_player(id: int, pname: String, bot: bool, team := -1) -> void:
 		var c := _team_counts()
 		team = 0 if c[0] <= c[1] else 1
 	var slot := _free_slot()
-	var hat := randi_range(1, Config.HATS.size() - 1) if bot else clampi(int(Config.settings.get("hat", 0)), 0, Config.HATS.size() - 1)
-	players[id] = {"name": pname, "team": team, "color": (slot - 1) % Config.PLAYER_COLORS.size(), "bot": bot, "slot": slot, "hat": hat}
+	var rng := RandomNumberGenerator.new()
+	rng.seed = slot * 31 + 7
+	var look := Cosmetics.random_look(rng) if bot else Cosmetics.sanitize(Config.settings.get("look", {}))
+	players[id] = {"name": pname, "team": team, "color": (slot - 1) % Config.PLAYER_COLORS.size(), "bot": bot, "slot": slot, "look": look}
 
 
 func add_bot(team: int) -> void:

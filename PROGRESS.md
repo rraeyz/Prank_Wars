@@ -13,6 +13,13 @@ Sonraki oturum: önce `PLAN.md`, sonra bu dosyanın en üstündeki kaydı oku.
 
 ---
 
+## Oturum 4 — 2026-11-01 (kullanıcı soruları ve fikirleri)
+- Parlaklık/kontrast/doygunluk ayarı ve daha canlı görünüm; görev görselleri; Z yakınlaştırma.
+- Yazılı sohbet + hızlı mesajlar; yetenek sistemi + ceza/destek; Malikane (büyük harita).
+- Kozmetik (23 eşya), Dolap, XP/seviye; Steam mağazası ve herkese açık oda kodu (Steamworks gerektirir, test edilmedi).
+- `steam/STEAM_SETUP.md`: Steamworks'te yapılacaklar.
+- 222 test + ağ testleri geçiyor.
+
 ## Oturum 3 — 2026-11-01 (kullanıcı: "tek düze olmasın, özgün şeyler, sürekli eğlence")
 - Ev Kuralları (7 rastgele kural, 2. rauntan itibaren; lobide rastgele/kapalı/sabit), "Annem geliyor!" son 30 sn çifte puan.
 - Raunt olayları: kedi kaçtı (tuzak tetikler, yakala +10), pizza geldi (bonus görev).

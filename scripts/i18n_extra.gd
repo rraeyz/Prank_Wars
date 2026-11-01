@@ -4,6 +4,22 @@ extends RefCounted
 const LANGS := ["es", "pt", "de", "fr", "ru"]
 
 const S := {
+	"steam_public": ["Crear sala pública (Steam)", "Criar sala pública (Steam)", "Öffentlichen Raum hosten (Steam)", "Créer un salon public (Steam)", "Открытая комната (Steam)"],
+	"find_rooms": ["Buscar salas (Steam)", "Procurar salas (Steam)", "Räume finden (Steam)", "Trouver un salon (Steam)", "Найти комнату (Steam)"],
+	"refresh": ["Actualizar", "Atualizar", "Aktualisieren", "Actualiser", "Обновить"],
+	"no_rooms": ["No hay salas abiertas. ¡Crea una!", "Nenhuma sala aberta. Crie uma!", "Keine offenen Räume. Erstell einen!", "Aucun salon ouvert. Crée-en un !", "Нет открытых комнат. Создай свою!"],
+	"in_game": ["en partida", "em jogo", "im Spiel", "en jeu", "в игре"],
+	"searching": ["Buscando salas...", "Procurando salas...", "Suche Räume...", "Recherche...", "Поиск..."],
+	"locker": ["Armario (aspectos)", "Armário (visuais)", "Spind (Kosmetik)", "Casier (cosmétiques)", "Шкаф (облик)"],
+	"slot_hat": ["Sombrero", "Chapéu", "Hut", "Chapeau", "Шляпа"],
+	"slot_outfit": ["Ropa", "Roupa", "Outfit", "Tenue", "Одежда"],
+	"slot_shoes": ["Zapatos", "Sapatos", "Schuhe", "Chaussures", "Обувь"],
+	"slot_skin": ["Disfraz", "Fantasia", "Kostüm", "Costume", "Костюм"],
+	"level_n": ["Nivel %d", "Nível %d", "Stufe %d", "Niveau %d", "Уровень %d"],
+	"store": ["Tienda", "Loja", "Shop", "Boutique", "Магазин"],
+	"buy": ["Comprar: %s", "Comprar: %s", "Kaufen: %s", "Acheter : %s", "Купить: %s"],
+	"level_up": ["¡SUBISTE DE NIVEL!", "SUBIU DE NÍVEL!", "AUFGESTIEGEN!", "NIVEAU SUPÉRIEUR !", "НОВЫЙ УРОВЕНЬ!"],
+	"unlocked": ["Desbloqueado: %s", "Desbloqueado: %s", "Freigeschaltet: %s", "Débloqué : %s", "Открыто: %s"],
 	"map_mansion": ["Mansión", "Mansão", "Villa", "Manoir", "Особняк"],
 	"size_medium": ["mediano, 2–6", "médio, 2–6", "mittel, 2–6", "moyen, 2–6", "средняя, 2–6"],
 	"size_large": ["grande, 4–8", "grande, 4–8", "groß, 4–8", "grand, 4–8", "большая, 4–8"],

@@ -30,6 +30,7 @@ func _run() -> void:
 	test_sample_one()
 	test_i18n()
 	test_chat()
+	test_cosmetics()
 	Sfx.build_all()
 	check(Sfx.sounds.has("meow") and Sfx.sounds.has("doorbell") and Sfx.sounds.size() >= 26, "all sounds synthesize (%d)" % Sfx.sounds.size())
 	var mus: AudioStreamWAV = Sfx.build_music()
@@ -399,6 +400,7 @@ func it_placement() -> void:
 	var t := _runner(1)
 	t.respawn(Vector3(-1, 0.8, 3))
 	await _frames(3)
+	w.budget = [Config.BUDGET, Config.BUDGET]  # ignore random budget perks
 	var pl: Dictionary = w.placement_for("banana", Vector3(-1, 0.8, 3), Vector3.FORWARD)
 	check(pl["ok"] and pl["pos"].y == 0.0, "banana on hallway floor ok")
 	check(w.host_place(1, "banana", pl["pos"], 0.0, ""), "host accepts placement")
@@ -906,3 +908,29 @@ func it_mansion_match() -> void:
 	check(done >= 1, "bots finished chores on the big map (%d)" % done)
 	print("     mansion score ", w.scoring.totals)
 	Config.map = "house"
+
+
+
+func test_cosmetics() -> void:
+	var bad := Cosmetics.sanitize({"hat": "hat_crown", "outfit": "hat_party", "shoes": 42, "skin": "nope"})
+	check(bad["hat"] == "hat_crown" and bad["outfit"] == Cosmetics.DEFAULT["outfit"] and bad["shoes"] == Cosmetics.DEFAULT["shoes"] and bad["skin"] == "skin_none", "look sanitize keeps only valid slot items")
+	check(Cosmetics.owned("hat_party", 1, {}) and not Cosmetics.owned("hat_horns", 1, {}) and Cosmetics.owned("hat_horns", 6, {}), "level unlocks")
+	check(not Cosmetics.owned("skin_dino", 99, {}) and Cosmetics.owned("skin_dino", 1, {105: true}), "store items need the Steam item")
+	for slot in Cosmetics.SLOTS:
+		check(Cosmetics.items_for(slot).size() >= 4, "slot %s has items" % slot)
+	var keep: int = int(Config.settings.get("xp", 0))
+	Config.settings["xp"] = Config.XP_PER_LEVEL * 3 - 10
+	var r: Dictionary = Config.add_match_xp(true, 200, 2)
+	check(r["leveled"] and r["level"] == 4 and "hat_propeller" in r["unlocked"], "XP levels up and unlocks items (%s)" % str(r))
+	Config.settings["xp"] = keep
+	Config.save_settings()
+	# every item can be built on a bean without errors
+	for id in Cosmetics.ITEMS:
+		var a := Avatar.new()
+		get_tree().root.add_child(a)
+		var lk := Cosmetics.DEFAULT.duplicate()
+		lk[Cosmetics.ITEMS[id][0]] = id
+		a.setup(null, {"name": "t", "team": 0, "bot": true, "color": 0, "look": lk}, 1, 0)
+		a.freeze = true
+		a.free()
+	check(true, "all %d cosmetics build" % Cosmetics.ITEMS.size())

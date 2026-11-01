@@ -45,6 +45,8 @@ func _ready() -> void:
 		add_child(load("res://tests/count_probe.gd").new())
 	if args.has("posprobe"):
 		add_child(load("res://tests/pos_probe.gd").new())
+	if args.has("lockerprobe"):
+		add_child(load("res://tests/locker_probe.gd").new())
 	if args.has("nanprobe"):
 		add_child(load("res://tests/nan_probe.gd").new())
 	Net.match_begin.connect(_on_match_begin)
@@ -136,6 +138,7 @@ func _on_match_begin(_cfg: Dictionary) -> void:
 		bg = null
 	menu.visible = false
 	Net.in_match = true
+	SteamNet.update_lobby_info()
 	world = World.new()
 	add_child(world)
 
@@ -148,6 +151,7 @@ func _on_lobby_return() -> void:
 
 func _free_world() -> void:
 	Net.in_match = false
+	SteamNet.update_lobby_info()
 	if world:
 		world.queue_free()
 		world = null

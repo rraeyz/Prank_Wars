@@ -76,12 +76,12 @@ var taunt_until := 0.0  # local clock (Time) for the dance
 var _dizzy := 0.0
 
 
-var info_hat := 0
+var look := {}
 var _prop_spin: Node3D
 
 
 func setup(w: Node, info: Dictionary, s: int, pid: int) -> void:
-	info_hat = clampi(int(info.get("hat", 0)), 0, Config.HATS.size() - 1)
+	look = Cosmetics.sanitize(info.get("look", {}))
 	world = w
 	slot = s
 	peer_id = pid
@@ -118,43 +118,6 @@ func setup(w: Node, info: Dictionary, s: int, pid: int) -> void:
 		freeze = true
 		collision_layer = 0
 		collision_mask = 0
-
-
-## Cosmetic hat on top of the head (chosen in the main menu).
-func _make_hat(i: int) -> void:
-	var h := Node3D.new()
-	h.position = Vector3(0, 0.36, 0)
-	_head.add_child(h)
-	match Config.HATS[i]:
-		"party":
-			var c := U.cyl(0.14, 0.34, Color("ff4d6d"), Vector3(0, 0.12, 0), h, 0.0)
-			c.rotation.z = 0.15
-			U.sphere(0.05, Color("ffe14d"), Vector3(-0.03, 0.3, 0), h, 8)
-		"crown":
-			U.cyl(0.2, 0.1, Color("ffd60a"), Vector3(0, 0.02, 0), h, 0.22)
-			for k in 5:
-				var a := TAU * k / 5.0
-				U.cyl(0.035, 0.1, Color("ffd60a"), Vector3(cos(a) * 0.17, 0.11, sin(a) * 0.17), h, 0.0)
-		"cap":
-			var s := U.sphere(0.27, Color("3a86ff"), Vector3(0, -0.04, 0), h, 12)
-			s.scale = Vector3(1, 0.55, 1)
-			U.box(Vector3(0.3, 0.02, 0.22), Color("3a86ff"), Vector3(0, -0.06, -0.3), h)
-		"chef":
-			U.cyl(0.18, 0.12, Color.WHITE, Vector3(0, 0.0, 0), h)
-			U.sphere(0.22, Color.WHITE, Vector3(0, 0.16, 0), h, 10)
-		"propeller":
-			var s2 := U.sphere(0.25, Color("ff9f1c"), Vector3(0, -0.04, 0), h, 12)
-			s2.scale = Vector3(1, 0.5, 1)
-			U.cyl(0.015, 0.12, Color("333333"), Vector3(0, 0.1, 0), h)
-			_prop_spin = Node3D.new()
-			_prop_spin.position = Vector3(0, 0.16, 0)
-			h.add_child(_prop_spin)
-			U.box(Vector3(0.45, 0.01, 0.06), Color("2ec4b6"), Vector3.ZERO, _prop_spin)
-			U.box(Vector3(0.06, 0.01, 0.45), Color("e71d36"), Vector3.ZERO, _prop_spin)
-		"horns":
-			for sx in [-1.0, 1.0]:
-				var hn := U.cyl(0.05, 0.18, Color("e63946"), Vector3(0.15 * sx, 0.04, 0), h, 0.0)
-				hn.rotation.z = -0.4 * sx
 
 
 func _build_visual() -> void:
@@ -204,7 +167,7 @@ func _build_visual() -> void:
 	_stars = Node3D.new()
 	_stars.position = Vector3(0, 0.53, 0)
 	_head.add_child(_stars)
-	_make_hat(int(info_hat))
+	Cosmetics.apply(self, look)
 	_umbrella = Node3D.new()
 	_umbrella.position = Vector3(0, 1.05, 0)
 	add_child(_umbrella)

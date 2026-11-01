@@ -386,6 +386,16 @@ func on_phase(p: String) -> void:
 		if w >= 0:
 			_end_text.add_theme_color_override("font_color", Config.TEAM_COLORS[w])
 		_end_lobby.visible = Net.is_host()
+		if not world.sandbox:
+			var lt: int = world.local_team()
+			var r: Dictionary = Config.add_match_xp(w == lt and lt >= 0, int(sc[lt]) if lt >= 0 else 0, Config.rounds)
+			var xt := "\n" + I18n.t("xp_gain", [r["gained"]]) + "   " + I18n.t("level_n", [r["level"]])
+			if r["leveled"]:
+				xt += "  " + I18n.t("level_up")
+			for id in r["unlocked"]:
+				xt += "\n" + I18n.t("unlocked", [I18n.t("c_" + id)])
+			_end_text.text += xt
+			SteamNet.playtime_drop()
 		_focus_in.call_deferred(_end)
 		Sfx.play("win")
 	if p == "intro":

@@ -92,7 +92,28 @@ const PRANKS := {
 const PRANK_ORDER := ["banana", "bucket", "paint", "oil", "flour", "whoopee", "glove",
 	"tape", "spring", "marbles", "confetti", "alarm", "fake_remote", "vacuum", "trampoline", "cake"]
 const CAKE_BONUS := 5  # eating the bait cake still pays the runners a little
-const HATS := ["none", "party", "crown", "cap", "chef", "propeller", "horns"]
+const XP_PER_LEVEL := 200
+
+
+## Level from saved XP (local progress; shortcut: stored in the settings file, move to Steam Stats for anti-cheat).
+func level() -> int:
+	return 1 + int(settings.get("xp", 0)) / XP_PER_LEVEL
+
+
+## Match-end reward. Returns {"gained", "level", "leveled", "unlocked": [item ids]}.
+func add_match_xp(won: bool, team_points: int, played_rounds: int) -> Dictionary:
+	var before := level()
+	var gained := 40 + 15 * played_rounds + (40 if won else 0) + mini(60, team_points / 5)
+	settings["xp"] = int(settings.get("xp", 0)) + gained
+	save_settings()
+	var unlocked := []
+	for id in Cosmetics.ITEMS:
+		var u := Cosmetics.unlock_of(id)
+		if u.begins_with("level:"):
+			var n := u.substr(6).to_int()
+			if n > before and n <= level():
+				unlocked.append(id)
+	return {"gained": gained, "level": level(), "leveled": level() > before, "unlocked": unlocked}
 const DEMO_PRANKS := ["banana", "bucket", "paint", "spring", "flour"]
 var demo_mode := false
 var sandbox := false
@@ -129,7 +150,7 @@ var now := 0.0
 
 var settings := {
 	"name": "", "lang": "", "master": 0.8, "music": 0.5, "sfx": 0.9,
-	"fullscreen": false, "last_ip": "127.0.0.1", "keys": {}, "hat": 1,
+	"fullscreen": false, "last_ip": "127.0.0.1", "keys": {}, "look": {}, "xp": 0,
 	"brightness": 1.0, "contrast": 1.0, "saturation": 1.0,
 }
 const REBINDABLE := ["move_up", "move_down", "move_left", "move_right", "jump", "interact", "dive", "action", "prev_item", "next_item", "cam_next", "reveal", "taunt", "ghost", "trigger_all"]

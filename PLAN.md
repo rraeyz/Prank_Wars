@@ -119,5 +119,16 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 
 - [x] Güç toplama: Şemsiye (sonraki şakayı engeller, 25 sn) ve Kahve (10 sn hız); görev sırasında rastgele odada belirir, botlar da toplar
 
+## Faz 11 — Oturum 4 (kullanıcı fikirleri)
+- [x] Parlaklık / kontrast / doygunluk ayarı; dokulu zemin, pencereler, renk düzeltmesi
+- [x] Görev bitince görsel karşılık; Z ile yakınlaştırma (hassas tuzak kurma)
+- [x] Yazılı sohbet (oyun içi + lobi) ve F1–F4 hızlı mesajlar; sunucu temizliyor, spam sınırı
+- [x] Yetenekler: her raunt otomatik rastgele (seçim ekranı yok), karşı yetenek (Usta Tuzakçı ↔ Kokla), öndeki takıma ceza / geridekine destek
+- [x] Büyük harita: Malikane (24x16, 7 oda), boyuta göre süre x1.3
+- [x] Kozmetik: şapka / kıyafet / ayakkabı / tam kostüm (23 eşya), Dolap ekranı + 3D önizleme, XP ve seviye ödülleri
+- [~] Steam mağazası (Inventory Service) + oynadıkça bedava eşya: kod + `steam/itemdefs.json` hazır, Steamworks hesabı gerekli
+- [~] Steam herkese açık oda + oda listesi: kod hazır, Steam istemcisiyle test edilmedi
+- [ ] Sesli sohbet: yok (Discord önerilir); Steam Voice ile eklenebilir ama test için 2 Steam hesabı gerekir
+
 ## Haftalık
 - [x] Hafta 1 video fikirleri (`marketing/VIDEO_IDEAS.md`)
