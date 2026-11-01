@@ -1376,6 +1376,7 @@ func _end_run_replay() -> void:
 func s_replay(t0: float, t1: float, speed: float, focus: int, links: int, pts: int) -> void:
 	replaying = true
 	replay = {"t0": t0, "t1": t1, "speed": speed, "focus": focus, "t": t0, "links": links, "pts": pts}
+	recorder.clear()
 	timeline.rewind()
 	if Net.is_host():
 		for id in entities:
@@ -1389,7 +1390,12 @@ func s_replay(t0: float, t1: float, speed: float, focus: int, links: int, pts: i
 		hud.on_replay(true, links, pts)
 
 
+var recorder := ClipRecorder.new()
+
+
 func _replay_step(delta: float) -> void:
+	if bool(Config.settings.get("clips", true)) and not headless:
+		recorder.capture(get_viewport().get_texture().get_image(), delta)
 	var prev: float = replay["t"]
 	replay["t"] = minf(prev + delta * float(replay["speed"]), float(replay["t1"]))
 	_apply_sample(timeline.sample(replay["t"]))
@@ -1406,6 +1412,12 @@ func _end_replay_host() -> void:
 @rpc("authority", "reliable")
 func s_end_replay() -> void:
 	replaying = false
+	if not recorder.frames.is_empty():
+		var stem := "prankwars_%s" % Time.get_datetime_string_from_system().replace(":", "-")
+		var paths := recorder.save("user://clips", stem)
+		recorder.clear()
+		if hud and paths.size() > 0:
+			hud.toast(I18n.t("clip_saved", [paths[0].get_base_dir()]))
 	Sfx.pitch_scale = 1.0
 	if hud:
 		hud.on_replay(false, 0, 0)

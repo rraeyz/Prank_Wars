@@ -190,6 +190,8 @@ const S := {
 	"tut_watch": ["Bir bot eve giriyor... kapıdan geçince izle!", "A bot is coming in... watch the door!"],
 	"tut_flour": ["'Un torbası'nı seç, tavana as (Sol tık) ve T ile uzaktan patlat.", "Pick 'Flour sack', hang it (Left click) and fire it remotely with T."],
 	"tut_done": ["Harika! Gerçek maçta bir takım evi kurar, diğeri görev yapar; sonra roller değişir. Esc > Ana menü ile çıkabilir ya da burada denemeye devam edebilirsin.", "Great! In a real match one team rigs the house and the other does chores, then they swap. Press Esc > Main menu to leave, or keep experimenting here."],
+	"clip_saved": ["Klip kaydedildi (yatay + dikey): %s  — F10 klasörü açar", "Clip saved (landscape + vertical): %s  — F10 opens the folder"],
+	"clips_opt": ["En iyi şakanın tekrarını video olarak kaydet", "Save the best-prank replay as a video"],
 	"mode": ["Mod", "Mode"],
 	"mode_turns": ["Sıralı (biri kurar, biri koşar)", "Turns (one traps, one runs)"],
 	"mode_chaos": ["KAOS (herkes aynı anda kurar ve koşar)", "CHAOS (everyone traps and runs at once)"],

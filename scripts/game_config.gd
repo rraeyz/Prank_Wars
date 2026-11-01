@@ -239,7 +239,7 @@ var settings := {
 	"name": "", "lang": "", "master": 0.8, "music": 0.5, "sfx": 0.9,
 	"fullscreen": false, "last_ip": "127.0.0.1", "keys": {}, "look": {}, "xp": 0,
 	"brightness": 1.0, "contrast": 1.0, "saturation": 1.0, "quality": 2, "twitch": "", "twitch_on": false,
-	"ach": {}, "counts": {}, "daily": {}, "tutorial_done": false,
+	"ach": {}, "counts": {}, "daily": {}, "tutorial_done": false, "clips": true,
 }
 const REBINDABLE := ["move_up", "move_down", "move_left", "move_right", "jump", "interact", "dive", "action", "prev_item", "next_item", "cam_next", "reveal", "taunt", "ghost", "trigger_all"]
 const SETTINGS_PATH := "user://settings.cfg"
@@ -299,6 +299,7 @@ func _setup_input() -> void:
 		"cam_next": [_key(KEY_TAB), _joy(JOY_BUTTON_Y)],
 		"menu": [_key(KEY_ESCAPE), _joy(JOY_BUTTON_START)],
 		"screenshot": [_key(KEY_F9)],
+		"open_clips": [_key(KEY_F10)],
 		"taunt": [_key(KEY_V), _joy(JOY_BUTTON_DPAD_DOWN)],
 		"zoom": [_key(KEY_Z), _joy(JOY_BUTTON_RIGHT_STICK)],
 		"chat": [_key(KEY_ENTER), _key(KEY_KP_ENTER)],

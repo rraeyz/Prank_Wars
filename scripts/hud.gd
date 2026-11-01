@@ -192,24 +192,25 @@ func _ready() -> void:
 			bar.offset_top = -70
 		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_replay_banner.add_child(bar)
-	_replay_title = _lbl("", 34, Color("ff4d6d"))
+	_replay_title = _lbl("", 26, Color("ff4d6d"))
 	_replay_title.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_replay_title.offset_top = 14
+	_replay_title.offset_top = 4
 	_replay_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_replay_banner.add_child(_replay_title)
+	# centred so both the landscape clip and the 9:16 vertical crop keep the branding
 	var wm := _lbl("PRANK WARS", 30, Color("ffe14d"))
-	wm.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	wm.offset_left = -420
-	wm.offset_top = -62
-	wm.offset_right = -24
-	wm.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	wm.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	wm.offset_left = -200
+	wm.offset_top = -64
+	wm.offset_right = 200
+	wm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_replay_banner.add_child(wm)
 	var wl := _lbl(I18n.t("wishlist"), 16, Color.WHITE)
-	wl.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	wl.offset_left = -420
-	wl.offset_top = -28
-	wl.offset_right = -24
-	wl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	wl.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	wl.offset_left = -200
+	wl.offset_top = -30
+	wl.offset_right = 200
+	wl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_replay_banner.add_child(wl)
 
 	# round summary / end
@@ -365,6 +366,9 @@ func _unhandled_input(e: InputEvent) -> void:
 		_pause.visible = not _pause.visible
 		if _pause.visible:
 			_focus_in(_pause)
+	if e.is_action_pressed("open_clips"):
+		DirAccess.make_dir_recursive_absolute("user://clips")
+		OS.shell_open(ProjectSettings.globalize_path("user://clips"))
 	if e.is_action_pressed("screenshot"):
 		DirAccess.make_dir_recursive_absolute("user://screenshots")
 		var path := "user://screenshots/prankwars_%s.png" % Time.get_datetime_string_from_system().replace(":", "-")
@@ -425,7 +429,7 @@ func show_awards(list: Array) -> void:
 
 func on_replay(on: bool, links: int, pts: int) -> void:
 	_replay_banner.visible = on
-	_replay_title.text = "%s  —  %s x%d  +%d" % [I18n.t("phase_replay"), I18n.t("best_prank"), links, pts]
+	_replay_title.text = "%s\n%s x%d  +%d" % [I18n.t("phase_replay"), I18n.t("best_prank"), links, pts]
 
 
 func feed(text: String, c: Color) -> void:

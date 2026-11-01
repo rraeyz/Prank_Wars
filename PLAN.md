@@ -134,7 +134,7 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [x] Twitch modu: izleyiciler sohbetten oy verip yayıncıya şaka gönderir (canlı bağlantı denendi)
 - [x] Başarımlar: 10 başarım, oyun içi ekran + Steam başarım çağrıları
 - [x] Etkileşimli eğitim (10 adım, ~1 dk, otomatik testli)
-- [ ] Klip kaydı (tekrarı video/GIF olarak kaydet)
+- [x] Klip kaydı: tekrar otomatik video (yatay 960x540 + dikey 540x960 TikTok), filigranlı, F10 klasörü açar
 - [ ] Kurucu ayrılınca maçın devam etmesi (host migration) — zor, Steam testi sonrası
 - [ ] Yeni haritalar: okul, düğün salonu; harita editörü (topluluk içeriği)
 - [x] Günlük görevler (her gün 3 küçük hedef, +150 XP)

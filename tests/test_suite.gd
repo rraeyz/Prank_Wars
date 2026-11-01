@@ -34,6 +34,7 @@ func _run() -> void:
 	test_twitch()
 	test_achievements()
 	test_daily()
+	test_clip()
 	Sfx.build_all()
 	check(Sfx.sounds.has("meow") and Sfx.sounds.has("doorbell") and Sfx.sounds.size() >= 26, "all sounds synthesize (%d)" % Sfx.sounds.size())
 	check(Sfx.sounds["fart"].size() == 4 and Sfx.sounds["fart"][0] is AudioStreamOggVorbis and Sfx.sounds.has("grunt"), "real CC0 recordings loaded")
@@ -1070,3 +1071,19 @@ func it_tutorial() -> void:
 	await _frames(5)
 	check(tut.step == 9, "tutorial finished")
 	Config.tutorial = false
+
+
+
+func test_clip() -> void:
+	var rec := ClipRecorder.new()
+	for i in 12:
+		var img := Image.create(1280, 720, false, Image.FORMAT_RGB8)
+		img.fill(Color.from_hsv(i / 12.0, 0.8, 0.9))
+		rec.capture(img, 1.0 / 30.0 + 0.001)
+	check(rec.frames.size() == 12 and rec.vframes.size() == 12, "12 frames captured (both formats)")
+	var paths: Array = rec.save("user://test_clips", "t")
+	check(paths.size() == 2 and FileAccess.file_exists(paths[0]) and FileAccess.file_exists(paths[1]), "two clip files written")
+	var out := []
+	var code := OS.execute("ffprobe", ["-v", "error", "-select_streams", "v:0", "-count_frames", "-show_entries", "stream=codec_name,width,height,nb_read_frames", "-of", "csv=p=0", paths[1]], out)
+	if code == 0:
+		check(str(out[0]).strip_edges() == "mjpeg,540,960,12", "ffprobe reads the vertical clip (%s)" % str(out[0]).strip_edges())

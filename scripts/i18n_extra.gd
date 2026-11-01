@@ -4,6 +4,8 @@ extends RefCounted
 const LANGS := ["es", "pt", "de", "fr", "ru"]
 
 const S := {
+	"clip_saved": ["Clip guardado (horizontal + vertical): %s — F10 abre la carpeta", "Clipe salvo (horizontal + vertical): %s — F10 abre a pasta", "Clip gespeichert (quer + hochkant): %s — F10 öffnet den Ordner", "Clip enregistré (paysage + vertical) : %s — F10 ouvre le dossier", "Клип сохранён (гориз. + верт.): %s — F10 откроет папку"],
+	"clips_opt": ["Guardar la repetición como vídeo", "Salvar o replay como vídeo", "Wiederholung als Video speichern", "Enregistrer le ralenti en vidéo", "Сохранять повтор как видео"],
 	"tutorial": ["TUTORIAL", "TUTORIAL", "TUTORIAL", "TUTORIEL", "ОБУЧЕНИЕ"],
 	"tutorial_btn": ["Tutorial (1 minuto)", "Tutorial (1 minuto)", "Tutorial (1 Minute)", "Tutoriel (1 minute)", "Обучение (1 минута)"],
 	"quality": ["Calidad gráfica (0-2)", "Qualidade gráfica (0-2)", "Grafikqualität (0-2)", "Qualité graphique (0-2)", "Качество графики (0-2)"],
