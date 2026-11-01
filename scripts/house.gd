@@ -178,7 +178,7 @@ func _door(n: String, pos: Vector3, horiz: bool) -> void:
 
 
 ## Fades E-W walls that sit between the camera (south) and the target.
-func update_fade(target: Vector3, delta: float) -> void:
+func update_fade(target: Vector3, delta: float, force_roof := false) -> void:
 	var in_house := inside(target, -0.5)
 	for w in walls:
 		var want := 1.0
@@ -193,7 +193,7 @@ func update_fade(target: Vector3, delta: float) -> void:
 				m.albedo_color.a = a
 				m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA if a < 0.98 else BaseMaterial3D.TRANSPARENCY_DISABLED
 	if roof:
-		roof.visible = not inside(target, -0.6)
+		roof.visible = force_roof or not inside(target, -0.6)
 
 
 # ------------------------------------------------------------------ furniture

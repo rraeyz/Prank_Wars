@@ -185,6 +185,8 @@ func _process(delta: float) -> void:
 		show = false
 		if ringing:
 			show = true
+		elif world.phase != "run" and world.phase != "sandbox":
+			show = false
 		elif def["reveal"] and not used:
 			var me: Node3D = world.local_view_target()
 			if me and U.dist_xz(me.global_position, global_position) < 2.6:

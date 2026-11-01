@@ -67,4 +67,5 @@ func _process(delta: float) -> void:
 		_shake = maxf(0.0, _shake - delta * 2.0)
 		position += Vector3(randf_range(-1, 1), randf_range(-1, 1), 0) * _shake * 0.3
 	look_at(focus + Vector3(0, 0.6, 0), Vector3.UP)
-	world.house.update_fade(focus, delta)
+	var peeking: bool = world.phase in ["intro", "setup"] and not world.local_is_trapper() and not world.replaying
+	world.house.update_fade(focus, delta, peeking)
