@@ -31,6 +31,7 @@ func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(out)
 	AudioServer.set_bus_mute(AudioServer.get_bus_index("Music"), true)
 	_build_card()
+	get_node("/root/Main").menu.visible = false
 	_run()
 
 

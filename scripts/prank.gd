@@ -217,7 +217,7 @@ func _process(delta: float) -> void:
 	visual.visible = show
 	if _tag:
 		_tag.visible = false
-		if world.live() and not used and world.local_team() == team and not world.replaying:
+		if world.live() and not used and world.local_team() == team and not world.replaying and world.show_names:
 			var idx: int = world.remote_pranks(team).find(self)
 			if idx >= 0:
 				_tag.visible = true
