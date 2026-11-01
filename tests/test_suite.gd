@@ -28,7 +28,7 @@ func _run() -> void:
 	test_timeline()
 	test_house()
 	print("== integration tests")
-	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "full_match"]:
+	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "full_match"]:
 		if only != "" and only != t:
 			continue
 		print("-- ", t)
@@ -50,6 +50,7 @@ func _dispatch(t: String) -> void:
 		"disarm": await it_disarm()
 		"bump_chain": await it_bump_chain()
 		"placement": await it_placement()
+		"sandbox": await it_sandbox()
 		"full_match": await it_full_match()
 
 
@@ -134,8 +135,9 @@ func test_house() -> void:
 var w: World
 
 
-func _make_world(players: Dictionary) -> void:
+func _make_world(players: Dictionary, sandbox := false) -> void:
 	Net.leave()
+	Config.sandbox = sandbox
 	Net.mode = "practice"
 	Net.players = players
 	Config.intro_time = 0.5
@@ -370,6 +372,25 @@ func it_placement() -> void:
 	w.budget[0] = 1
 	check(not w.host_place(1, "spring", Vector3(-1, 0, 1.5), 0.0, ""), "not enough budget -> rejected")
 	check(not w.host_place(2, "banana", Vector3(-2, 0, 4), 0.0, ""), "runner can't place")
+
+
+func it_sandbox() -> void:
+	await _make_world({5: _p("Me", 0, 1), -1: _p("B1", 1, 2, true)}, true)
+	check(w.phase == "sandbox", "sandbox phase")
+	var me := _runner(1)
+	me.respawn(Vector3(3, 0.8, -1.5))
+	await _frames(5)
+	check(w.host_place(1, "banana", Vector3(3, 0, -3), 0.0, ""), "free placement in sandbox")
+	check(w.budget[0] == 999, "no budget cost")
+	await _walk(me, Vector2(0, -1), 1.0)
+	check(w.scoring.totals[0] == 10, "you can prank yourself in sandbox (got %d)" % w.scoring.totals[0])
+	w._sandbox_action("rearm")
+	await _frames(3)
+	var p: Prank = w.pranks.values()[0]
+	check(w.pranks.size() == 1 and p.armed and not p.used, "re-arm restores the traps")
+	w._sandbox_action("clear")
+	check(w.pranks.is_empty(), "clear removes traps")
+	Config.sandbox = false
 
 
 func it_full_match() -> void:

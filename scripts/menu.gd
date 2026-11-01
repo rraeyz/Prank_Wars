@@ -87,6 +87,8 @@ func _build_main() -> void:
 	v.add_child(row)
 	var pb := _btn(I18n.t("practice"), func(): Net.start_practice(); show_screen("lobby"), v)
 	pb.add_theme_color_override("font_color", Color("ffe14d"))
+	var sbx := _btn(I18n.t("sandbox"), func(): Net.start_sandbox(), v)
+	sbx.add_theme_color_override("font_color", Color("ffb3e6"))
 	if SteamNet.available():
 		var sb := _btn(I18n.t("steam_host"), func(): SteamNet.host_lobby(), v)
 		sb.add_theme_color_override("font_color", Color("9ad0ff"))

@@ -361,7 +361,7 @@ func _process(delta: float) -> void:
 	var p: String = world.phase
 	_phase.text = I18n.t("phase_" + p) if p != "none" else ""
 	var tl: float = world.time_left()
-	_timer.text = "" if p in ["end", "none", "replay"] else "%d" % ceili(tl)
+	_timer.text = "" if p in ["end", "none", "replay", "sandbox"] else "%d" % ceili(tl)
 	if p in ["setup", "run"] and tl <= 5.0 and tl > 0.0 and ceili(tl) != _last_sec:
 		_last_sec = ceili(tl)
 		Sfx.play("tick")
@@ -388,15 +388,17 @@ func _process(delta: float) -> void:
 	_bar.visible = show_prompt and float(pr[1]) > 0.0
 	_bar.value = float(pr[1])
 	# palette
-	var trapper_setup: bool = p == "setup" and world.local_is_trapper()
+	var trapper_setup: bool = world.building() and world.local_is_trapper()
 	_palette.visible = trapper_setup
 	_budget.visible = trapper_setup
 	if trapper_setup:
 		_update_palette()
 		_budget.text = "%s: %d / %d" % [I18n.t("budget"), world.budget[world.local_team()], Config.BUDGET]
+		if p == "sandbox":
+			_budget.text = I18n.t("budget") + ": ∞"
 	# remote list
 	var rtext := ""
-	if p == "run" and world.local_is_trapper():
+	if (p == "run" and world.local_is_trapper()) or p == "sandbox":
 		var rl: Array = world.remote_pranks(world.local_team())
 		for i in rl.size():
 			rtext += "[%d] %s\n" % [i + 1, I18n.t("p_" + rl[i].type)]
@@ -408,6 +410,8 @@ func _process(delta: float) -> void:
 			h = I18n.t("setup_help") + "   " + I18n.t("run_help_runner") if world.local_is_trapper() else I18n.t("warmup_help")
 		"run":
 			h = I18n.t("run_help_trapper") if world.local_is_trapper() else I18n.t("run_help_runner")
+		"sandbox":
+			h = I18n.t("sandbox_help")
 	_help.text = h
 	# timers
 	if _popup_t > 0.0:

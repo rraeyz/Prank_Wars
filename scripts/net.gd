@@ -31,9 +31,22 @@ func _ready() -> void:
 
 
 func _reset() -> void:
+	Config.sandbox = false
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
 	players.clear()
 	mode = "none"
+
+
+func start_sandbox() -> void:
+	leave()
+	mode = "practice"
+	Config.sandbox = true
+	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+	players.clear()
+	_add_player(1, str(Config.settings["name"]), false, 0)
+	add_bot(1)
+	add_bot(1)
+	start_match()
 
 
 func start_practice() -> void:
@@ -204,7 +217,7 @@ func can_start() -> bool:
 func start_match() -> void:
 	if not is_host() or not can_start():
 		return
-	var cfg := {"rounds": Config.rounds, "seed": randi(), "demo": Config.demo_mode,
+	var cfg := {"rounds": Config.rounds, "seed": randi(), "demo": Config.demo_mode, "sandbox": Config.sandbox,
 		"setup": Config.setup_time, "run": Config.run_time}
 	if mode == "host":
 		_begin.rpc(players, cfg)
@@ -216,6 +229,7 @@ func _begin(p: Dictionary, cfg: Dictionary) -> void:
 	players = p
 	Config.rounds = int(cfg["rounds"])
 	Config.demo_mode = bool(cfg["demo"])
+	Config.sandbox = bool(cfg.get("sandbox", false))
 	Config.setup_time = float(cfg["setup"])
 	Config.run_time = float(cfg["run"])
 	match_begin.emit(cfg)

@@ -37,6 +37,8 @@ var _interact := {}  # slot -> {"key", "t"}
 var _prompts := {}  # slot -> [label, progress]
 var _chain_victims := {}  # chain id -> [slots]
 var _alarm_fails := 0
+var _sandbox_log: Array = []
+var sandbox := false
 
 # replay / client display
 var replaying := false
@@ -88,8 +90,12 @@ func _ready() -> void:
 	_build_ghost()
 	Net.players_changed.connect(_on_players_changed)
 	Sfx.play_music()
+	sandbox = Config.sandbox
 	if Net.is_host():
-		_host_start_round(0)
+		if sandbox:
+			_host_start_sandbox()
+		else:
+			_host_start_round(0)
 
 
 func _lights() -> void:
@@ -198,7 +204,7 @@ func local_view_target() -> Node3D:
 
 
 func is_runner(a: Avatar) -> bool:
-	return a.team != trapper_team
+	return sandbox or a.team != trapper_team
 
 
 func runner_avatars() -> Array:
@@ -219,6 +225,10 @@ func avatars_near(p: Vector3, r: float, runners_only: bool) -> Array:
 		if U.dist_xz(a.global_position, p) <= r and absf(a.global_position.y - p.y) < 3.0:
 			out.append(a)
 	return out
+
+
+func building() -> bool:
+	return phase == "setup" or phase == "sandbox"
 
 
 func ui_blocking() -> bool:
@@ -300,7 +310,7 @@ func _local_input() -> void:
 	if Input.is_action_just_pressed("dive"):
 		_send_action("dive", [])
 	var list := Config.enabled_pranks()
-	if phase == "setup" and local_is_trapper():
+	if building() and local_is_trapper():
 		if Input.is_action_just_pressed("next_item"):
 			selected = (selected + 1) % list.size()
 			Sfx.play("click")
@@ -311,7 +321,7 @@ func _local_input() -> void:
 			if Input.is_action_just_pressed("slot_%d" % i) and i - 1 < list.size():
 				selected = i - 1
 	if Input.is_action_just_pressed("action"):
-		if phase == "setup" and local_is_trapper() and me.visible:
+		if building() and local_is_trapper() and me.visible:
 			var pl := placement_for(list[selected], me.global_position, -me.global_transform.basis.z)
 			if pl["ok"]:
 				_send_action("place", [list[selected], pl["pos"], pl["yaw"], pl["socket"]])
@@ -329,6 +339,13 @@ func _local_input() -> void:
 			_send_action("remote", [rl[0].id])
 	if Input.is_action_just_pressed("cam_next"):
 		cam.cycle()
+	if phase == "sandbox":
+		if Input.is_action_just_pressed("trigger_all"):
+			_send_action("remote_all", [])
+		if Input.is_action_just_pressed("rearm"):
+			_send_action("rearm", [])
+		if Input.is_action_just_pressed("clear_all"):
+			_send_action("clear", [])
 
 
 func _send_action(kind: String, args: Array) -> void:
@@ -384,6 +401,9 @@ func _host_action(slot: int, kind: String, args: Array) -> void:
 		"remote":
 			if args.size() == 1 and a.team == trapper_team:
 				remote_trigger(a.team, int(args[0]))
+		"remote_all", "rearm", "clear":
+			if phase == "sandbox":
+				_sandbox_action(kind)
 
 
 func _is_task_item_locked(_p: Prop) -> bool:
@@ -498,11 +518,13 @@ func _ray_down(p: Vector3) -> Dictionary:
 
 func host_place(slot: int, type: String, pos: Vector3, yaw: float, socket: String) -> bool:
 	var a: Avatar = avatars.get(slot)
-	if a == null or phase != "setup" or a.team != trapper_team or not Config.PRANKS.has(type):
+	if a == null or not building() or a.team != trapper_team or not Config.PRANKS.has(type):
 		return false
 	if not type in Config.enabled_pranks():
 		return false
 	var cost: int = Config.PRANKS[type]["cost"]
+	if phase == "sandbox":
+		cost = 0
 	if budget[a.team] < cost:
 		_toast_to(a, "no_budget")
 		return false
@@ -530,6 +552,9 @@ func host_place(slot: int, type: String, pos: Vector3, yaw: float, socket: Strin
 	if Net.mode == "host":
 		s_spawn_prank.rpc(pid, type, a.team, pos, yaw, socket)
 	s_spawn_prank(pid, type, a.team, pos, yaw, socket)
+	if phase == "sandbox":
+		pranks[pid].arm()
+		_sandbox_log.append([type, a.team, pos, yaw, socket])
 	_sync_state()
 	return true
 
@@ -552,7 +577,7 @@ func s_spawn_prank(pid: int, type: String, team: int, pos: Vector3, yaw: float, 
 
 
 func remote_trigger(team: int, pid: int) -> void:
-	if phase != "run":
+	if phase != "run" and phase != "sandbox":
 		return
 	var p: Prank = pranks.get(pid)
 	if p and p.team == team and p.def["trigger"] == "remote":
@@ -586,7 +611,7 @@ func on_bump(knocked: Avatar, other: Avatar) -> void:
 	## A flying bean knocked over another bean. Counts as a chain link if the flyer was pranked.
 	var v := knocked.pre_vel
 	var ch := -1
-	if phase == "run" and knocked.is_chained() and is_runner(other):
+	if phase in ["run", "sandbox"] and knocked.is_chained() and is_runner(other):
 		var r := scoring.prank_hit(knocked.chain_id, trapper_team, "bump", other.pname, Config.now)
 		ch = r["chain"]
 		if not _chain_victims.has(ch):
@@ -611,11 +636,11 @@ func on_prop_hit(p: Prop, body: Node) -> void:
 	if p.kind == "vacuum":
 		for id in pranks:
 			if pranks[id].vac == p:
-				if phase == "run" and is_runner(a):
+				if phase in ["run", "sandbox"] and is_runner(a):
 					pranks[id].vacuum_bump(a)
 		return
 	if p.kind == "marble":
-		if phase == "run" and is_runner(a) and spd > 1.2 and p.is_chained(now):
+		if phase in ["run", "sandbox"] and is_runner(a) and spd > 1.2 and p.is_chained(now):
 			var r := scoring.prank_hit(p.chain_id, trapper_team, "marbles", a.pname, now)
 			_chain_victims.get_or_add(r["chain"], []).append(a.slot)
 			p.chain_id = r["chain"]
@@ -629,7 +654,7 @@ func on_prop_hit(p: Prop, body: Node) -> void:
 		return
 	if spd < 5.0:
 		return
-	if p.is_chained(now) and phase == "run" and is_runner(a):
+	if p.is_chained(now) and phase in ["run", "sandbox"] and is_runner(a):
 		var r2 := scoring.prank_hit(p.chain_id, trapper_team, "bump", a.pname, now)
 		_chain_victims.get_or_add(r2["chain"], []).append(a.slot)
 		feed_all("feed_prank", ["@p_bump", a.pname, r2["delta"]], trapper_team)
@@ -704,7 +729,7 @@ func _prop_of_kind(k: String) -> Prop:
 ## Best thing this avatar can do with E right now -> {"key", "label", "time", "do": Callable} or {}.
 func _best_interaction(a: Avatar) -> Dictionary:
 	var pos := a.global_position
-	if phase == "run" and is_runner(a):
+	if (phase == "run" or phase == "sandbox") and is_runner(a):
 		for id in pranks:
 			var p: Prank = pranks[id]
 			if p.used or p.disarmed or not p.armed:
@@ -726,7 +751,7 @@ func _best_interaction(a: Avatar) -> Dictionary:
 			var lbl := I18n.t("s_" + str(e["at"]))
 			return {"key": "task_%s_%s" % [e["task"], e["at"]], "label": lbl, "time": e["time"],
 				"do": _do_task_step.bind(a, e)}
-	if phase in ["setup", "run", "intro"] and not a.carrying:
+	if phase in ["setup", "run", "intro", "sandbox"] and not a.carrying:
 		var best: Prop = null
 		var bd := 1.3
 		for p in house.props:
@@ -764,7 +789,7 @@ func _host_interactions(delta: float) -> void:
 			prompt = [best["label"], clampf(st["t"] / maxf(best["time"], 0.01), 0.0, 1.0)]
 		_send_prompt(a, prompt)
 		# deliveries happen automatically
-		if a.carrying and phase == "run" and is_runner(a):
+		if a.carrying and phase in ["run", "sandbox"] and is_runner(a):
 			for e in _task_targets():
 				if e["type"] == "deliver" and U.dist_xz(e["pos"], a.global_position) < e["radius"]:
 					var item_kind: String = Config.TASKS[e["task"]][0]["at"]
@@ -807,7 +832,7 @@ func _do_grab(a: Avatar, p: Prop) -> void:
 	a.pick_up(p)
 	fx_all("sfx", ["pop", a.global_position])
 	# picking up a pickup-step item completes that step
-	if phase == "run" and is_runner(a):
+	if phase in ["run", "sandbox"] and is_runner(a):
 		for e in _task_targets():
 			if e["type"] == "pickup" and e.get("prop") == p:
 				_advance_task(e["task"], a)
@@ -875,13 +900,7 @@ func _host_start_round(i: int) -> void:
 	trapper_team = i % 2
 	scoring.start_round()
 	_chain_victims.clear()
-	var keys := Config.TASKS.keys()
-	for k in range(keys.size() - 1, 0, -1):
-		var j := rng.randi_range(0, k)
-		var tmp = keys[k]
-		keys[k] = keys[j]
-		keys[j] = tmp
-	var picked: Array = keys.slice(0, Config.TASKS_PER_ROUND)
+	var picked: Array = _pick_tasks()
 	if Net.mode == "host":
 		s_round_reset.rpc(i, trapper_team, picked)
 	s_round_reset(i, trapper_team, picked)
@@ -929,6 +948,71 @@ func s_round_reset(i: int, ttm: int, picked: Array) -> void:
 	render_t = 0.0
 
 
+func _pick_tasks() -> Array:
+	var keys := Config.TASKS.keys()
+	for k in range(keys.size() - 1, 0, -1):
+		var j := rng.randi_range(0, k)
+		var tmp = keys[k]
+		keys[k] = keys[j]
+		keys[j] = tmp
+	return keys.slice(0, Config.TASKS_PER_ROUND)
+
+
+func _sync_tasks_new() -> void:
+	tasks = []
+	for k in _pick_tasks():
+		tasks.append({"id": k, "step": 0, "done": false})
+	for p in house.props:
+		if p.hidden_prop and p.kind in ["trash_bag", "laundry"]:
+			p.set_hidden(false)
+			p.global_transform = p.home
+	_sync_state()
+
+
+func _host_start_sandbox() -> void:
+	trapper_team = 0
+	var picked := _pick_tasks()
+	s_round_reset(0, 0, picked)
+	for s in avatars:
+		var a: Avatar = avatars[s]
+		a.respawn(house.spawn_house[s % 8] if a.team == 0 else house.spawn_garden[s % 8])
+	budget = [999, 999]
+	_set_phase("sandbox", 1.0e9)
+
+
+func _sandbox_action(kind: String) -> void:
+	match kind:
+		"remote_all":
+			for p in remote_pranks(0) + remote_pranks(1):
+				p.fire(null)
+		"rearm", "clear":
+			var saved := _sandbox_log.duplicate()
+			if Net.mode == "host":
+				s_round_reset.rpc(0, 0, tasks.map(func(t): return t["id"]))
+			s_round_reset(0, 0, tasks.map(func(t): return t["id"]))
+			_sandbox_log.clear()
+			budget = [999, 999]
+			for s in avatars:
+				avatars[s].mess = 0.0
+			for p in house.props:
+				p.carrier = null
+				p.set_hidden(false)
+				p.freeze = false
+				p.global_transform = p.home
+				p.linear_velocity = Vector3.ZERO
+			if kind == "rearm":
+				for e in saved:
+					var pid := _next_prank_id
+					_next_prank_id += 1
+					if Net.mode == "host":
+						s_spawn_prank.rpc(pid, e[0], e[1], e[2], e[3], e[4])
+					s_spawn_prank(pid, e[0], e[1], e[2], e[3], e[4])
+					pranks[pid].arm()
+					_sandbox_log.append(e)
+			fx_all("sfx", ["disarm", Vector3.ZERO])
+	_sync_state()
+
+
 func _set_phase(p: String, dur: float) -> void:
 	_phase_end = Config.now + dur
 	if Net.mode == "host":
@@ -959,6 +1043,14 @@ func s_phase(p: String, dur: float) -> void:
 func _host_phase_tick() -> void:
 	var now := Config.now
 	match phase:
+		"sandbox":
+			var done_all := tasks.size() > 0
+			for t in tasks:
+				if not t["done"]:
+					done_all = false
+			if done_all:
+				_sync_tasks_new()
+			return
 		"run":
 			var all_done := tasks.size() > 0
 			for t in tasks:
@@ -1281,7 +1373,7 @@ func _build_ghost() -> void:
 
 func _update_ghost() -> void:
 	var me := local_avatar()
-	if me == null or phase != "setup" or not local_is_trapper() or not me.visible:
+	if me == null or not building() or not local_is_trapper() or not me.visible:
 		_ghost.visible = false
 		return
 	var type: String = Config.enabled_pranks()[selected]

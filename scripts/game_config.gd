@@ -55,6 +55,7 @@ const PRANK_ORDER := ["banana", "bucket", "paint", "oil", "flour", "whoopee", "g
 	"tape", "spring", "marbles", "confetti", "alarm", "fake_remote", "vacuum"]
 const DEMO_PRANKS := ["banana", "bucket", "paint", "spring", "flour"]
 var demo_mode := false
+var sandbox := false
 
 # Task steps: hold = hold E at spot, open = open container, pickup/deliver = carry item.
 const TASKS := {
@@ -131,7 +132,10 @@ func _setup_input() -> void:
 		"prev_item": [_key(KEY_Q), _mouse(MOUSE_BUTTON_WHEEL_UP), _joy(JOY_BUTTON_DPAD_LEFT), _joy(JOY_BUTTON_LEFT_SHOULDER)],
 		"cam_next": [_key(KEY_TAB), _joy(JOY_BUTTON_Y)],
 		"menu": [_key(KEY_ESCAPE), _joy(JOY_BUTTON_START)],
-		"scoreboard": [_key(KEY_C), _joy(JOY_BUTTON_BACK)],
+		"scoreboard": [_key(KEY_C)],
+		"trigger_all": [_key(KEY_T), _joy(JOY_BUTTON_DPAD_UP)],
+		"rearm": [_key(KEY_BACKSPACE), _joy(JOY_BUTTON_BACK)],
+		"clear_all": [_key(KEY_DELETE)],
 	}
 	for i in range(1, 10):
 		map["slot_%d" % i] = [_key(KEY_0 + i)]

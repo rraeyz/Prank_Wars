@@ -71,6 +71,9 @@ func tick(delta: float) -> void:
 				_trapper_run(now)
 			else:
 				_runner(now, delta)
+		"sandbox":
+			if a.team != world.trapper_team:
+				_runner(now, delta)
 		"intro":
 			pass
 	if not a.can_act():
@@ -150,7 +153,7 @@ func _runner(now: float, _delta: float) -> void:
 		var near := 12.0 if p.ringing else 2.2
 		if d < near:
 			if not _disarm_roll.has(id):
-				_disarm_roll[id] = p.ringing or rng.randf() < 0.3
+				_disarm_roll[id] = p.ringing or (rng.randf() < 0.3 and not world.sandbox)
 			if _disarm_roll[id]:
 				if d < 1.0:
 					a.in_interact = true

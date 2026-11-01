@@ -42,7 +42,9 @@ func _ready() -> void:
 	Net.server_gone.connect(to_menu)
 	_make_bg()
 	rebuild_menu()
-	if args.has("practice"):
+	if args.has("sandbox"):
+		Net.start_sandbox.call_deferred()
+	elif args.has("practice"):
 		Net.start_practice()
 		Net.start_match.call_deferred()
 	elif args.has("host"):
