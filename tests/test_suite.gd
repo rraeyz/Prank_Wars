@@ -32,6 +32,7 @@ func _run() -> void:
 	test_chat()
 	test_cosmetics()
 	test_twitch()
+	test_achievements()
 	Sfx.build_all()
 	check(Sfx.sounds.has("meow") and Sfx.sounds.has("doorbell") and Sfx.sounds.size() >= 26, "all sounds synthesize (%d)" % Sfx.sounds.size())
 	var mus: AudioStreamWAV = Sfx.build_music()
@@ -967,3 +968,24 @@ func it_twitch_effect() -> void:
 		await _frames(5)
 	check(r.down or r.is_knocked() or _runner(3).is_knocked() or w.cat_zoom_until > Config.now, "viewer effects hit the beans")
 	check(w.scoring.totals[0] + w.scoring.totals[1] == 0, "Twitch effects don't change the score")
+
+
+
+func test_achievements() -> void:
+	var keep_a = Config.settings["ach"]
+	var keep_c = Config.settings["counts"]
+	Config.settings["ach"] = {}
+	Config.settings["counts"] = {}
+	var got := []
+	var cb := func(id): got.append(id)
+	Config.achievement.connect(cb)
+	Config.unlock_ach("CHAIN_3")
+	Config.unlock_ach("CHAIN_3")
+	for i in 5:
+		Config.add_count("disarms")
+	Config.unlock_ach("NOT_REAL")
+	Config.achievement.disconnect(cb)
+	check(got == ["CHAIN_3", "BOMB_SQUAD"], "achievements unlock once, counters work, unknown ids ignored (%s)" % str(got))
+	Config.settings["ach"] = keep_a
+	Config.settings["counts"] = keep_c
+	Config.save_settings()

@@ -904,6 +904,10 @@ func _prop_of_kind(k: String) -> Prop:
 func _best_interaction(a: Avatar) -> Dictionary:
 	var pos := a.global_position
 	if live() and is_runner(a):
+		for pu in house.props:
+			if pu.kind in Config.POWERUPS and not pu.hidden_prop and U.dist_xz(pu.global_position, pos) < 1.3:
+				return {"key": "pu%d" % pu.net_id, "label": I18n.t("act_grab") + ": " + I18n.t("pu_" + pu.kind), "time": 0.15, "do": _take_powerup.bind(a, pu)}
+	if live() and is_runner(a):
 		for id in pranks:
 			var p: Prank = pranks[id]
 			if p.used or p.disarmed or not p.armed or (chaos and p.team == a.team):
@@ -929,10 +933,6 @@ func _best_interaction(a: Avatar) -> Dictionary:
 			var lbl := I18n.t("s_" + str(e["at"]))
 			return {"key": "task_%s_%s" % [e["task"], e["at"]], "label": lbl, "time": e["time"],
 				"do": _do_task_step.bind(a, e)}
-	if live() and is_runner(a):
-		for pu in house.props:
-			if pu.kind in Config.POWERUPS and not pu.hidden_prop and U.dist_xz(pu.global_position, pos) < 1.3:
-				return {"key": "pu%d" % pu.net_id, "label": I18n.t("act_grab") + ": " + I18n.t("pu_" + pu.kind), "time": 0.15, "do": _take_powerup.bind(a, pu)}
 	if live() and is_runner(a) and cat_zoom_until > Config.now:
 		var cat := _prop_of_kind("cat")
 		if U.dist_xz(cat.global_position, pos) < 1.3:
@@ -1615,6 +1615,13 @@ func _prank_particles(p: Prank) -> void:
 
 ## Host: feed line for everyone. Args starting with "@" are translated on each client.
 func feed_all(key: String, args: Array, team: int, big := false) -> void:
+	if key == "chain" and Net.is_host():
+		for s in avatars:
+			if avatars[s].team == team:
+				if int(args[0]) >= 3:
+					achieve(s, "CHAIN_3")
+				if int(args[0]) >= 5:
+					achieve(s, "CHAIN_5")
 	if Net.mode == "host":
 		s_feed.rpc(key, args, team, big)
 	s_feed(key, args, team, big)
@@ -1936,6 +1943,14 @@ func stat(slot: int, key: String, v: float) -> void:
 		return
 	var d: Dictionary = _stats.get_or_add(slot, {})
 	d[key] = float(d.get(key, 0.0)) + v
+	match key:
+		"trap":
+			if v > 0:
+				achieve(slot, "FIRST_PRANK")
+		"ghost":
+			achieve(slot, "GHOSTLY")
+		"disarms", "tasks":
+			achieve(slot, "+" + key)
 
 
 ## End-of-match awards: the top player in each funny category.
@@ -2011,6 +2026,7 @@ func _catch_cat(a: Avatar) -> void:
 	var cat := _prop_of_kind("cat")
 	cat.linear_velocity = Vector3.ZERO
 	scoring.bonus(a.team, Config.CAT_BONUS * scoring.mult, "cat", Config.now)
+	achieve(a.slot, "CAT_HERDER")
 	feed_all("feed_cat_caught", [a.pname, Config.CAT_BONUS * scoring.mult], a.team)
 	fx_all("sfx", ["meow", cat.global_position])
 	_sync_state()
@@ -2239,3 +2255,24 @@ func twitch_effect(eff: String, n: int) -> void:
 					fx_all("sfx", ["fart", target.global_position])
 					fx_all("burst", [target.global_position, "fart", Color.WHITE])
 	feed_all("feed_twitch", ["@tw_" + eff, n, target.pname if target else "-"], 1 - (target.team if target else 0), true)
+
+
+# ------------------------------------------------------------------ achievements (each player's own machine keeps them)
+
+## Host tells a player's machine about an achievement ("+key" = bump a lifetime counter).
+func achieve(slot: int, id: String) -> void:
+	var a: Avatar = avatars.get(slot)
+	if a == null or a.is_bot or sandbox:
+		return
+	if a.peer_id == Net.my_id():
+		s_ach(id)
+	elif Net.mode == "host":
+		s_ach.rpc_id(a.peer_id, id)
+
+
+@rpc("authority", "reliable")
+func s_ach(id: String) -> void:
+	if id.begins_with("+"):
+		Config.add_count(id.substr(1))
+	else:
+		Config.unlock_ach(id)

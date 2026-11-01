@@ -17,3 +17,13 @@ Sunucu kirası yok: odalar, eşleşme ve bağlantı Steam'in ücretsiz altyapıs
 4. `900` numaralı "playtime generator" oynadıkça bedava eşya düşürür (haftada en fazla 1).
 - Rastgele paralı kutu (loot box) yok: bazı ülkelerde kumar sayılıyor. Her eşya doğrudan, fiyatı görünerek satılır.
 - Not: Oyun şu an satın alınan eşyayı istemcinin söylemesine güveniyor (sadece görünüş). İleride Steam envanter imzası doğrulanabilir.
+
+## 4. Başarımlar (Achievements)
+Steamworks > Stats & Achievements'ta şu kimliklerle (API Name) oluştur; oyun aynı adlarla açar:
+FIRST_PRANK, CHAIN_3, CHAIN_5, GHOSTLY, CAT_HERDER, WINNER, BOMB_SQUAD, CHORE_MASTER, REGULAR, LEVEL_10.
+Oyun içi "Başarımlar" ekranı Steam olmadan da çalışır.
+
+## 5. Twitch modu
+Steam gerekmez. Ayarlar > Twitch: kanal adını yaz, "İzleyiciler şaka göndersin"i işaretle.
+İzleyiciler !muz !un !konfeti !deprem !kedi !osuruk (veya İngilizce !banana ...) yazar; 25 sn'de bir en çok oy alan şaka yayıncıya gelir.
+Puanı değiştirmez, sadece kaos. Odayı yayıncı kurmalı (etkiler kurucu bilgisayarda hesaplanır).

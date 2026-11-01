@@ -130,5 +130,14 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [~] Steam herkese açık oda + oda listesi: kod hazır, Steam istemcisiyle test edilmedi
 - [ ] Sesli sohbet: yok (Discord önerilir); Steam Voice ile eklenebilir ama test için 2 Steam hesabı gerekir
 
+## Faz 12 — Oturum 5
+- [x] Twitch modu: izleyiciler sohbetten oy verip yayıncıya şaka gönderir (canlı bağlantı denendi)
+- [x] Başarımlar: 10 başarım, oyun içi ekran + Steam başarım çağrıları
+- [ ] Etkileşimli eğitim (ilk oyun için adım adım)
+- [ ] Klip kaydı (tekrarı video/GIF olarak kaydet)
+- [ ] Kurucu ayrılınca maçın devam etmesi (host migration) — zor, Steam testi sonrası
+- [ ] Yeni haritalar: okul, düğün salonu; harita editörü (topluluk içeriği)
+- [ ] Günlük görevler (her gün 3 küçük hedef, XP ödülü)
+
 ## Haftalık
 - [x] Hafta 1 video fikirleri (`marketing/VIDEO_IDEAS.md`)

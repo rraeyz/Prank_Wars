@@ -93,6 +93,37 @@ const PRANK_ORDER := ["banana", "bucket", "paint", "oil", "flour", "whoopee", "g
 	"tape", "spring", "marbles", "confetti", "alarm", "fake_remote", "vacuum", "trampoline", "cake"]
 const CAKE_BONUS := 5  # eating the bait cake still pays the runners a little
 const XP_PER_LEVEL := 200
+# achievement id -> [counter, needed] (counter "" = one-off). Same ids go to Steamworks > Achievements.
+const ACHIEVEMENTS := {
+	"FIRST_PRANK": ["", 1], "CHAIN_3": ["", 1], "CHAIN_5": ["", 1], "GHOSTLY": ["", 1], "CAT_HERDER": ["", 1],
+	"WINNER": ["", 1], "BOMB_SQUAD": ["disarms", 5], "CHORE_MASTER": ["tasks", 25], "REGULAR": ["matches", 10], "LEVEL_10": ["", 1],
+}
+signal achievement(id: String)
+
+
+func unlock_ach(id: String) -> void:
+	if not ACHIEVEMENTS.has(id):
+		return
+	var got: Dictionary = settings["ach"] if settings["ach"] is Dictionary else {}
+	if got.has(id):
+		return
+	got[id] = true
+	settings["ach"] = got
+	save_settings()
+	if has_node("/root/SteamNet"):
+		get_node("/root/SteamNet").achieve(id)
+	achievement.emit(id)
+
+
+## Lifetime counters (disarms, chores, matches); unlocks the matching achievement when reached.
+func add_count(key: String, n := 1) -> void:
+	var c: Dictionary = settings["counts"] if settings["counts"] is Dictionary else {}
+	c[key] = int(c.get(key, 0)) + n
+	settings["counts"] = c
+	save_settings()
+	for id in ACHIEVEMENTS:
+		if ACHIEVEMENTS[id][0] == key and int(c[key]) >= int(ACHIEVEMENTS[id][1]):
+			unlock_ach(id)
 
 
 ## Level from saved XP (local progress; shortcut: stored in the settings file, move to Steam Stats for anti-cheat).
@@ -102,6 +133,9 @@ func level() -> int:
 
 ## Match-end reward. Returns {"gained", "level", "leveled", "unlocked": [item ids]}.
 func add_match_xp(won: bool, team_points: int, played_rounds: int) -> Dictionary:
+	add_count("matches")
+	if won:
+		unlock_ach("WINNER")
 	var before := level()
 	var gained := 40 + 15 * played_rounds + (40 if won else 0) + mini(60, team_points / 5)
 	settings["xp"] = int(settings.get("xp", 0)) + gained
@@ -113,6 +147,8 @@ func add_match_xp(won: bool, team_points: int, played_rounds: int) -> Dictionary
 			var n := u.substr(6).to_int()
 			if n > before and n <= level():
 				unlocked.append(id)
+	if level() >= 10:
+		unlock_ach("LEVEL_10")
 	return {"gained": gained, "level": level(), "leveled": level() > before, "unlocked": unlocked}
 const DEMO_PRANKS := ["banana", "bucket", "paint", "spring", "flour"]
 var demo_mode := false
@@ -153,6 +189,7 @@ var settings := {
 	"name": "", "lang": "", "master": 0.8, "music": 0.5, "sfx": 0.9,
 	"fullscreen": false, "last_ip": "127.0.0.1", "keys": {}, "look": {}, "xp": 0,
 	"brightness": 1.0, "contrast": 1.0, "saturation": 1.0, "twitch": "", "twitch_on": false,
+	"ach": {}, "counts": {},
 }
 const REBINDABLE := ["move_up", "move_down", "move_left", "move_right", "jump", "interact", "dive", "action", "prev_item", "next_item", "cam_next", "reveal", "taunt", "ghost", "trigger_all"]
 const SETTINGS_PATH := "user://settings.cfg"

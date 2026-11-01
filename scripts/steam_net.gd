@@ -143,6 +143,12 @@ func _on_inventory(result: int, handle: int) -> void:
 		steam.destroyResult(handle)
 
 
+func achieve(id: String) -> void:
+	if ready_ok and steam.has_method("setAchievement"):
+		steam.setAchievement(id)
+		steam.storeStats()
+
+
 ## Opens the Steam overlay checkout for one item (price is set in Steamworks).
 func purchase(itemdef: int) -> void:
 	if ready_ok and itemdef > 0 and steam.has_method("startPurchase"):

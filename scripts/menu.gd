@@ -17,6 +17,7 @@ var _rule_btn: Button
 var _mode_btn: Button
 var _map_btn: Button
 var _invite_btn: Button
+var _ach_label: Label
 var _lobby_chat: Label
 var _chat_lines: Array = []
 
@@ -29,6 +30,12 @@ func _ready() -> void:
 	_build_keys()
 	_build_locker()
 	_build_browser()
+	var av := _screen("ach")
+	av.add_child(_lbl(I18n.t("achievements"), 36, Color("ffe14d")))
+	_ach_label = _lbl("", 17)
+	_ach_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	av.add_child(_ach_label)
+	_btn(I18n.t("back"), func(): show_screen("main"), av)
 	var hv := _screen("how")
 	hv.add_child(_lbl(I18n.t("how"), 40, Color("ffe14d")))
 	var ht := _lbl(I18n.t("how_text"), 18)
@@ -142,6 +149,7 @@ func _build_main() -> void:
 	jr.add_child(jb)
 	v.add_child(jr)
 	_btn(I18n.t("how"), func(): show_screen("how"), v)
+	_btn(I18n.t("achievements"), func(): _refresh_ach(); show_screen("ach"), v)
 	_btn(I18n.t("settings"), func(): show_screen("settings"), v)
 	_btn(I18n.t("quit"), func(): get_tree().quit(), v)
 	_status = _lbl("", 16, Color("ff9a9a"))
@@ -529,3 +537,14 @@ func _show_rooms(list: Array) -> void:
 		b.custom_minimum_size = Vector2(560, 40)
 		b.pressed.connect(func(): SteamNet.join_lobby(r["id"]))
 		_rooms.add_child(b)
+
+
+func _refresh_ach() -> void:
+	var got: Dictionary = Config.settings.get("ach", {}) if Config.settings.get("ach", {}) is Dictionary else {}
+	var counts: Dictionary = Config.settings.get("counts", {}) if Config.settings.get("counts", {}) is Dictionary else {}
+	var t := ""
+	for id in Config.ACHIEVEMENTS:
+		var c: Array = Config.ACHIEVEMENTS[id]
+		var prog := "" if c[0] == "" or got.has(id) else "  (%d/%d)" % [mini(int(counts.get(c[0], 0)), int(c[1])), int(c[1])]
+		t += ("★ " if got.has(id) else "☆ ") + I18n.t("ach_" + id) + prog + "\n"
+	_ach_label.text = t

@@ -4,6 +4,8 @@ extends RefCounted
 const LANGS := ["es", "pt", "de", "fr", "ru"]
 
 const S := {
+	"achievements": ["Logros", "Conquistas", "Erfolge", "Succès", "Достижения"],
+	"ach_got": ["¡LOGRO!", "CONQUISTA!", "ERFOLG!", "SUCCÈS !", "ДОСТИЖЕНИЕ!"],
 	"twitch_channel": ["tu canal", "seu canal", "dein Kanal", "ta chaîne", "твой канал"],
 	"twitch_mode": ["Los espectadores mandan bromas", "Espectadores mandam pegadinhas", "Zuschauer schicken Streiche", "Les spectateurs envoient des blagues", "Зрители шлют приколы"],
 	"twitch_ok": ["Twitch conectado: #%s — escriban !banana !flour !confetti !quake !cat !fart", "Twitch conectado: #%s — digitem !banana !flour !confetti !quake !cat !fart", "Twitch verbunden: #%s — schreibt !banana !flour !confetti !quake !cat !fart", "Twitch connecté : #%s — tapez !banana !flour !confetti !quake !cat !fart", "Twitch подключён: #%s — пишите !banana !flour !confetti !quake !cat !fart"],

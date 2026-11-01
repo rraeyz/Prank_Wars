@@ -232,6 +232,7 @@ func _ready() -> void:
 	ev.add_child(_btn(I18n.t("to_menu"), func(): get_tree().root.get_node("Main").to_menu()))
 
 	_build_chat()
+	Config.achievement.connect(func(id): popup(I18n.t("ach_got") + "\n" + I18n.t("ach_" + id), Color("ffd60a")); Sfx.play("win"))
 	# pause
 	_pause = _panel()
 	var pv := VBoxContainer.new()
