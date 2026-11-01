@@ -1,0 +1,1373 @@
+class_name World
+extends Node3D
+## The match: house, avatars, pranks, round flow, interactions, netcode, replay.
+## Host runs the simulation and rules; clients send input and display snapshots.
+
+var house: House
+var scoring := Scoring.new()
+var timeline := Timeline.new()
+var avatars := {}  # slot -> Avatar
+var entities := {}  # net id -> Node3D
+var pranks := {}  # id -> Prank
+var bots := {}  # slot -> Bot
+var cam: CameraRig
+var hud: Node
+var rng := RandomNumberGenerator.new()
+var show_names := true
+var headless := false
+
+# synced match state
+var phase := "none"
+var round_i := 0
+var trapper_team := 0
+var tasks: Array = []  # [{"id", "step", "done"}]
+var budget := [Config.BUDGET, Config.BUDGET]
+var scores := [0, 0]
+var round_scores := [0, 0]
+var phase_end_local := 0.0  # Time (seconds) when the phase ends, local clock
+var phase_dur := 0.0
+
+# host-only
+var _phase_end := 0.0
+var _next_prank_id := 1000
+var _net_accum := 0.0
+var _tick := 0
+var _last_sent := {}
+var _interact := {}  # slot -> {"key", "t"}
+var _prompts := {}  # slot -> [label, progress]
+var _chain_victims := {}  # chain id -> [slots]
+var _alarm_fails := 0
+
+# replay / client display
+var replaying := false
+var replay := {}
+var render_t := 0.0
+var _splat_root: Node3D
+var _ents: Node3D
+var _ghost: Node3D
+var _ghost_ring: MeshInstance3D
+var _ghost_label: Label3D
+var selected := 0  # index in Config.enabled_pranks()
+var local_prompt := ["", 0.0]
+var _pending_remote := {}
+var _clock := 0.0
+
+
+func _ready() -> void:
+	name = "World"
+	headless = DisplayServer.get_name() == "headless"
+	Config.now = 0.0
+	house = House.new()
+	house.name = "House"
+	add_child(house)
+	house.build()
+	_ents = Node3D.new()
+	_ents.name = "Ents"
+	add_child(_ents)
+	_splat_root = Node3D.new()
+	_splat_root.name = "Splats"
+	add_child(_splat_root)
+	for i in house.props.size():
+		var p: Prop = house.props[i]
+		p.net_id = 100 + i
+		p.world = self
+		_make_client_body(p)
+		register_entity(p.net_id, p)
+	_lights()
+	for n in house.doors:
+		house.doors[n].opened.connect(_on_door_opened.bind(house.doors[n]))
+	for pid in Net.players:
+		_spawn_avatar(pid)
+	cam = CameraRig.new()
+	cam.world = self
+	add_child(cam)
+	var hud_script := load("res://scripts/hud.gd")
+	hud = hud_script.new()
+	hud.world = self
+	add_child(hud)
+	_build_ghost()
+	Net.players_changed.connect(_on_players_changed)
+	Sfx.play_music()
+	if Net.is_host():
+		_host_start_round(0)
+
+
+func _lights() -> void:
+	var sun := DirectionalLight3D.new()
+	sun.rotation_degrees = Vector3(-58, -28, 0)
+	sun.shadow_enabled = true
+	sun.light_energy = 1.1
+	sun.directional_shadow_max_distance = 40.0
+	add_child(sun)
+	var env := WorldEnvironment.new()
+	var e := Environment.new()
+	e.background_mode = Environment.BG_COLOR
+	e.background_color = Color("9fd8ff")
+	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	e.ambient_light_color = Color("fff4e6")
+	e.ambient_light_energy = 0.55
+	e.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env.environment = e
+	add_child(env)
+
+
+func _make_client_body(b: RigidBody3D) -> void:
+	if Net.is_host():
+		return
+	b.freeze_mode = RigidBody3D.FREEZE_MODE_KINEMATIC
+	b.freeze = true
+	b.collision_layer = 0
+	b.collision_mask = 0
+	b.contact_monitor = false
+
+
+func entity_root() -> Node3D:
+	return _ents
+
+
+func register_entity(id: int, n: Node3D) -> void:
+	entities[id] = n
+	if n is RigidBody3D and n != null:
+		_make_client_body(n)
+
+
+func _spawn_avatar(pid: int) -> Avatar:
+	var info: Dictionary = Net.players[pid]
+	var a := Avatar.new()
+	var slot := int(info["slot"])
+	_ents.add_child(a)
+	a.setup(self, info, slot, pid)
+	a.global_position = Vector3(slot, 0.8, 10)
+	avatars[slot] = a
+	register_entity(slot, a)
+	if Net.is_host() and bool(info["bot"]):
+		bots[slot] = Bot.new(self, a)
+	return a
+
+
+func _on_door_opened(opener: Node3D, d: HouseDoor) -> void:
+	if not Net.is_host() or not (opener is Avatar) or not is_runner(opener):
+		return
+	for id in pranks:
+		var p: Prank = pranks[id]
+		if p.socket == d.door_name and p.def["trigger"] == "door":
+			p.fire(opener)
+
+
+func _on_players_changed() -> void:
+	if not Net.is_host():
+		return
+	# a human left mid-match: a bot takes over their bean
+	for slot in avatars:
+		var a: Avatar = avatars[slot]
+		if not a.is_bot and not Net.players.has(a.peer_id):
+			a.is_bot = true
+			a.pname += " (bot)"
+			bots[slot] = Bot.new(self, a)
+
+
+# ------------------------------------------------------------------ queries
+
+func local_slot() -> int:
+	var me = Net.players.get(Net.my_id())
+	return int(me["slot"]) if me else -1
+
+
+func local_avatar() -> Avatar:
+	return avatars.get(local_slot())
+
+
+func local_team() -> int:
+	var me = Net.players.get(Net.my_id())
+	return int(me["team"]) if me else -1
+
+
+func local_is_trapper() -> bool:
+	return local_team() == trapper_team
+
+
+func local_sees_pranks(prank_team: int) -> bool:
+	return replaying or local_team() == prank_team or phase in ["score", "end"]
+
+
+func local_view_target() -> Node3D:
+	var a := local_avatar()
+	if a and a.visible:
+		return a
+	return cam.spectate_target() if cam else null
+
+
+func is_runner(a: Avatar) -> bool:
+	return a.team != trapper_team
+
+
+func runner_avatars() -> Array:
+	var r := []
+	for s in avatars:
+		var a: Avatar = avatars[s]
+		if a.team != trapper_team:
+			r.append(a)
+	return r
+
+
+func avatars_near(p: Vector3, r: float, runners_only: bool) -> Array:
+	var out := []
+	for s in avatars:
+		var a: Avatar = avatars[s]
+		if not a.active or (runners_only and not is_runner(a)):
+			continue
+		if U.dist_xz(a.global_position, p) <= r and absf(a.global_position.y - p.y) < 3.0:
+			out.append(a)
+	return out
+
+
+func ui_blocking() -> bool:
+	return hud != null and hud.has_method("is_blocking") and hud.is_blocking()
+
+
+func time_left() -> float:
+	return maxf(0.0, phase_end_local - _clock)
+
+
+func replay_focus() -> Node3D:
+	return avatars.get(int(replay.get("focus", -1)))
+
+
+func remote_pranks(team: int) -> Array:
+	var r := []
+	var ids := pranks.keys()
+	ids.sort()
+	for id in ids:
+		var p: Prank = pranks[id]
+		if p.team == team and p.def["trigger"] == "remote" and not p.used and not p.disarmed:
+			r.append(p)
+	return r
+
+
+# ------------------------------------------------------------------ main loop
+
+func _process(delta: float) -> void:
+	_clock += delta
+	if replaying:
+		_replay_step(delta)
+	elif not Net.is_host():
+		_client_interpolate(delta)
+	_local_input()
+	_update_ghost()
+
+
+func _physics_process(delta: float) -> void:
+	if not Net.is_host():
+		return
+	Config.now += delta
+	if replaying:
+		_host_phase_tick()
+		return
+	for s in bots:
+		bots[s].tick(delta)
+	_host_interactions(delta)
+	for id in pranks:
+		pranks[id].host_tick(delta)
+	_host_safety()
+	_host_phase_tick()
+	_net_accum += delta
+	if _net_accum >= 1.0 / Config.NET_RATE:
+		_net_accum = 0.0
+		_send_snapshot()
+
+
+# ------------------------------------------------------------------ local input
+
+func _local_input() -> void:
+	var me := local_avatar()
+	if me == null:
+		return
+	var blocked := ui_blocking()
+	var mv := Vector2.ZERO if blocked else Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	var inter := false if blocked else Input.is_action_pressed("interact")
+	if not me.visible:
+		mv = Vector2.ZERO
+	if Net.is_host():
+		if not me.is_bot:
+			me.in_move = mv
+			me.in_interact = inter
+	else:
+		c_input.rpc_id(1, mv, inter)
+	if blocked:
+		return
+	if Input.is_action_just_pressed("jump"):
+		_send_action("jump", [])
+	if Input.is_action_just_pressed("dive"):
+		_send_action("dive", [])
+	var list := Config.enabled_pranks()
+	if phase == "setup" and local_is_trapper():
+		if Input.is_action_just_pressed("next_item"):
+			selected = (selected + 1) % list.size()
+			Sfx.play("click")
+		if Input.is_action_just_pressed("prev_item"):
+			selected = (selected - 1 + list.size()) % list.size()
+			Sfx.play("click")
+		for i in range(1, 10):
+			if Input.is_action_just_pressed("slot_%d" % i) and i - 1 < list.size():
+				selected = i - 1
+	if Input.is_action_just_pressed("action"):
+		if phase == "setup" and local_is_trapper() and me.visible:
+			var pl := placement_for(list[selected], me.global_position, -me.global_transform.basis.z)
+			if pl["ok"]:
+				_send_action("place", [list[selected], pl["pos"], pl["yaw"], pl["socket"]])
+			else:
+				hud.toast(I18n.t(pl.get("reason", "cant_place")))
+				Sfx.play("tick")
+		elif me.visible:
+			_send_action("throw", [])
+	if phase == "run" and local_is_trapper():
+		var rl := remote_pranks(local_team())
+		for i in range(1, 10):
+			if Input.is_action_just_pressed("slot_%d" % i) and i - 1 < rl.size():
+				_send_action("remote", [rl[i - 1].id])
+		if Input.is_action_just_pressed("action") and rl.size() > 0:
+			_send_action("remote", [rl[0].id])
+	if Input.is_action_just_pressed("cam_next"):
+		cam.cycle()
+
+
+func _send_action(kind: String, args: Array) -> void:
+	if Net.is_host():
+		_host_action(local_slot(), kind, args)
+	else:
+		c_action.rpc_id(1, kind, args)
+
+
+@rpc("any_peer", "unreliable_ordered")
+func c_input(mv: Vector2, inter: bool) -> void:
+	var a := _sender_avatar()
+	if a:
+		a.in_move = mv.limit_length(1.0)
+		a.in_interact = inter
+
+
+@rpc("any_peer", "reliable")
+func c_action(kind: String, args: Array) -> void:
+	var a := _sender_avatar()
+	if a:
+		_host_action(a.slot, kind, args)
+
+
+func _sender_avatar() -> Avatar:
+	if not Net.is_host():
+		return null
+	var info = Net.players.get(multiplayer.get_remote_sender_id())
+	if info == null:
+		return null
+	return avatars.get(int(info["slot"]))
+
+
+func _host_action(slot: int, kind: String, args: Array) -> void:
+	var a: Avatar = avatars.get(slot)
+	if a == null or not a.active:
+		if kind == "remote" and a and a.team == trapper_team and args.size() == 1:
+			remote_trigger(a.team, int(args[0]))
+		return
+	match kind:
+		"jump":
+			a.jump()
+		"dive":
+			if phase != "replay":
+				a.dive()
+		"throw":
+			if a.carrying and not _is_task_item_locked(a.carrying):
+				a.throw_carry()
+				fx_all("sfx", ["whoosh", a.global_position])
+		"place":
+			if args.size() == 4:
+				host_place(slot, str(args[0]), args[1], float(args[2]), str(args[3]))
+		"remote":
+			if args.size() == 1 and a.team == trapper_team:
+				remote_trigger(a.team, int(args[0]))
+
+
+func _is_task_item_locked(_p: Prop) -> bool:
+	return false
+
+
+# ------------------------------------------------------------------ placement
+
+## Where would `type` go for an avatar at `origin` facing `fwd`? Shared by ghost preview, host and bots.
+func placement_for(type: String, origin: Vector3, fwd: Vector3) -> Dictionary:
+	var def: Dictionary = Config.PRANKS[type]
+	fwd = U.flat_xz(fwd).normalized()
+	if fwd.length() < 0.1:
+		fwd = Vector3.FORWARD
+	var res := {"ok": false, "pos": origin, "yaw": atan2(-fwd.x, -fwd.z), "socket": "", "reason": "cant_place"}
+	match def["place"]:
+		"floor", "surface":
+			var p := origin + fwd * 1.0
+			var hit := _ray_down(p)
+			if hit.is_empty():
+				return res
+			var floor_only: bool = def["place"] == "floor"
+			if floor_only and not hit["collider"].is_in_group("floor"):
+				return res
+			p = hit["position"]
+			if floor_only:
+				p.y = 0.0
+			if not house.inside(p, 0.25):
+				return res
+			for id in pranks:
+				var o: Prank = pranks[id]
+				if o.def["place"] in ["floor", "surface"] and U.dist_xz(o.position, p) < 0.7:
+					return res
+			res["pos"] = p
+			res["ok"] = true
+		"ceiling":
+			var p2 := origin + fwd * 0.6
+			if not house.inside(p2, 0.4):
+				return res
+			res["pos"] = Vector3(p2.x, 2.55, p2.z)
+			res["ok"] = true
+			for id in pranks:
+				var o2: Prank = pranks[id]
+				if o2.def["place"] == "ceiling" and U.dist_xz(o2.position, p2) < 1.0:
+					res["ok"] = false
+		"door":
+			var best: HouseDoor = null
+			var bd := 2.2
+			for n in house.doors:
+				var d: HouseDoor = house.doors[n]
+				var dd := U.dist_xz(d.global_position, origin)
+				if dd < bd and not _socket_used(n):
+					bd = dd
+					best = d
+			if best:
+				res["pos"] = best.bucket_slot.global_position
+				res["yaw"] = best.rotation.y
+				res["socket"] = best.door_name
+				res["ok"] = true
+		"container":
+			var bc: Cupboard = null
+			var bcd := 1.7
+			for n in house.cupboards:
+				var c: Cupboard = house.cupboards[n]
+				var cd := U.dist_xz(c.front_point(), origin)
+				if cd < bcd and not _socket_used(n):
+					bcd = cd
+					bc = c
+			if bc:
+				res["pos"] = bc.inside_point()
+				res["yaw"] = bc.rotation.y
+				res["socket"] = bc.cup_name
+				res["ok"] = true
+		"task":
+			var bs := ""
+			var bsd := 1.9
+			for n in house.spots:
+				if not _is_hold_spot(n) or _socket_used(n):
+					continue
+				var sp: Dictionary = house.spots[n]
+				var sd := U.dist_xz(sp["pos"], origin)
+				if sd < bsd:
+					bsd = sd
+					bs = n
+			if bs != "":
+				res["pos"] = house.spots[bs]["pos"] + Vector3(0, 0.05, 0)
+				res["socket"] = bs
+				res["ok"] = true
+	return res
+
+
+func _is_hold_spot(n: String) -> bool:
+	for t in Config.TASKS:
+		for st in Config.TASKS[t]:
+			if st["type"] == "hold" and st["at"] == n:
+				return true
+	return false
+
+
+func _socket_used(n: String) -> bool:
+	for id in pranks:
+		if pranks[id].socket == n:
+			return true
+	return false
+
+
+func _ray_down(p: Vector3) -> Dictionary:
+	var space := get_world_3d().direct_space_state
+	var q := PhysicsRayQueryParameters3D.create(Vector3(p.x, 2.45, p.z), Vector3(p.x, -0.5, p.z), U.L_WORLD)
+	return space.intersect_ray(q)
+
+
+func host_place(slot: int, type: String, pos: Vector3, yaw: float, socket: String) -> bool:
+	var a: Avatar = avatars.get(slot)
+	if a == null or phase != "setup" or a.team != trapper_team or not Config.PRANKS.has(type):
+		return false
+	if not type in Config.enabled_pranks():
+		return false
+	var cost: int = Config.PRANKS[type]["cost"]
+	if budget[a.team] < cost:
+		_toast_to(a, "no_budget")
+		return false
+	if U.dist_xz(a.global_position, pos) > 3.5:
+		return false
+	# re-validate from the host's view of the world
+	var check := placement_for(type, pos - Vector3(0, 0, 0), Vector3.FORWARD) if Config.PRANKS[type]["place"] in ["door", "container", "task"] else {}
+	if socket != "":
+		if _socket_used(socket):
+			return false
+		if not check.is_empty() and check["socket"] != socket:
+			# accept if the named socket exists and is near the avatar
+			if not (house.doors.has(socket) or house.cupboards.has(socket) or house.spots.has(socket)):
+				return false
+	else:
+		if not house.inside(pos, 0.2):
+			return false
+		for id in pranks:
+			var o: Prank = pranks[id]
+			if o.def["place"] == Config.PRANKS[type]["place"] and U.dist_xz(o.position, pos) < 0.6:
+				return false
+	budget[a.team] -= cost
+	var pid := _next_prank_id
+	_next_prank_id += 1
+	if Net.mode == "host":
+		s_spawn_prank.rpc(pid, type, a.team, pos, yaw, socket)
+	s_spawn_prank(pid, type, a.team, pos, yaw, socket)
+	_sync_state()
+	return true
+
+
+@rpc("authority", "reliable")
+func s_spawn_prank(pid: int, type: String, team: int, pos: Vector3, yaw: float, socket: String) -> void:
+	if pranks.has(pid):
+		return
+	var p := Prank.new()
+	_ents.add_child(p)
+	p.global_position = pos
+	p.rotation.y = yaw
+	p.setup(self, pid, type, team, socket)
+	pranks[pid] = p
+	if house.cupboards.has(socket):
+		house.cupboards[socket].prank = p
+	if not headless and local_team() == team:
+		Sfx.play("place", pos)
+		Fx.burst(self, pos, "sparkle")
+
+
+func remote_trigger(team: int, pid: int) -> void:
+	if phase != "run":
+		return
+	var p: Prank = pranks.get(pid)
+	if p and p.team == team and p.def["trigger"] == "remote":
+		p.fire(null)
+
+
+# ------------------------------------------------------------------ scoring hooks (host)
+
+## Registers a prank hit and returns the chain id to tag the victim with.
+func prank_hit(p: Prank, victim: Avatar, cause: Node3D) -> int:
+	var ch := -1
+	if cause is Avatar and (cause as Avatar).is_chained():
+		ch = (cause as Avatar).chain_id
+	elif cause is Prop and (cause as Prop).is_chained(Config.now):
+		ch = (cause as Prop).chain_id
+	elif victim.is_chained():
+		ch = victim.chain_id
+	var r := scoring.prank_hit(ch, p.team, p.type, victim.pname, Config.now)
+	if not _chain_victims.has(r["chain"]):
+		_chain_victims[r["chain"]] = []
+	_chain_victims[r["chain"]].append(victim.slot)
+	victim.set_chain(r["chain"], Config.now + 2.5)
+	feed_all("feed_prank", ["@p_" + p.type, victim.pname, r["delta"]], p.team)
+	if r["links"] >= 2:
+		feed_all("chain", [r["links"], Scoring.chain_value(r["links"])], p.team, true)
+	_sync_state()
+	return r["chain"]
+
+
+func on_bump(knocked: Avatar, other: Avatar) -> void:
+	## A flying bean knocked over another bean. Counts as a chain link if the flyer was pranked.
+	var v := knocked.pre_vel
+	var ch := -1
+	if phase == "run" and knocked.is_chained() and is_runner(other):
+		var r := scoring.prank_hit(knocked.chain_id, trapper_team, "bump", other.pname, Config.now)
+		ch = r["chain"]
+		if not _chain_victims.has(ch):
+			_chain_victims[ch] = []
+		_chain_victims[ch].append(other.slot)
+		feed_all("feed_prank", ["@p_bump", other.pname, r["delta"]], trapper_team)
+		if r["links"] >= 2:
+			feed_all("chain", [r["links"], Scoring.chain_value(r["links"])], trapper_team, true)
+		_sync_state()
+	other.knock(U.flat_xz(v) * 0.6 + Vector3.UP * 3.5, Vector3(randf_range(-8, 8), 0, randf_range(-8, 8)), 1.6, ch)
+	fx_all("sfx", ["thud", other.global_position])
+
+
+func on_prop_hit(p: Prop, body: Node) -> void:
+	if not Net.is_host() or not (body is Avatar):
+		return
+	var a: Avatar = body
+	if not a.active or a.is_knocked():
+		return
+	var now := Config.now
+	var spd := p.linear_velocity.length()
+	if p.kind == "vacuum":
+		for id in pranks:
+			if pranks[id].vac == p:
+				if phase == "run" and is_runner(a):
+					pranks[id].vacuum_bump(a)
+		return
+	if p.kind == "marble":
+		if phase == "run" and is_runner(a) and spd > 1.2 and p.is_chained(now):
+			var r := scoring.prank_hit(p.chain_id, trapper_team, "marbles", a.pname, now)
+			_chain_victims.get_or_add(r["chain"], []).append(a.slot)
+			p.chain_id = r["chain"]
+			feed_all("feed_prank", ["@p_marbles", a.pname, r["delta"]], trapper_team)
+			if r["links"] >= 2:
+				feed_all("chain", [r["links"], Scoring.chain_value(r["links"])], trapper_team, true)
+			var d := a.move_dir()
+			a.knock(d * 5.0 + Vector3.UP * 3.0, d.cross(Vector3.UP) * 11.0, 1.8, r["chain"])
+			fx_all("sfx", ["slip", a.global_position])
+			_sync_state()
+		return
+	if spd < 5.0:
+		return
+	if p.is_chained(now) and phase == "run" and is_runner(a):
+		var r2 := scoring.prank_hit(p.chain_id, trapper_team, "bump", a.pname, now)
+		_chain_victims.get_or_add(r2["chain"], []).append(a.slot)
+		feed_all("feed_prank", ["@p_bump", a.pname, r2["delta"]], trapper_team)
+		a.knock(p.linear_velocity * 0.5 + Vector3.UP * 3.0, Vector3(randf_range(-8, 8), 0, randf_range(-8, 8)), 1.5, r2["chain"])
+		_sync_state()
+	elif now < p.thrown_until and p.thrown_by != a:
+		a.knock(p.linear_velocity * 0.5 + Vector3.UP * 3.0, Vector3(randf_range(-8, 8), 0, randf_range(-8, 8)), 1.3)
+		fx_all("sfx", ["thud", a.global_position])
+
+
+func add_mess(a: Avatar, amount: float, c: Color, kind: String) -> void:
+	fx_all("mess", [a.slot, amount, c, kind])
+
+
+func alarm_failed(p: Prank) -> void:
+	scoring.bonus(p.team, Config.ALARM_POINTS, "alarm", Config.now)
+	feed_all("feed_alarm_fail", [Config.ALARM_POINTS], p.team)
+	_sync_state()
+
+
+func _toast_to(a: Avatar, key: String) -> void:
+	if a.is_bot:
+		return
+	if a.peer_id == Net.my_id():
+		hud.toast(I18n.t(key))
+	elif Net.mode == "host":
+		s_toast.rpc_id(a.peer_id, key)
+
+
+@rpc("authority", "reliable")
+func s_toast(key: String) -> void:
+	hud.toast(I18n.t(key))
+
+
+# ------------------------------------------------------------------ interactions (host)
+
+func _task_targets() -> Array:
+	## Current step of each unfinished task -> [{"task", "type", "at", "pos", "radius", "time"}]
+	var out := []
+	for t in tasks:
+		if t["done"]:
+			continue
+		var st: Dictionary = Config.TASKS[t["id"]][t["step"]]
+		var e := {"task": t["id"], "type": st["type"], "at": st["at"], "time": float(st.get("time", 0.3))}
+		match st["type"]:
+			"hold", "deliver":
+				var sp: Dictionary = house.spots[st["at"]]
+				e["pos"] = sp["pos"]
+				e["radius"] = sp["radius"]
+			"open":
+				var c: Cupboard = house.cupboards[st["at"]]
+				e["pos"] = c.front_point()
+				e["radius"] = 1.3
+			"pickup":
+				var pr := _prop_of_kind(st["at"])
+				if pr == null:
+					continue
+				e["pos"] = pr.global_position
+				e["radius"] = 1.4
+				e["prop"] = pr
+		out.append(e)
+	return out
+
+
+func _prop_of_kind(k: String) -> Prop:
+	for p in house.props:
+		if p.kind == k:
+			return p
+	return null
+
+
+## Best thing this avatar can do with E right now -> {"key", "label", "time", "do": Callable} or {}.
+func _best_interaction(a: Avatar) -> Dictionary:
+	var pos := a.global_position
+	if phase == "run" and is_runner(a):
+		for id in pranks:
+			var p: Prank = pranks[id]
+			if p.used or p.disarmed or not p.armed:
+				continue
+			if not (p.def["reveal"] or p.ringing):
+				continue
+			if p.type == "alarm" and not p.ringing:
+				continue
+			if U.dist_xz(p.net_pos(), pos) < 1.3:
+				return {"key": "disarm%d" % id, "label": I18n.t("act_disarm") + ": " + I18n.t("p_" + p.type), "time": 1.2,
+					"do": _do_disarm.bind(a, p)}
+		for e in _task_targets():
+			if e["type"] == "deliver":
+				continue
+			if U.dist_xz(e["pos"], pos) > e["radius"]:
+				continue
+			if e["type"] == "pickup" and a.carrying:
+				continue
+			var lbl := I18n.t("s_" + str(e["at"]))
+			return {"key": "task_%s_%s" % [e["task"], e["at"]], "label": lbl, "time": e["time"],
+				"do": _do_task_step.bind(a, e)}
+	if phase in ["setup", "run", "intro"] and not a.carrying:
+		var best: Prop = null
+		var bd := 1.3
+		for p in house.props:
+			if not p.carryable or p.carrier or p.hidden_prop:
+				continue
+			var d := U.dist_xz(p.global_position, pos)
+			if d < bd and absf(p.global_position.y - pos.y) < 1.5:
+				bd = d
+				best = p
+		if best:
+			return {"key": "grab%d" % best.net_id, "label": I18n.t("act_grab"), "time": 0.15, "do": _do_grab.bind(a, best)}
+	return {}
+
+
+func _host_interactions(delta: float) -> void:
+	for s in avatars:
+		var a: Avatar = avatars[s]
+		var best := {}
+		if a.can_act():
+			best = _best_interaction(a)
+		var st: Dictionary = _interact.get(s, {"key": "", "t": 0.0})
+		if best.is_empty() or not a.in_interact:
+			st = {"key": "" if best.is_empty() else best["key"], "t": 0.0}
+		else:
+			if st["key"] != best["key"]:
+				st = {"key": best["key"], "t": 0.0}
+			st["t"] += delta
+			if st["t"] >= best["time"]:
+				best["do"].call()
+				st = {"key": "", "t": 0.0}
+		_interact[s] = st
+		a.interacting = a.in_interact and not best.is_empty()
+		var prompt := ["", 0.0]
+		if not best.is_empty():
+			prompt = [best["label"], clampf(st["t"] / maxf(best["time"], 0.01), 0.0, 1.0)]
+		_send_prompt(a, prompt)
+		# deliveries happen automatically
+		if a.carrying and phase == "run" and is_runner(a):
+			for e in _task_targets():
+				if e["type"] == "deliver" and U.dist_xz(e["pos"], a.global_position) < e["radius"]:
+					var item_kind: String = Config.TASKS[e["task"]][0]["at"]
+					if a.carrying.kind == item_kind:
+						var it := a.carrying
+						a.drop_carry()
+						it.set_hidden(true)
+						_advance_task(e["task"], a)
+
+
+func _send_prompt(a: Avatar, prompt: Array) -> void:
+	if a.is_bot:
+		return
+	var last: Array = _prompts.get(a.slot, ["", -1.0])
+	if last[0] == prompt[0] and absf(last[1] - prompt[1]) < 0.05:
+		return
+	_prompts[a.slot] = prompt
+	if a.peer_id == Net.my_id():
+		local_prompt = prompt
+	elif Net.mode == "host":
+		s_prompt.rpc_id(a.peer_id, prompt[0], prompt[1])
+
+
+@rpc("authority", "unreliable_ordered")
+func s_prompt(label: String, progress: float) -> void:
+	local_prompt = [label, progress]
+
+
+func _do_disarm(a: Avatar, p: Prank) -> void:
+	if p.disarmed or p.used:
+		return
+	p.disarm()
+	scoring.disarmed(a.team, p.type, Config.now)
+	feed_all("feed_disarm", [a.pname, "@p_" + p.type, Config.DISARM_POINTS], a.team)
+	fx_all("prank", [p.id, "disarmed"])
+	_sync_state()
+
+
+func _do_grab(a: Avatar, p: Prop) -> void:
+	a.pick_up(p)
+	fx_all("sfx", ["pop", a.global_position])
+	# picking up a pickup-step item completes that step
+	if phase == "run" and is_runner(a):
+		for e in _task_targets():
+			if e["type"] == "pickup" and e.get("prop") == p:
+				_advance_task(e["task"], a)
+
+
+func _do_task_step(a: Avatar, e: Dictionary) -> void:
+	match e["type"]:
+		"hold":
+			for id in pranks:
+				var p: Prank = pranks[id]
+				if p.socket == e["at"] and p.type == "fake_remote" and p.armed and not p.used:
+					p.fire(a)
+					return
+			_advance_task(e["task"], a)
+		"open":
+			var c: Cupboard = house.cupboards[e["at"]]
+			open_cupboard(c, a)
+			_advance_task(e["task"], a)
+		"pickup":
+			if e.has("prop"):
+				_do_grab(a, e["prop"])
+
+
+func open_cupboard(c: Cupboard, a: Avatar) -> void:
+	fx_all("cup_open", [c.cup_name])
+	if c.prank and is_instance_valid(c.prank):
+		var p: Prank = c.prank
+		if p.armed and not p.used and is_runner(a):
+			p.fire(a)
+
+
+func _advance_task(task_id: String, a: Avatar) -> void:
+	for t in tasks:
+		if t["id"] != task_id or t["done"]:
+			continue
+		t["step"] += 1
+		if t["step"] >= Config.TASKS[task_id].size():
+			t["done"] = true
+			scoring.task_done(a.team, task_id, Config.now)
+			feed_all("feed_task", ["@t_" + task_id, Config.TASK_POINTS], a.team)
+			fx_all("sfx", ["task", a.global_position])
+			fx_all("burst", [a.global_position + Vector3(0, 1, 0), "sparkle", Color.WHITE])
+		else:
+			fx_all("sfx", ["click", a.global_position])
+		_sync_state()
+		return
+
+
+func _host_safety() -> void:
+	for s in avatars:
+		var a: Avatar = avatars[s]
+		if a.active and (a.global_position.y < -4.0 or a.global_position.y > 12.0):
+			var sp: Vector3 = house.spawn_house[s % 8] if a.team == trapper_team and phase == "setup" else house.spawn_garden[s % 8]
+			a.respawn(sp)
+	for p in house.props:
+		if not p.hidden_prop and p.carrier == null and p.global_position.y < -4.0:
+			p.global_transform = p.home
+			p.linear_velocity = Vector3.ZERO
+
+
+# ------------------------------------------------------------------ round flow (host)
+
+func _host_start_round(i: int) -> void:
+	round_i = i
+	trapper_team = i % 2
+	scoring.start_round()
+	_chain_victims.clear()
+	var keys := Config.TASKS.keys()
+	for k in range(keys.size() - 1, 0, -1):
+		var j := rng.randi_range(0, k)
+		var tmp = keys[k]
+		keys[k] = keys[j]
+		keys[j] = tmp
+	var picked: Array = keys.slice(0, Config.TASKS_PER_ROUND)
+	if Net.mode == "host":
+		s_round_reset.rpc(i, trapper_team, picked)
+	s_round_reset(i, trapper_team, picked)
+	for s in avatars:
+		var a: Avatar = avatars[s]
+		var idx: int = s % 8
+		a.respawn(house.spawn_house[idx] if a.team == trapper_team else house.spawn_garden[idx])
+	for p in house.props:
+		p.carrier = null
+		p.set_hidden(false)
+		p.freeze = false
+		p.global_transform = p.home
+		p.linear_velocity = Vector3.ZERO
+		p.angular_velocity = Vector3.ZERO
+		p.chain_id = -1
+	for s in bots:
+		bots[s].on_round_start()
+	_set_phase("intro", Config.intro_time)
+
+
+@rpc("authority", "reliable")
+func s_round_reset(i: int, ttm: int, picked: Array) -> void:
+	round_i = i
+	trapper_team = ttm
+	replaying = false
+	Sfx.pitch_scale = 1.0
+	tasks = []
+	for k in picked:
+		tasks.append({"id": k, "step": 0, "done": false})
+	budget = [Config.BUDGET, Config.BUDGET]
+	for id in pranks.keys():
+		var p: Prank = pranks[id]
+		for m in p.marbles:
+			entities.erase(m.net_id)
+			m.queue_free()
+		if p.vac:
+			entities.erase(p.vac.net_id)
+			p.vac.queue_free()
+		p.queue_free()
+	pranks.clear()
+	for c in house.cupboards:
+		house.cupboards[c].prank = null
+	timeline.clear()
+	_last_sent.clear()
+	render_t = 0.0
+
+
+func _set_phase(p: String, dur: float) -> void:
+	_phase_end = Config.now + dur
+	if Net.mode == "host":
+		s_phase.rpc(p, dur)
+	s_phase(p, dur)
+	_sync_state()
+
+
+@rpc("authority", "reliable")
+func s_phase(p: String, dur: float) -> void:
+	var prev := phase
+	phase = p
+	phase_dur = dur
+	phase_end_local = _clock + dur
+	var front: HouseDoor = house.doors["front"]
+	front.locked = p in ["intro", "setup"]
+	house.set_front_locked(front.locked)
+	if p == "run":
+		Sfx.play("go")
+		if cam:
+			cam.spectate_idx = 1
+	if p == "setup" and prev != "setup":
+		Sfx.play("tick")
+	if hud:
+		hud.on_phase(p)
+
+
+func _host_phase_tick() -> void:
+	var now := Config.now
+	match phase:
+		"run":
+			var all_done := tasks.size() > 0
+			for t in tasks:
+				if not t["done"]:
+					all_done = false
+			if all_done and now < _phase_end - 1.0:
+				_phase_end = now + 1.0
+	if now < _phase_end:
+		return
+	match phase:
+		"intro":
+			for s in bots:
+				bots[s].on_setup()
+			_set_phase("setup", Config.setup_time)
+		"setup":
+			_start_run()
+		"run":
+			_end_run()
+		"replay":
+			_end_replay_host()
+			_set_phase("score", Config.score_time)
+		"score":
+			if round_i + 1 < Config.rounds:
+				_host_start_round(round_i + 1)
+			else:
+				_set_phase("end", 9999.0)
+				fx_all("sfx", ["win", Vector3.ZERO])
+
+
+func _start_run() -> void:
+	for id in pranks:
+		pranks[id].arm()
+	for s in avatars:
+		var a: Avatar = avatars[s]
+		if a.team == trapper_team:
+			a.park()
+	_set_phase("run", Config.run_time)
+
+
+func _end_run() -> void:
+	for id in pranks:
+		pranks[id].armed = false
+	var mess := []
+	for a in runner_avatars():
+		mess.append(a.mess)
+	var mp := scoring.mess_points(trapper_team, mess, Config.now)
+	if mp > 0:
+		feed_all("feed_mess", [mp], trapper_team)
+	_sync_state()
+	var best := scoring.best_chain()
+	if best.is_empty() or timeline.frames.size() < 4:
+		_set_phase("score", Config.score_time)
+		return
+	var t0: float = maxf(float(best["t0"]) - 2.0, timeline.first_t())
+	var t1: float = minf(float(best["t1"]) + 2.5, timeline.latest_t())
+	var speed := clampf((t1 - t0) / Config.replay_time, 0.4, 2.0)
+	var vict: Array = _chain_victims.get(best["id"], [])
+	var focus: int = vict[0] if vict.size() > 0 else -1
+	var title := "%s  x%d  +%d" % [I18n.t("best_prank"), best["links"].size(), best["points"]]
+	if Net.mode == "host":
+		s_replay.rpc(t0, t1, speed, focus, best["links"].size(), int(best["points"]))
+	s_replay(t0, t1, speed, focus, best["links"].size(), int(best["points"]))
+	_set_phase("replay", (t1 - t0) / speed + 0.6)
+
+
+# ------------------------------------------------------------------ replay (all peers)
+
+@rpc("authority", "reliable")
+func s_replay(t0: float, t1: float, speed: float, focus: int, links: int, pts: int) -> void:
+	replaying = true
+	replay = {"t0": t0, "t1": t1, "speed": speed, "focus": focus, "t": t0, "links": links, "pts": pts}
+	timeline.rewind()
+	if Net.is_host():
+		for id in entities:
+			var e = entities[id]
+			if e is RigidBody3D:
+				e.freeze = true
+	for id in pranks:
+		pranks[id].reset_visual()
+	Sfx.pitch_scale = 0.7
+	if hud:
+		hud.on_replay(true, links, pts)
+
+
+func _replay_step(delta: float) -> void:
+	var prev: float = replay["t"]
+	replay["t"] = minf(prev + delta * float(replay["speed"]), float(replay["t1"]))
+	_apply_sample(timeline.sample(replay["t"]))
+	for ev in timeline.events_between(prev, replay["t"]):
+		_apply_fx(ev["kind"], ev["args"], true)
+
+
+func _end_replay_host() -> void:
+	if Net.mode == "host":
+		s_end_replay.rpc()
+	s_end_replay()
+
+
+@rpc("authority", "reliable")
+func s_end_replay() -> void:
+	replaying = false
+	Sfx.pitch_scale = 1.0
+	if hud:
+		hud.on_replay(false, 0, 0)
+
+
+# ------------------------------------------------------------------ netcode
+
+func _ent_state(e: Node3D) -> float:
+	if e is Avatar:
+		return float((e as Avatar).net_flags())
+	if e is Prop:
+		return (e as Prop).net_state()
+	return 0.0
+
+
+func _send_snapshot() -> void:
+	_tick += 1
+	var d := PackedFloat32Array()
+	for id in entities:
+		var e: Node3D = entities[id]
+		if not is_instance_valid(e):
+			continue
+		var p := e.global_position
+		var q := e.global_transform.basis.get_rotation_quaternion()
+		var st := _ent_state(e)
+		var last = _last_sent.get(id)
+		var force: bool = (_tick + int(id)) % 20 == 0
+		if not force and last != null and last[0].distance_squared_to(p) < 0.000004 \
+				and absf(last[1].dot(q)) > 0.99999 and last[2] == st:
+			continue
+		_last_sent[id] = [p, q, st]
+		d.append_array([id, p.x, p.y, p.z, q.x, q.y, q.z, q.w, st])
+	timeline.push(Config.now, d)
+	if Net.mode == "host":
+		s_snapshot.rpc(Config.now, d)
+
+
+@rpc("authority", "unreliable_ordered")
+func s_snapshot(t: float, d: PackedFloat32Array) -> void:
+	timeline.push(t, d)
+
+
+func _client_interpolate(delta: float) -> void:
+	if timeline.frames.is_empty():
+		return
+	var target := timeline.latest_t() - Config.INTERP_DELAY
+	render_t += delta
+	if absf(render_t - target) > 0.3:
+		render_t = target
+	else:
+		render_t = lerpf(render_t, target, 0.1)
+	_apply_sample(timeline.sample(render_t))
+
+
+func _apply_sample(s: Dictionary) -> void:
+	for id in s:
+		var e = entities.get(id)
+		if e == null or not is_instance_valid(e):
+			continue
+		var v: Array = s[id]
+		e.global_transform = Transform3D(Basis(v[1]), v[0])
+		if e is Avatar:
+			e.flags = int(v[2])
+		elif e is Prop:
+			e.visible = (int(v[2]) & 1) == 0
+
+
+## Host: broadcast an effect (and record it for replays).
+func fx_all(kind: String, args: Array) -> void:
+	if not Net.is_host():
+		return
+	if Net.mode == "host":
+		s_fx.rpc(Config.now, kind, args)
+	s_fx(Config.now, kind, args)
+
+
+@rpc("authority", "reliable")
+func s_fx(t: float, kind: String, args: Array) -> void:
+	if not replaying:
+		timeline.add_event(t, kind, args)
+	_apply_fx(kind, args, false)
+
+
+func _apply_fx(kind: String, args: Array, in_replay: bool) -> void:
+	match kind:
+		"yell":
+			var a: Avatar = avatars.get(int(args[0]))
+			if a:
+				Sfx.play("yell", a.global_position, -2.0, 0.85 + (a.slot % 4) * 0.12)
+				if not headless:
+					Fx.burst(self, a.global_position, "dust")
+		"sfx":
+			Sfx.play(str(args[0]), args[1])
+		"burst":
+			if not headless:
+				Fx.burst(self, args[0], str(args[1]), args[2])
+		"prank":
+			var p: Prank = pranks.get(int(args[0]))
+			if p == null:
+				return
+			match str(args[1]):
+				"trigger":
+					p.used = p.used or p.type != "oil"
+					p.play_trigger()
+					if not headless:
+						_prank_particles(p)
+					if not in_replay and cam:
+						cam.shake(0.6)
+				"ring_on":
+					p.ringing = true
+					Sfx.play("alarm", p.global_position, 4.0)
+					if hud and not in_replay:
+						hud.toast(I18n.t("alarm_ring"))
+				"ring_off":
+					p.ringing = false
+				"disarmed":
+					p.disarmed = true
+					p.ringing = false
+					Sfx.play("disarm", p.global_position)
+		"mess":
+			if in_replay:
+				return
+			var a2: Avatar = avatars.get(int(args[0]))
+			if a2:
+				a2.add_mess(float(args[1]), args[2], str(args[3]))
+		"blind":
+			if not in_replay and int(args[0]) == local_slot() and hud:
+				hud.blind(str(args[1]), float(args[2]))
+		"splats":
+			if in_replay or headless:
+				return
+			var c: Vector3 = args[0]
+			for i in 9:
+				var o := Vector3(randf_range(-1, 1), 0, randf_range(-1, 1)) * float(args[2])
+				Fx.splat(_splat_root, c + o, args[1], randf_range(0.15, 0.45))
+			while _splat_root.get_child_count() > 160:
+				_splat_root.get_child(0).free()
+		"cup_open":
+			var cup: Cupboard = house.cupboards.get(str(args[0]))
+			if cup:
+				cup.open()
+				Sfx.play("pop", cup.global_position, -6.0, 0.6)
+
+
+func _prank_particles(p: Prank) -> void:
+	var at := p.global_position
+	match p.type:
+		"bucket":
+			Fx.burst(self, at, "water")
+		"paint", "fake_remote":
+			Fx.burst(self, at + Vector3(0, 0.3, 0), "paint", p.team_color())
+		"flour":
+			Fx.burst(self, Vector3(at.x, 1.0, at.z), "flour")
+			Sfx.play("flour", at)
+		"confetti":
+			Fx.burst(self, at + Vector3(0, 0.4, 0), "confetti")
+		"whoopee":
+			Fx.burst(self, at + Vector3(0, 0.3, 0), "fart")
+		_:
+			Fx.burst(self, at + Vector3(0, 0.2, 0), "dust")
+
+
+## Host: feed line for everyone. Args starting with "@" are translated on each client.
+func feed_all(key: String, args: Array, team: int, big := false) -> void:
+	if Net.mode == "host":
+		s_feed.rpc(key, args, team, big)
+	s_feed(key, args, team, big)
+
+
+@rpc("authority", "reliable")
+func s_feed(key: String, args: Array, team: int, big: bool) -> void:
+	var a2 := []
+	for x in args:
+		if x is String and x.begins_with("@"):
+			a2.append(I18n.t(x.substr(1)))
+		else:
+			a2.append(x)
+	var text := I18n.t(key, a2)
+	if hud:
+		if big:
+			hud.popup(text, Config.TEAM_COLORS[team])
+			Sfx.play("chain")
+		else:
+			hud.feed(text, Config.TEAM_COLORS[team])
+
+
+func _sync_state() -> void:
+	if not Net.is_host():
+		return
+	scores = scoring.totals.duplicate()
+	round_scores = scoring.round_pts.duplicate()
+	if Net.mode == "host":
+		s_state.rpc(scores, round_scores, budget, tasks)
+
+
+@rpc("authority", "reliable")
+func s_state(sc: Array, rs: Array, b: Array, t: Array) -> void:
+	scores = sc
+	round_scores = rs
+	budget = b
+	tasks = t
+
+
+# ------------------------------------------------------------------ ghost preview
+
+func _build_ghost() -> void:
+	_ghost = Node3D.new()
+	add_child(_ghost)
+	_ghost_ring = MeshInstance3D.new()
+	var cm := CylinderMesh.new()
+	cm.top_radius = 0.45
+	cm.bottom_radius = 0.45
+	cm.height = 0.04
+	_ghost_ring.mesh = cm
+	_ghost.add_child(_ghost_ring)
+	_ghost_label = U.label3d("", 36, Color.WHITE, Vector3(0, 0.6, 0), _ghost)
+	_ghost.visible = false
+
+
+func _update_ghost() -> void:
+	var me := local_avatar()
+	if me == null or phase != "setup" or not local_is_trapper() or not me.visible:
+		_ghost.visible = false
+		return
+	var type: String = Config.enabled_pranks()[selected]
+	var pl := placement_for(type, me.global_position, -me.global_transform.basis.z)
+	_ghost.visible = true
+	_ghost.global_position = pl["pos"] + Vector3(0, 0.03, 0)
+	var ok: bool = pl["ok"] and budget[local_team()] >= int(Config.PRANKS[type]["cost"])
+	_ghost_ring.material_override = U.mat(Color(0.2, 1.0, 0.4, 0.5) if ok else Color(1.0, 0.25, 0.2, 0.5), 0.5, 0.0, true)
+	_ghost_label.text = "%s (%d)" % [I18n.t("p_" + type), Config.PRANKS[type]["cost"]]
+
+
+# ------------------------------------------------------------------ bot helpers
+
+func bot_targets() -> Array:
+	return _task_targets()
+
+
+## Random affordable prank plan for a trapper team. Each entry: {"type", "pos", "yaw", "socket", "stand"}.
+func bot_make_plan(team: int, max_cost: int) -> Array:
+	var plan := []
+	var left := max_cost
+	var types := Config.enabled_pranks()
+	var targets := _task_targets()
+	var tries := 0
+	var used_sockets := {}
+	while left > 0 and tries < 60:
+		tries += 1
+		var t: String = types[rng.randi() % types.size()]
+		var def: Dictionary = Config.PRANKS[t]
+		if int(def["cost"]) > left:
+			continue
+		var e := {}
+		match def["place"]:
+			"floor", "surface", "ceiling":
+				var anchor: Vector3
+				if rng.randf() < 0.6 and targets.size() > 0:
+					anchor = targets[rng.randi() % targets.size()]["pos"]
+				else:
+					var dn: Array = house.doors.keys()
+					var d: HouseDoor = house.doors[dn[rng.randi() % dn.size()]]
+					anchor = d.global_position + (Vector3(0, 0, 1) if d.horizontal else Vector3(1, 0, 0)) * (1.0 if rng.randf() < 0.5 else -1.0)
+				var p := U.flat_xz(anchor) + Vector3(rng.randf_range(-0.9, 0.9), 0, rng.randf_range(-0.9, 0.9))
+				var stand := p + Vector3(0, 0, 1.0)
+				var pl := placement_for(t, stand, Vector3.FORWARD)
+				if not pl["ok"]:
+					continue
+				var clash := false
+				for o in plan:
+					if o["pos"].distance_to(pl["pos"]) < 0.9:
+						clash = true
+				if clash:
+					continue
+				e = {"type": t, "pos": pl["pos"], "yaw": pl["yaw"], "socket": "", "stand": stand}
+			"door":
+				var order := ["front", "hall_kitchen", "hall_living", "hall_bath", "hall_bed", "kitchen_living"]
+				for n in order:
+					if not used_sockets.has(n) and not _socket_used(n) and rng.randf() < 0.6:
+						var d2: HouseDoor = house.doors[n]
+						var off := Vector3(0, 0, -0.9) if d2.horizontal else Vector3(0.9, 0, 0)
+						e = {"type": t, "pos": d2.bucket_slot.global_position, "yaw": d2.rotation.y, "socket": n, "stand": d2.global_position + off}
+						break
+			"container":
+				var names := []
+				for tg in targets:
+					if tg["type"] == "open":
+						names.append(tg["at"])
+				if names.is_empty() or rng.randf() < 0.3:
+					names = house.cupboards.keys()
+				var n2: String = names[rng.randi() % names.size()]
+				if not used_sockets.has(n2) and not _socket_used(n2):
+					var c: Cupboard = house.cupboards[n2]
+					e = {"type": t, "pos": c.inside_point(), "yaw": c.rotation.y, "socket": n2, "stand": c.front_point()}
+			"task":
+				var holds := []
+				for tg in targets:
+					if tg["type"] == "hold":
+						holds.append(tg["at"])
+				if holds.size() > 0:
+					var n3: String = holds[rng.randi() % holds.size()]
+					if not used_sockets.has(n3) and not _socket_used(n3):
+						var sp: Dictionary = house.spots[n3]
+						e = {"type": t, "pos": sp["pos"] + Vector3(0, 0.05, 0), "yaw": 0.0, "socket": n3, "stand": sp["pos"]}
+		if e.is_empty():
+			continue
+		if e["socket"] != "":
+			used_sockets[e["socket"]] = true
+		plan.append(e)
+		left -= int(def["cost"])
+	return plan

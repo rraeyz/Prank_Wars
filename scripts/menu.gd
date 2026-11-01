@@ -1,0 +1,230 @@
+extends CanvasLayer
+## Main menu, lobby and settings screens (built in code).
+
+var main: Node
+var _screens := {}
+var _name_edit: LineEdit
+var _ip_edit: LineEdit
+var _status: Label
+var _lobby_list: VBoxContainer
+var _lobby_info: Label
+var _host_box: HBoxContainer
+var _start_btn: Button
+var _rounds_btn: Button
+
+
+func _ready() -> void:
+	layer = 10
+	_build_main()
+	_build_lobby()
+	_build_settings()
+	show_screen("main")
+	Net.players_changed.connect(_refresh_lobby)
+	Net.connected_ok.connect(func(): show_screen("lobby"))
+	Net.connection_failed.connect(func(): show_screen("main"); _status.text = I18n.t("conn_failed"))
+	Net.server_gone.connect(func(): show_screen("main"); _status.text = I18n.t("disconnected"))
+
+
+func show_screen(n: String) -> void:
+	for k in _screens:
+		_screens[k].visible = k == n
+	if n == "lobby":
+		_refresh_lobby()
+
+
+func _screen(n: String) -> VBoxContainer:
+	var cc := CenterContainer.new()
+	cc.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(cc)
+	var panel := PanelContainer.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.08, 0.06, 0.15, 0.82)
+	sb.set_corner_radius_all(22)
+	sb.set_content_margin_all(30)
+	panel.add_theme_stylebox_override("panel", sb)
+	cc.add_child(panel)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 12)
+	panel.add_child(v)
+	_screens[n] = cc
+	return v
+
+
+func _lbl(t: String, size: int, c := Color.WHITE) -> Label:
+	var l := Label.new()
+	l.text = t
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_color_override("font_color", c)
+	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	l.add_theme_constant_override("outline_size", maxi(4, size / 6))
+	return l
+
+
+func _btn(t: String, cb: Callable, parent: Node) -> Button:
+	var b := Button.new()
+	b.text = t
+	b.add_theme_font_size_override("font_size", 22)
+	b.custom_minimum_size = Vector2(320, 48)
+	b.pressed.connect(func(): Sfx.play("click"); cb.call())
+	parent.add_child(b)
+	return b
+
+
+func _build_main() -> void:
+	var v := _screen("main")
+	v.add_child(_lbl("PRANK WARS", 72, Color("ffe14d")))
+	v.add_child(_lbl(I18n.t("title_sub"), 18))
+	var row := HBoxContainer.new()
+	row.add_child(_lbl(I18n.t("name") + ":", 20))
+	_name_edit = LineEdit.new()
+	_name_edit.text = str(Config.settings["name"])
+	_name_edit.max_length = 16
+	_name_edit.custom_minimum_size = Vector2(240, 40)
+	_name_edit.text_changed.connect(func(t): Config.settings["name"] = t; Config.save_settings())
+	row.add_child(_name_edit)
+	v.add_child(row)
+	var pb := _btn(I18n.t("practice"), func(): Net.start_practice(); show_screen("lobby"), v)
+	pb.add_theme_color_override("font_color", Color("ffe14d"))
+	_btn(I18n.t("host"), _on_host, v)
+	var jr := HBoxContainer.new()
+	_ip_edit = LineEdit.new()
+	_ip_edit.text = str(Config.settings["last_ip"])
+	_ip_edit.placeholder_text = I18n.t("ip")
+	_ip_edit.custom_minimum_size = Vector2(190, 44)
+	jr.add_child(_ip_edit)
+	var jb := Button.new()
+	jb.text = I18n.t("join")
+	jb.custom_minimum_size = Vector2(124, 44)
+	jb.add_theme_font_size_override("font_size", 22)
+	jb.pressed.connect(_on_join)
+	jr.add_child(jb)
+	v.add_child(jr)
+	_btn(I18n.t("settings"), func(): show_screen("settings"), v)
+	_btn(I18n.t("quit"), func(): get_tree().quit(), v)
+	_status = _lbl("", 16, Color("ff9a9a"))
+	v.add_child(_status)
+	v.add_child(_lbl("v" + Config.VERSION, 12, Color(1, 1, 1, 0.5)))
+
+
+func _on_host() -> void:
+	var err := Net.host_game()
+	if err != OK:
+		_status.text = I18n.t("host_failed")
+		return
+	show_screen("lobby")
+
+
+func _on_join() -> void:
+	var ip := _ip_edit.text.strip_edges()
+	if ip == "":
+		ip = "127.0.0.1"
+	Config.settings["last_ip"] = ip
+	Config.save_settings()
+	if Net.join_game(ip) != OK:
+		_status.text = I18n.t("conn_failed")
+		return
+	_status.text = I18n.t("connecting")
+
+
+func _build_lobby() -> void:
+	var v := _screen("lobby")
+	v.add_child(_lbl(I18n.t("lobby"), 44, Color("ffe14d")))
+	_lobby_info = _lbl("", 16, Color(1, 1, 1, 0.8))
+	v.add_child(_lobby_info)
+	_lobby_list = VBoxContainer.new()
+	_lobby_list.custom_minimum_size = Vector2(520, 220)
+	v.add_child(_lobby_list)
+	_btn(I18n.t("switch_team"), func(): Net.request_switch_team(), v)
+	_host_box = HBoxContainer.new()
+	_host_box.add_theme_constant_override("separation", 8)
+	v.add_child(_host_box)
+	for t in [0, 1]:
+		var b := Button.new()
+		b.text = I18n.t("add_bot") + " (" + I18n.t("team_%d" % t).split(" ")[0] + ")"
+		b.add_theme_color_override("font_color", Config.TEAM_COLORS[t])
+		b.custom_minimum_size = Vector2(170, 42)
+		b.pressed.connect(func(): Net.add_bot(t))
+		_host_box.add_child(b)
+	var rb := Button.new()
+	rb.text = I18n.t("remove_bot")
+	rb.custom_minimum_size = Vector2(150, 42)
+	rb.pressed.connect(func(): Net.remove_bot())
+	_host_box.add_child(rb)
+	_rounds_btn = _btn("", _cycle_rounds, v)
+	_start_btn = _btn(I18n.t("start"), _on_start, v)
+	_start_btn.add_theme_color_override("font_color", Color("7CFC9A"))
+	_btn(I18n.t("leave"), func(): Net.leave(); show_screen("main"), v)
+
+
+func _cycle_rounds() -> void:
+	Config.rounds = 2 if Config.rounds >= 6 else Config.rounds + 2
+	_refresh_lobby()
+
+
+func _on_start() -> void:
+	if not Net.can_start():
+		_lobby_info.text = I18n.t("need_both_teams")
+		return
+	Net.start_match()
+
+
+func _refresh_lobby() -> void:
+	if _lobby_list == null:
+		return
+	for c in _lobby_list.get_children():
+		c.queue_free()
+	for t in [0, 1]:
+		_lobby_list.add_child(_lbl(I18n.t("team_%d" % t), 22, Config.TEAM_COLORS[t]))
+		for id in Net.players:
+			var p: Dictionary = Net.players[id]
+			if p["team"] != t:
+				continue
+			var me := " ◀" if id == Net.my_id() else ""
+			var l := _lbl("●  " + str(p["name"]) + me, 20, Config.PLAYER_COLORS[int(p["color"]) % 8])
+			_lobby_list.add_child(l)
+	var host := Net.is_host()
+	_host_box.visible = host
+	_start_btn.visible = host
+	_rounds_btn.visible = host
+	_rounds_btn.text = "%s: %d" % [I18n.t("rounds"), Config.rounds]
+	if Net.mode == "host":
+		_lobby_info.text = I18n.t("host_info", [Net.local_ip(), Config.PORT])
+	elif Net.mode == "client":
+		_lobby_info.text = I18n.t("waiting_host")
+	else:
+		_lobby_info.text = ""
+
+
+func _build_settings() -> void:
+	var v := _screen("settings")
+	v.add_child(_lbl(I18n.t("settings"), 40, Color("ffe14d")))
+	for k in ["master", "music", "sfx"]:
+		var row := HBoxContainer.new()
+		var l := _lbl(I18n.t(k), 20)
+		l.custom_minimum_size = Vector2(160, 0)
+		row.add_child(l)
+		var sl := HSlider.new()
+		sl.min_value = 0.0
+		sl.max_value = 1.0
+		sl.step = 0.05
+		sl.value = float(Config.settings[k])
+		sl.custom_minimum_size = Vector2(260, 24)
+		sl.value_changed.connect(func(val): Config.settings[k] = val; Config.save_settings())
+		row.add_child(sl)
+		v.add_child(row)
+	var fs := CheckBox.new()
+	fs.text = I18n.t("fullscreen")
+	fs.button_pressed = bool(Config.settings["fullscreen"])
+	fs.toggled.connect(func(on): Config.settings["fullscreen"] = on; Config.save_settings())
+	v.add_child(fs)
+	var lr := HBoxContainer.new()
+	lr.add_child(_lbl(I18n.t("lang") + ":", 20))
+	for code in ["tr", "en"]:
+		var b := Button.new()
+		b.text = "Türkçe" if code == "tr" else "English"
+		b.custom_minimum_size = Vector2(130, 40)
+		b.pressed.connect(func(): Config.settings["lang"] = code; Config.save_settings(); I18n.set_lang(code); main.rebuild_menu())
+		lr.add_child(b)
+	v.add_child(lr)
+	_btn(I18n.t("back"), func(): show_screen("main"), v)
