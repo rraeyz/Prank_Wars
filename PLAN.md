@@ -83,9 +83,9 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [~] Denge: puanlar, şaka maliyetleri, süreler (botlu maçlarda iki taraf yakın puan alıyor; gerçek oyuncu testine göre ayarlanacak)
 
 ## Faz 7 — Kullanıcı testini beklerken
-- [ ] Maç sürerken katılmaya çalışana "maç devam ediyor" mesajı
-- [ ] Mağaza görselleri için sahne/kapak çekim modu (`--capsule`), 1920x1080 ekran görüntüleri
-- [ ] Basın kiti + yayıncı mesajları (`marketing/`)
+- [x] Maç sürerken katılmaya çalışana "maç devam ediyor" mesajı
+- [x] Mağaza görselleri için sahne çekim modu (`tools/keyart.gd`, `-- --keyart=KLASÖR`), 1920x1080
+- [x] Basın kiti + yayıncı mesajları (`marketing/`)
 - [ ] Online his: kendi karakterinde istemci tahmini (gecikmeyi gizler)
 
 ## Haftalık
