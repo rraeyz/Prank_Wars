@@ -24,6 +24,7 @@ func _ready() -> void:
 	Net.connected_ok.connect(func(): show_screen("lobby"))
 	Net.connection_failed.connect(func(): show_screen("main"); _status.text = I18n.t("conn_failed"))
 	Net.server_gone.connect(func(): show_screen("main"); _status.text = I18n.t("disconnected"))
+	Net.rejected.connect(func(r): show_screen("main"); _status.text = I18n.t("rej_" + r))
 
 
 func show_screen(n: String) -> void:

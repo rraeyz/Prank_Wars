@@ -120,6 +120,7 @@ func _on_match_begin(_cfg: Dictionary) -> void:
 		bg.queue_free()
 		bg = null
 	menu.visible = false
+	Net.in_match = true
 	world = World.new()
 	add_child(world)
 
@@ -131,6 +132,7 @@ func _on_lobby_return() -> void:
 
 
 func _free_world() -> void:
+	Net.in_match = false
 	if world:
 		world.queue_free()
 		world = null

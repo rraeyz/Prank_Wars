@@ -12,6 +12,8 @@ signal lobby_return
 var players := {}
 var mode := "none"  # none | practice | host | client
 var _next_bot := -1
+var in_match := false
+signal rejected(reason: String)
 
 
 func is_host() -> bool:
@@ -32,6 +34,7 @@ func _ready() -> void:
 
 func _reset() -> void:
 	Config.sandbox = false
+	in_match = false
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
 	players.clear()
 	mode = "none"
@@ -126,11 +129,21 @@ func _register(pname: String) -> void:
 	if not is_host():
 		return
 	var id := multiplayer.get_remote_sender_id()
+	if in_match or players.size() >= Config.MAX_PLAYERS:
+		_reject.rpc_id(id, "in_match" if in_match else "full")
+		get_tree().create_timer(0.5).timeout.connect(func(): if multiplayer.multiplayer_peer: multiplayer.multiplayer_peer.disconnect_peer(id))
+		return
 	pname = pname.strip_edges().substr(0, 16)
 	if pname == "":
 		pname = "Player"
 	_add_player(id, pname, false)
 	_broadcast()
+
+
+@rpc("authority", "reliable")
+func _reject(reason: String) -> void:
+	rejected.emit(reason)
+	leave()
 
 
 @rpc("authority", "reliable")

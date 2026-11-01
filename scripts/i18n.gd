@@ -28,6 +28,8 @@ const S := {
 	"credits": ["Krediler", "Credits"],
 	"credits_text": ["Prank Wars\nTasarım, test ve tanıtım: idris\nKod: Claude (Anthropic) ile birlikte\n\nMotor: Godot Engine (MIT lisansı)\nModeller, sesler ve müzik koddan üretildi.\nSteam bağlantısı: GodotSteam (MIT)", "Prank Wars\nDesign, testing and marketing: idris\nCode: made together with Claude (Anthropic)\n\nEngine: Godot Engine (MIT license)\nModels, sounds and music are generated in code.\nSteam integration: GodotSteam (MIT)"],
 	"shot_saved": ["Ekran görüntüsü kaydedildi: %s", "Screenshot saved: %s"],
+	"rej_in_match": ["Maç devam ediyor, bitince tekrar dene.", "A match is in progress, try again when it ends."],
+	"rej_full": ["Oda dolu (en fazla 8 kişi).", "The room is full (max 8)."],
 	"settings": ["Ayarlar", "Settings"],
 	"quit": ["Çıkış", "Quit"],
 	"back": ["Geri", "Back"],

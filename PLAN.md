@@ -82,5 +82,11 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [x] Görsel cila: konturlar, gölgeler, oda süsleri, düşüşte toz/yıldız efekti
 - [~] Denge: puanlar, şaka maliyetleri, süreler (botlu maçlarda iki taraf yakın puan alıyor; gerçek oyuncu testine göre ayarlanacak)
 
+## Faz 7 — Kullanıcı testini beklerken
+- [ ] Maç sürerken katılmaya çalışana "maç devam ediyor" mesajı
+- [ ] Mağaza görselleri için sahne/kapak çekim modu (`--capsule`), 1920x1080 ekran görüntüleri
+- [ ] Basın kiti + yayıncı mesajları (`marketing/`)
+- [ ] Online his: kendi karakterinde istemci tahmini (gecikmeyi gizler)
+
 ## Haftalık
 - [x] Hafta 1 video fikirleri (`marketing/VIDEO_IDEAS.md`)
