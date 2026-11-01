@@ -503,7 +503,7 @@ func _process(delta: float) -> void:
 		tip_key = "tips_run"
 	elif p == "sandbox":
 		tip_key = "tips_trap"
-	_tip.visible = tip_key != "" and not rp and (world.round_i < 2 or p == "sandbox")
+	_tip.visible = tip_key != "" and not rp and (world.round_i < 2 or p == "sandbox") and not Config.tutorial
 	if _tip.visible:
 		_tip.text = I18n.tip(tip_key, int(_tip_t / 7.0))
 	# tasks

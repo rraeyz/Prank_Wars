@@ -4,6 +4,8 @@ extends RefCounted
 const LANGS := ["es", "pt", "de", "fr", "ru"]
 
 const S := {
+	"tutorial": ["TUTORIAL", "TUTORIAL", "TUTORIAL", "TUTORIEL", "ОБУЧЕНИЕ"],
+	"tutorial_btn": ["Tutorial (1 minuto)", "Tutorial (1 minuto)", "Tutorial (1 Minute)", "Tutoriel (1 minute)", "Обучение (1 минута)"],
 	"quality": ["Calidad gráfica (0-2)", "Qualidade gráfica (0-2)", "Grafikqualität (0-2)", "Qualité graphique (0-2)", "Качество графики (0-2)"],
 	"daily": ["Retos de hoy (+150 XP)", "Desafios de hoje (+150 XP)", "Heutige Aufgaben (+150 XP)", "Défis du jour (+150 XP)", "Задания дня (+150 XP)"],
 	"daily_done": ["¡RETO DIARIO COMPLETADO! +%d XP", "DESAFIO DIÁRIO CONCLUÍDO! +%d XP", "TAGESAUFGABE GESCHAFFT! +%d XP", "DÉFI DU JOUR RÉUSSI ! +%d XP", "ЗАДАНИЕ ДНЯ ВЫПОЛНЕНО! +%d XP"],

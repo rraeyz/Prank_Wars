@@ -38,6 +38,7 @@ func _ready() -> void:
 
 func _reset() -> void:
 	Config.sandbox = false
+	Config.tutorial = false
 	in_match = false
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
 	players.clear()
@@ -54,6 +55,23 @@ func start_sandbox() -> void:
 	add_bot(1)
 	add_bot(1)
 	start_match()
+
+
+func start_tutorial() -> void:
+	start_sandbox_with(1)
+	Config.tutorial = true
+	start_match()
+
+
+func start_sandbox_with(bots: int) -> void:
+	leave()
+	mode = "practice"
+	Config.sandbox = true
+	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
+	players.clear()
+	_add_player(1, str(Config.settings["name"]), false, 0)
+	for i in bots:
+		add_bot(1)
 
 
 func start_practice() -> void:
@@ -256,7 +274,7 @@ func can_start() -> bool:
 func start_match() -> void:
 	if not is_host() or not can_start():
 		return
-	var cfg := {"rounds": Config.rounds, "seed": randi(), "demo": Config.demo_mode, "sandbox": Config.sandbox,
+	var cfg := {"rounds": Config.rounds, "seed": randi(), "demo": Config.demo_mode, "sandbox": Config.sandbox, "tutorial": Config.tutorial,
 		"setup": Config.setup_time, "run": Config.run_time, "rule": Config.rule_choice, "mode": Config.mode, "map": Config.map}
 	if mode == "host":
 		_begin.rpc(players, cfg)
@@ -269,6 +287,7 @@ func _begin(p: Dictionary, cfg: Dictionary) -> void:
 	Config.rounds = clampi(int(cfg["rounds"]), 1, 12)
 	Config.demo_mode = bool(cfg["demo"])
 	Config.sandbox = bool(cfg.get("sandbox", false))
+	Config.tutorial = bool(cfg.get("tutorial", false))
 	Config.setup_time = float(cfg["setup"])
 	Config.run_time = float(cfg["run"])
 	var rc := str(cfg.get("rule", "random"))

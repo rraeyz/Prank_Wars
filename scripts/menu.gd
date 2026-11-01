@@ -122,6 +122,8 @@ func _build_main() -> void:
 	v.add_child(row)
 	var lk := _btn(I18n.t("locker") + "  (" + I18n.t("level_n", [Config.level()]) + ")", func(): show_screen("locker"); _refresh_locker(), v)
 	lk.add_theme_color_override("font_color", Color("9ad0ff"))
+	var tb := _btn(I18n.t("tutorial_btn"), func(): Net.start_tutorial(), v)
+	tb.add_theme_color_override("font_color", Color("7CFC9A") if not bool(Config.settings.get("tutorial_done", false)) else Color.WHITE)
 	var pb := _btn(I18n.t("practice"), func(): Net.start_practice(); show_screen("lobby"), v)
 	pb.add_theme_color_override("font_color", Color("ffe14d"))
 	var sbx := _btn(I18n.t("sandbox"), func(): Net.start_sandbox(), v)

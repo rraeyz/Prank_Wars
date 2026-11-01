@@ -202,6 +202,7 @@ func add_match_xp(won: bool, team_points: int, played_rounds: int) -> Dictionary
 const DEMO_PRANKS := ["banana", "bucket", "paint", "spring", "flour"]
 var demo_mode := false
 var sandbox := false
+var tutorial := false
 
 # Task steps: hold = hold E at spot, open = open container, pickup/deliver = carry item.
 const TASKS := {
@@ -238,7 +239,7 @@ var settings := {
 	"name": "", "lang": "", "master": 0.8, "music": 0.5, "sfx": 0.9,
 	"fullscreen": false, "last_ip": "127.0.0.1", "keys": {}, "look": {}, "xp": 0,
 	"brightness": 1.0, "contrast": 1.0, "saturation": 1.0, "quality": 2, "twitch": "", "twitch_on": false,
-	"ach": {}, "counts": {}, "daily": {},
+	"ach": {}, "counts": {}, "daily": {}, "tutorial_done": false,
 }
 const REBINDABLE := ["move_up", "move_down", "move_left", "move_right", "jump", "interact", "dive", "action", "prev_item", "next_item", "cam_next", "reveal", "taunt", "ghost", "trigger_all"]
 const SETTINGS_PATH := "user://settings.cfg"

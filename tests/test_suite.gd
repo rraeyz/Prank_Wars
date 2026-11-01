@@ -40,7 +40,7 @@ func _run() -> void:
 	var mus: AudioStreamWAV = Sfx.build_music()
 	check(mus.data.size() > 100000, "music synthesizes")
 	print("== integration tests")
-	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "rules", "rush", "sniff", "awards", "events", "new_pranks", "chaos", "chaos_bots", "office_match", "powerups", "perks", "mansion_match", "twitch_effect", "full_match"]:
+	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "rules", "rush", "sniff", "awards", "events", "new_pranks", "chaos", "chaos_bots", "office_match", "powerups", "perks", "mansion_match", "twitch_effect", "tutorial", "full_match"]:
 		if only != "" and only != t:
 			continue
 		print("-- ", t)
@@ -78,6 +78,7 @@ func _dispatch(t: String) -> void:
 		"perks": await it_perks()
 		"mansion_match": await it_mansion_match()
 		"twitch_effect": await it_twitch_effect()
+		"tutorial": await it_tutorial()
 		"full_match": await it_full_match()
 
 
@@ -179,9 +180,10 @@ func test_house() -> void:
 var w: World
 
 
-func _make_world(players: Dictionary, sandbox := false) -> void:
+func _make_world(players: Dictionary, sandbox := false, tutorial := false) -> void:
 	Net.leave()
 	Config.sandbox = sandbox
+	Config.tutorial = tutorial
 	Net.mode = "practice"
 	Net.players = players
 	Config.intro_time = 0.5
@@ -1010,3 +1012,61 @@ func test_daily() -> void:
 	for key in keep:
 		Config.settings[key] = keep[key]
 	Config.save_settings()
+
+
+
+func it_tutorial() -> void:
+	await _make_world({1: _p("Me", 0, 1), -1: _p("Bot", 1, 2, true)}, true, true)
+	await _frames(3)
+	var tut: Node = null
+	for c in w.get_children():
+		if c.get_script() and str(c.get_script().resource_path).ends_with("tutorial.gd"):
+			tut = c
+	check(tut != null and tut.step == 0, "tutorial starts")
+	var me := _runner(1)
+	me.perk = ""
+	me.steady = 0
+	me.respawn(Vector3(3.0, 0.8, -1.6))
+	await _frames(5)
+	check(tut.step == 1, "step: walk to marker")
+	w._host_action(1, "jump", [])
+	await _frames(20)
+	check(tut.step == 2, "step: jump")
+	w._host_action(1, "dive", [])
+	await _frames(10)
+	check(tut.step == 3, "step: dive")
+	await _seconds(2.5)
+	me.respawn(Vector3(1.5, 0.8, -1.6))
+	await _frames(5)
+	w.host_place(1, "banana", Vector3(1.5, 0, -3.0), 0.0, "")
+	await _frames(3)
+	check(tut.step == 4, "step: place banana")
+	Input.action_press("move_up")
+	await _seconds(1.0)
+	Input.action_release("move_up")
+	check(tut.step == 5, "step: slip on own banana")
+	await _seconds(3.0)
+	var plant: Vector3 = w.house.spots["plant_a"]["pos"]
+	me.respawn(plant + Vector3(-0.9, 0.8, 0.6))
+	await _frames(5)
+	Input.action_press("interact")
+	await _seconds(2.0)
+	Input.action_release("interact")
+	check(tut.step == 6, "step: do a chore")
+	me.respawn(Vector3(-1, 0.8, 4.5))
+	await _frames(3)
+	w.host_place(1, "bucket", Vector3.ZERO, 0.0, "front")
+	await _frames(3)
+	check(tut.step == 7, "step: bucket on the front door")
+	var t := 0
+	while tut.step == 7 and t < 60 * 30:
+		await get_tree().physics_frame
+		t += 1
+	check(tut.step == 8 and t > 60, "step: bot walked in (%.1f s, bot wet=%s)" % [t / 60.0, Config.now < tut._bot.slow_until])
+	me.respawn(Vector3(-1, 0.8, 3))
+	await _frames(3)
+	w.host_place(1, "flour", Vector3(-1, 2.55, 2.0), 0.0, "")
+	w._host_action(1, "remote_all", [])
+	await _frames(5)
+	check(tut.step == 9, "tutorial finished")
+	Config.tutorial = false

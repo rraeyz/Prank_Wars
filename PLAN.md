@@ -133,7 +133,7 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 ## Faz 12 — Oturum 5
 - [x] Twitch modu: izleyiciler sohbetten oy verip yayıncıya şaka gönderir (canlı bağlantı denendi)
 - [x] Başarımlar: 10 başarım, oyun içi ekran + Steam başarım çağrıları
-- [ ] Etkileşimli eğitim (ilk oyun için adım adım)
+- [x] Etkileşimli eğitim (10 adım, ~1 dk, otomatik testli)
 - [ ] Klip kaydı (tekrarı video/GIF olarak kaydet)
 - [ ] Kurucu ayrılınca maçın devam etmesi (host migration) — zor, Steam testi sonrası
 - [ ] Yeni haritalar: okul, düğün salonu; harita editörü (topluluk içeriği)

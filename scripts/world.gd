@@ -118,6 +118,10 @@ func _ready() -> void:
 	if Net.is_host():
 		if sandbox:
 			_host_start_sandbox()
+			if Config.tutorial:
+				var tut: Node = load("res://scripts/tutorial.gd").new()
+				tut.world = self
+				add_child(tut)
 		else:
 			_host_start_round(0)
 

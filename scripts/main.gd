@@ -65,6 +65,8 @@ func _ready() -> void:
 			ka.out = str(args["keyart"])
 		Net.start_sandbox.call_deferred()
 		Net.match_begin.connect(func(_c): add_child.call_deferred(ka), CONNECT_ONE_SHOT)
+	elif args.has("tutorial"):
+		Net.start_tutorial.call_deferred()
 	elif args.has("sandbox"):
 		Net.start_sandbox.call_deferred()
 	elif args.has("practice"):
