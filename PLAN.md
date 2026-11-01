@@ -88,5 +88,12 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [x] Basın kiti + yayıncı mesajları (`marketing/`)
 - [x] Online his: kendi karakterin ~100 ms daha taze gösteriliyor, durum paketi 30 Hz (tam istemci tahmini değil; online testte hâlâ gecikmeli hissedilirse tam tahmin eklenecek)
 
+## Faz 8 — Dünya pazarı ve erişilebilirlik (saatlik tetikleyici için)
+- [x] Gamepad ile menüde gezinme (Steam Deck)
+- [ ] Yeni diller: İspanyolca, Portekizce (BR), Almanca, Fransızca, Rusça (arayüz metinleri)
+- [ ] Tuş atama ekranı (klavye)
+- [ ] Botlar bazen görünen tuzaktan kaçsın (daha inandırıcı antrenman)
+- [ ] İkinci harita taslağı (ofis) — rapor: çıkıştan sonra; sadece altyapı (harita seçimi)
+
 ## Haftalık
 - [x] Hafta 1 video fikirleri (`marketing/VIDEO_IDEAS.md`)

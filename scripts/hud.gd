@@ -282,6 +282,13 @@ func _panel() -> PanelContainer:
 	return p
 
 
+func _focus_in(root: Node) -> void:
+	for c in root.find_children("*", "BaseButton", true, false):
+		if c.is_visible_in_tree():
+			c.grab_focus.call_deferred()
+			return
+
+
 func is_blocking() -> bool:
 	return _pause.visible or _end.visible
 
@@ -289,6 +296,8 @@ func is_blocking() -> bool:
 func _unhandled_input(e: InputEvent) -> void:
 	if e.is_action_pressed("menu"):
 		_pause.visible = not _pause.visible
+		if _pause.visible:
+			_focus_in(_pause)
 	if e.is_action_pressed("screenshot"):
 		DirAccess.make_dir_recursive_absolute("user://screenshots")
 		var path := "user://screenshots/prankwars_%s.png" % Time.get_datetime_string_from_system().replace(":", "-")
@@ -312,6 +321,7 @@ func on_phase(p: String) -> void:
 		if w >= 0:
 			_end_text.add_theme_color_override("font_color", Config.TEAM_COLORS[w])
 		_end_lobby.visible = Net.is_host()
+		_focus_in.call_deferred(_end)
 		Sfx.play("win")
 	if p == "intro":
 		popup(I18n.t("round_n", [world.round_i + 1, Config.rounds]) + "\n" + I18n.t("intro_trap", [I18n.t("team_%d" % world.trapper_team)]), Config.TEAM_COLORS[world.trapper_team])

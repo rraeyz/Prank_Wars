@@ -36,8 +36,19 @@ func _ready() -> void:
 func show_screen(n: String) -> void:
 	for k in _screens:
 		_screens[k].visible = k == n
+	_focus_first.call_deferred(_screens[n])
 	if n == "lobby":
 		_refresh_lobby()
+
+
+## Gamepad / keyboard users need a focused button to start navigating.
+func _focus_first(root: Node) -> void:
+	if not is_instance_valid(root) or not root.visible:
+		return
+	for c in root.find_children("*", "BaseButton", true, false):
+		if c.is_visible_in_tree() and not c.disabled:
+			c.grab_focus()
+			return
 
 
 func _screen(n: String) -> VBoxContainer:
