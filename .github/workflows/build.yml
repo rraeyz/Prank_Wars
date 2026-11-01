@@ -44,7 +44,9 @@ jobs:
         run: GODOT=~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 tests/run.sh
 
       - name: Network test (host + client on localhost)
-        run: GODOT=~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 timeout 150 tests/net_test.sh
+        run: |
+          GODOT=~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 timeout 150 tests/net_test.sh
+          HOST_EXTRA="--chaos --map=office" GODOT=~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 timeout 150 tests/net_test.sh
 
       - name: Add GodotSteam (Windows only, MIT) for Steam lobbies
         run: |

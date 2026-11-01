@@ -18,7 +18,7 @@ func _process(d: float) -> void:
 	var me = w.local_avatar()
 	if me == null:
 		return
-	if w.phase == "run" and role == "client":
+	if (w.phase == "run" or w.phase == "chaos") and role == "client":
 		Input.action_press("move_up")
 		if start_z == INF:
 			start_z = me.global_position.z
