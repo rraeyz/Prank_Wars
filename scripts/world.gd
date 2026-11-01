@@ -71,6 +71,7 @@ var _event_at := 0.0
 var cat_zoom_until := 0.0
 var _cat_turn_at := 0.0
 var _cat_dir := Vector3.FORWARD
+var _powerup_at := 0.0
 var _in_acc := 0.0
 var _mouse_mode := false
 var _last_mv := Vector2.ZERO
@@ -713,7 +714,23 @@ func remote_trigger(team: int, pid: int) -> void:
 # ------------------------------------------------------------------ scoring hooks (host)
 
 ## Registers a prank hit and returns the chain id to tag the victim with.
+## The umbrella eats one prank: no points, no effect (effects check victim.immune()).
+func _absorbed(victim: Avatar) -> bool:
+	if victim.immune():
+		return true
+	if victim.shield_until > Config.now:
+		victim.shield_until = 0.0
+		victim.immune_until = Config.now + 0.4
+		fx_all("sfx", ["pop", victim.global_position])
+		fx_all("burst", [victim.global_position + Vector3(0, 1.2, 0), "sparkle", Color.WHITE])
+		feed_all("feed_shield", [victim.pname], victim.team)
+		return true
+	return false
+
+
 func prank_hit(p: Prank, victim: Avatar, cause: Node3D) -> int:
+	if _absorbed(victim):
+		return -1
 	var ch := -1
 	if cause is Avatar and (cause as Avatar).is_chained():
 		ch = (cause as Avatar).chain_id
@@ -739,7 +756,7 @@ func on_bump(knocked: Avatar, other: Avatar) -> void:
 	var v := knocked.pre_vel
 	var ch := -1
 	var bt := chain_team(knocked.chain_id)
-	if live() and knocked.is_chained() and hits(other, bt):
+	if live() and knocked.is_chained() and hits(other, bt) and not _absorbed(other):
 		var r := scoring.prank_hit(knocked.chain_id, bt, "bump", other.pname, Config.now)
 		ch = r["chain"]
 		if not _chain_victims.has(ch):
@@ -769,7 +786,7 @@ func on_prop_hit(p: Prop, body: Node) -> void:
 		return
 	if p.kind == "marble":
 		var mt := chain_team(p.chain_id)
-		if live() and hits(a, mt) and spd > 1.2 and p.is_chained(now):
+		if live() and hits(a, mt) and spd > 1.2 and p.is_chained(now) and not _absorbed(a):
 			var r := scoring.prank_hit(p.chain_id, mt, "marbles", a.pname, now)
 			_chain_victims.get_or_add(r["chain"], []).append(a.slot)
 			p.chain_id = r["chain"]
@@ -792,7 +809,7 @@ func on_prop_hit(p: Prop, body: Node) -> void:
 	if spd < 5.0:
 		return
 	var pt := chain_team(p.chain_id)
-	if p.is_chained(now) and live() and hits(a, pt):
+	if p.is_chained(now) and live() and hits(a, pt) and not _absorbed(a):
 		var r2 := scoring.prank_hit(p.chain_id, pt, "bump", a.pname, now)
 		_chain_victims.get_or_add(r2["chain"], []).append(a.slot)
 		feed_all("feed_prank", ["@p_bump", a.pname, r2["delta"]], pt)
@@ -803,7 +820,14 @@ func on_prop_hit(p: Prop, body: Node) -> void:
 		fx_all("sfx", ["thud", a.global_position])
 
 
+func blind(a: Avatar, kind: String, dur: float) -> void:
+	if not a.immune():
+		fx_all("blind", [a.slot, kind, dur])
+
+
 func add_mess(a: Avatar, amount: float, c: Color, kind: String) -> void:
+	if a.immune():
+		return
 	stat(a.slot, "mess", amount)
 	fx_all("mess", [a.slot, amount, c, kind])
 
@@ -894,6 +918,10 @@ func _best_interaction(a: Avatar) -> Dictionary:
 			var lbl := I18n.t("s_" + str(e["at"]))
 			return {"key": "task_%s_%s" % [e["task"], e["at"]], "label": lbl, "time": e["time"],
 				"do": _do_task_step.bind(a, e)}
+	if live() and is_runner(a):
+		for pu in house.props:
+			if pu.kind in Config.POWERUPS and not pu.hidden_prop and U.dist_xz(pu.global_position, pos) < 1.3:
+				return {"key": "pu%d" % pu.net_id, "label": I18n.t("act_grab") + ": " + I18n.t("pu_" + pu.kind), "time": 0.15, "do": _take_powerup.bind(a, pu)}
 	if live() and is_runner(a) and cat_zoom_until > Config.now:
 		var cat := _prop_of_kind("cat")
 		if U.dist_xz(cat.global_position, pos) < 1.3:
@@ -1080,6 +1108,9 @@ func _host_start_round(i: int) -> void:
 		p.angular_velocity = Vector3.ZERO
 		p.chain_id = -1
 	_prop_of_kind("pizza").set_hidden(true)
+	for k in Config.POWERUPS:
+		_prop_of_kind(k).set_hidden(true)
+	_powerup_at = 0.0
 	for s in bots:
 		bots[s].on_round_start()
 	_set_phase("intro", Config.intro_time)
@@ -1247,6 +1278,7 @@ func _host_phase_tick() -> void:
 				_event = ""
 			if cat_zoom_until > now:
 				_cat_tick()
+			_powerup_tick(now)
 			if modifier == "quake" and now >= _quake_at:
 				_quake_at = now + rng.randf_range(14.0, 22.0)
 				if now - _run_start > 8.0:
@@ -1832,6 +1864,8 @@ func ghost_action(slot: int, point: Vector3) -> bool:
 
 
 func _ghost_hit(team: int, victim: Avatar, ghost_slot := -1) -> int:
+	if _absorbed(victim):
+		return -1
 	var r := scoring.prank_hit(victim.chain_id if victim.is_chained() else -1, team, "ghost", victim.pname, Config.now)
 	stat(ghost_slot, "ghost", 1)
 	_chain_victims.get_or_add(r["chain"], []).append(victim.slot)
@@ -1993,6 +2027,7 @@ func _chaos_tick(now: float) -> void:
 		_event = ""
 	if cat_zoom_until > now:
 		_cat_tick()
+	_powerup_tick(now)
 	if not rush and _phase_end - now <= minf(Config.RUSH_TIME, Config.chaos_time() * 0.25) and _phase_end - now > 3.0:
 		scoring.mult *= 2
 		fx_all("rush", [])
@@ -2011,3 +2046,38 @@ func _end_chaos() -> void:
 		if mp > 0:
 			feed_all("feed_mess", [mp], t)
 	_end_run_replay()
+
+
+# ------------------------------------------------------------------ power-ups (host)
+
+## Every ~30 s a random power-up appears in a random room (one of each kind at most).
+func _powerup_tick(now: float) -> void:
+	if _powerup_at == 0.0:
+		_powerup_at = now + rng.randf_range(15.0, 25.0)
+	if now < _powerup_at:
+		return
+	_powerup_at = now + rng.randf_range(25.0, 35.0)
+	var kind: String = Config.POWERUPS[rng.randi() % Config.POWERUPS.size()]
+	var pu := _prop_of_kind(kind)
+	if not pu.hidden_prop:
+		return
+	var rooms: Array = house.rooms.keys().filter(func(r): return r != "garden")
+	var c: Vector3 = house._nav_centers[rooms[rng.randi() % rooms.size()]]
+	pu.global_transform = Transform3D(Basis.IDENTITY, c + Vector3(rng.randf_range(-0.6, 0.6), 0.4, rng.randf_range(-0.6, 0.6)))
+	pu.linear_velocity = Vector3.ZERO
+	pu.set_hidden(false)
+	fx_all("burst", [pu.global_position, "sparkle", Color.WHITE])
+	fx_all("sfx", ["ding_pu", pu.global_position])
+
+
+func _take_powerup(a: Avatar, pu: Prop) -> void:
+	if pu.hidden_prop:
+		return
+	pu.set_hidden(true)
+	match pu.kind:
+		"umbrella":
+			a.shield_until = Config.now + 25.0
+		"coffee":
+			a.fast_until = Config.now + 10.0
+	feed_all("feed_powerup", [a.pname, "@pu_" + pu.kind], a.team)
+	fx_all("sfx", ["task", a.global_position])

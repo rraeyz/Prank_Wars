@@ -405,7 +405,7 @@ func fire(cause: Node3D) -> void:
 			var cch: int = world.prank_hit(self, victim, cause)
 			victim.knock(-victim.forward() * 4.0 + Vector3.UP * 3.0, victim.forward().cross(Vector3.UP) * 8.0, 1.5, cch)
 			world.add_mess(victim, 30.0, Color("ffc2d4"), "cream")
-			world.fx_all("blind", [victim.slot, "flour", 1.5])
+			world.blind(victim, "flour", 1.5)
 			world.fx_all("splats", [global_position, Color("ffc2d4"), 1.0])
 		"bucket":
 			used = true
@@ -439,11 +439,11 @@ func fire(cause: Node3D) -> void:
 				if type == "flour":
 					v.knock(Vector3.UP * 2.5 + away2 * 2.0, Vector3(randf_range(-4, 4), 0, randf_range(-4, 4)), 1.3, ch9)
 					world.add_mess(v, 35.0, Color.WHITE, "flour")
-					world.fx_all("blind", [v.slot, "flour", 2.5])
+					world.blind(v, "flour", 2.5)
 				else:
 					v.knock(Vector3.UP * 3.0 + away2 * 5.0, Vector3(randf_range(-6, 6), 0, randf_range(-6, 6)), 1.2, ch9)
 					world.add_mess(v, 10.0, Color.from_hsv(randf(), 0.8, 1.0), "confetti")
-					world.fx_all("blind", [v.slot, "confetti", 2.0])
+					world.blind(v, "confetti", 2.0)
 		_:
 			return
 	world.fx_all("prank", [id, "trigger"])

@@ -197,6 +197,14 @@ func _runner(now: float, _delta: float) -> void:
 					return
 				_go(p.net_pos(), "disarm%d" % id, now)
 				return
+	# grab a power-up if one is close
+	for pu in world.house.props:
+		if pu.kind in Config.POWERUPS and not pu.hidden_prop and U.dist_xz(pu.global_position, a.global_position) < 4.0:
+			if U.dist_xz(pu.global_position, a.global_position) < 1.0:
+				a.in_interact = true
+				return
+			_go(pu.global_position, "pu", now)
+			return
 	# chase the runaway cat if it's close
 	if world.cat_zoom_until > now:
 		var cat: Prop = world._prop_of_kind("cat")

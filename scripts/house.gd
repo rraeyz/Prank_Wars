@@ -402,6 +402,16 @@ func _garden() -> void:
 	U.cyl(0.21, 0.02, Color("d94a2b"), Vector3(0, 0.05, 0), pz)
 	for i in 4:
 		U.sphere(0.04, Color("8b1e1e"), Vector3(cos(i * 1.6) * 0.12, 0.07, sin(i * 1.6) * 0.12), pz, 6)
+	# power-ups (hidden until spawned during chores)
+	var um := _prop("umbrella", Vector3(0.5, 0.5, 0.5), Vector3(-8.0, 0.4, 14.0), Color("ff5d8f"), 0.5, "box", false)
+	um.get_child(0).visible = false
+	var cn := U.sphere(0.3, Color("ff5d8f"), Vector3(0, 0.1, 0), um, 10)
+	cn.scale = Vector3(1, 0.4, 1)
+	U.cyl(0.02, 0.4, Color("333333"), Vector3(0, -0.1, 0), um)
+	var cf := _prop("coffee", Vector3(0.3, 0.35, 0.3), Vector3(-7.0, 0.4, 14.0), Color("6f4e37"), 0.4, "box", false)
+	cf.get_child(0).visible = false
+	U.cyl(0.13, 0.3, Color.WHITE, Vector3.ZERO, cf, 0.16)
+	U.cyl(0.165, 0.05, Color("6f4e37"), Vector3(0, 0.16, 0), cf)
 	# toys for warm-up
 	_prop("ball", Vector3(0.8, 0.8, 0.8), Vector3(2.0, 0.5, 12.0), Color("ff4d6d"), 0.8, "ball")
 	_prop("ball", Vector3(0.6, 0.6, 0.6), Vector3(-3.0, 0.5, 13.5), Color("4dd2ff"), 0.6, "ball")

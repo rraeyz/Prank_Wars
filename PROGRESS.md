@@ -18,8 +18,10 @@ Sonraki oturum: önce `PLAN.md`, sonra bu dosyanın en üstündeki kaydı oku.
 - Raunt olayları: kedi kaçtı (tuzak tetikler, yakala +10), pizza geldi (bonus görev).
 - Koşucu "Kokla" yeteneği, dans/nanik, maç sonu ödülleri, 7 şapka, trambolin + tuzaklı pasta (16 şaka).
 - KAOS modu (lobide Mod): herkes aynı anda kurar ve koşar.
+- İkinci harita OFİS (5 yeni görev), zincir anonsları, güç toplama (şemsiye, kahve).
+- Uzun simülasyonlar (ev, ofis+deprem, kaos, 4 raunt karanlık) hatasız; ağ testi kaos+ofis varyantı eklendi.
 - KRİTİK BUG düzeltildi: custom_integrator yüzünden karakterlerde yerçekimi yoktu (zıplayan havada kalıyordu).
-- 159 test + ağ testi geçiyor.
+- 185 test + 2 ağ testi geçiyor.
 - Sıradaki: kullanıcı testi; Faz 10'da kalanlar yok — yeni fikirler için PLAN'a eklenebilir.
 
 ## Oturum 2 — 2026-11-01 (kullanıcı isteği)

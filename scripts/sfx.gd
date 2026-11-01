@@ -108,6 +108,7 @@ func build_all() -> void:
 	sounds["disarm"] = [_arp([784.0, 523.0], 0.08)]
 	sounds["meow"] = [_meow(1.0), _meow(1.2)]
 	sounds["doorbell"] = [_doorbell()]
+	sounds["ding_pu"] = [_arp([1047.0, 1319.0, 1568.0], 0.05)]
 
 
 func _buf(dur: float) -> PackedFloat32Array:

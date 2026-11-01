@@ -110,6 +110,7 @@ const TASKS := {
 	"pizza": [{"type": "pickup", "at": "pizza"}, {"type": "deliver", "at": "counter"}],  # event only
 }
 const EVENT_TASKS := ["pizza"]
+const POWERUPS := ["umbrella", "coffee"]
 const CAT_BONUS := 10
 
 ## Physics-time clock of the running match (seconds). Set by World.

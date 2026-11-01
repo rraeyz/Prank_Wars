@@ -117,5 +117,7 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [x] Zincir anonsları (GÜZEL / SANAT ESERİ / EFSANE / TANRI MODU)
 - [x] İkinci harita: OFİS (açık ofis, mola odası, toplantı, patron odası, lobi) + 5 yeni görev (fotokopi, kahve, toplantı, rapor, balık); lobide harita seçimi
 
+- [x] Güç toplama: Şemsiye (sonraki şakayı engeller, 25 sn) ve Kahve (10 sn hız); görev sırasında rastgele odada belirir, botlar da toplar
+
 ## Haftalık
 - [x] Hafta 1 video fikirleri (`marketing/VIDEO_IDEAS.md`)

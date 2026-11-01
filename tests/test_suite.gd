@@ -34,7 +34,7 @@ func _run() -> void:
 	var mus: AudioStreamWAV = Sfx.build_music()
 	check(mus.data.size() > 100000, "music synthesizes")
 	print("== integration tests")
-	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "rules", "rush", "sniff", "awards", "events", "new_pranks", "chaos", "chaos_bots", "office_match", "full_match"]:
+	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "rules", "rush", "sniff", "awards", "events", "new_pranks", "chaos", "chaos_bots", "office_match", "powerups", "full_match"]:
 		if only != "" and only != t:
 			continue
 		print("-- ", t)
@@ -68,6 +68,7 @@ func _dispatch(t: String) -> void:
 		"chaos": await it_chaos()
 		"chaos_bots": await it_chaos_bots()
 		"office_match": await it_office_match()
+		"powerups": await it_powerups()
 		"full_match": await it_full_match()
 
 
@@ -766,3 +767,39 @@ func it_office_match() -> void:
 	check(w.scoring.totals[0] + w.scoring.totals[1] > 0, "points scored on the office map %s" % str(w.scoring.totals))
 	print("     office score ", w.scoring.totals, " chores done: ", done)
 	Config.map = "house"
+
+
+func it_powerups() -> void:
+	await _make_world(_two_players())
+	await _setup_run([["banana", Vector3(3, 0, 2), ""]])
+	var r := _runner(2)
+	_runner(3).respawn(Vector3(6.5, 0.8, 5))
+	var um: Prop = w._prop_of_kind("umbrella")
+	check(um.hidden_prop, "power-ups start hidden")
+	w._powerup_at = Config.now - 1.0
+	w._powerup_tick(Config.now)
+	var shown: Prop = um if not um.hidden_prop else w._prop_of_kind("coffee")
+	check(not shown.hidden_prop and w.house.inside(shown.global_position), "a power-up appears inside the house")
+	um.set_hidden(false)
+	r.respawn(um.global_position + Vector3(0.5, 0.4, 0))
+	await _frames(5)
+	r.in_interact = true
+	await _seconds(0.5)
+	r.in_interact = false
+	check(um.hidden_prop and r.shield_until > Config.now, "runner took the umbrella")
+	r.respawn(Vector3(3, 0.8, 3.3))
+	r.shield_until = Config.now + 25.0  # respawn clears power-ups (test teleport only)
+	await _frames(3)
+	await _walk(r, Vector2(0, -1), 0.8)
+	check(not r.down and w.scoring.totals[0] == 0 and r.shield_until == 0.0, "umbrella blocked the banana (no fall, no points)")
+	r.respawn(Vector3(-6, 0.8, 8.5))
+	await _frames(20)
+	var x0 := r.global_position.x
+	await _walk(r, Vector2(1, 0), 0.5)
+	var base := r.global_position.x - x0
+	r.respawn(Vector3(-6, 0.8, 8.5))
+	r.fast_until = Config.now + 10.0
+	await _frames(20)
+	x0 = r.global_position.x
+	await _walk(r, Vector2(1, 0), 0.5)
+	check(r.global_position.x - x0 > base * 1.2, "coffee makes you faster (%.2f m)" % (r.global_position.x - x0))

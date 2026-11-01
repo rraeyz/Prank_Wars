@@ -4,6 +4,10 @@ extends RefCounted
 const LANGS := ["es", "pt", "de", "fr", "ru"]
 
 const S := {
+	"pu_umbrella": ["Paraguas (bloquea la próxima broma)", "Guarda-chuva (bloqueia a próxima)", "Schirm (blockt den nächsten Streich)", "Parapluie (bloque la prochaine blague)", "Зонт (блокирует следующий прикол)"],
+	"pu_coffee": ["Café (10 s de velocidad)", "Café (10 s de velocidade)", "Kaffee (10 s schneller)", "Café (10 s de vitesse)", "Кофе (10 с скорости)"],
+	"feed_powerup": ["%s consiguió: %s", "%s pegou: %s", "%s hat: %s", "%s a pris : %s", "%s взял(а): %s"],
+	"feed_shield": ["¡El paraguas de %s lo bloqueó!", "O guarda-chuva de %s bloqueou!", "%s' Schirm hat geblockt!", "Le parapluie de %s a bloqué !", "Зонт %s спас!"],
 	"map": ["Mapa", "Mapa", "Karte", "Carte", "Карта"],
 	"map_house": ["Casa", "Casa", "Haus", "Maison", "Дом"],
 	"map_office": ["Oficina", "Escritório", "Büro", "Bureau", "Офис"],

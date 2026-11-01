@@ -8,7 +8,7 @@ const SPEED := 5.6
 const JUMP_V := 7.5
 const HALF_H := 0.7
 
-enum F { KNOCKED = 1, STUCK = 2, WET = 4, CARRY = 8, PANIC = 16, HAT = 32, HIDDEN = 64, ACT = 128 }
+enum F { KNOCKED = 1, STUCK = 2, WET = 4, CARRY = 8, PANIC = 16, HAT = 32, HIDDEN = 64, ACT = 128, SHIELD = 256, FAST = 512 }
 
 var world: Node
 var slot := 0
@@ -40,6 +40,9 @@ var chain_until := 0.0
 var carrying: Prop = null
 var grounded := false
 var mess := 0.0
+var shield_until := 0.0  # umbrella power-up: blocks the next prank
+var immune_until := 0.0  # set for a moment when the umbrella absorbs a hit
+var fast_until := 0.0  # coffee power-up
 var interacting := false
 var _bump_cd := {}
 var _air_time := 0.0
@@ -66,6 +69,7 @@ var _flour := 0.0
 var _stars: Node3D
 var _head: Node3D
 var _lamp: OmniLight3D
+var _umbrella: Node3D
 var taunt_until := 0.0  # local clock (Time) for the dance
 var _dizzy := 0.0
 
@@ -199,6 +203,13 @@ func _build_visual() -> void:
 	_stars.position = Vector3(0, 0.53, 0)
 	_head.add_child(_stars)
 	_make_hat(int(info_hat))
+	_umbrella = Node3D.new()
+	_umbrella.position = Vector3(0, 1.05, 0)
+	add_child(_umbrella)
+	var canopy := U.sphere(0.6, Color("ff5d8f"), Vector3.ZERO, _umbrella, 10)
+	canopy.scale = Vector3(1, 0.35, 1)
+	U.cyl(0.02, 0.6, Color("333333"), Vector3(0, -0.3, 0), _umbrella)
+	_umbrella.visible = false
 	_lamp = OmniLight3D.new()
 	_lamp.position = Vector3(0, 0.9, 0)
 	_lamp.omni_range = 5.5
@@ -241,8 +252,12 @@ func move_dir() -> Vector3:
 	return hv.normalized() if hv.length() > 0.8 else forward()
 
 
+func immune() -> bool:
+	return Config.now < immune_until
+
+
 func knock(vel: Vector3, spin: Vector3, dur: float, chain := -1, by_self := false) -> void:
-	if not active:
+	if not active or (not by_self and immune()):
 		return
 	var now := Config.now
 	knocked_until = maxf(knocked_until if down else 0.0, now + dur)
@@ -260,6 +275,8 @@ func knock(vel: Vector3, spin: Vector3, dur: float, chain := -1, by_self := fals
 
 
 func panic(dur: float, chain: int) -> void:
+	if immune():
+		return
 	panic_until = Config.now + dur
 	var a := randf() * TAU
 	panic_dir = Vector3(cos(a), 0, sin(a))
@@ -268,11 +285,15 @@ func panic(dur: float, chain: int) -> void:
 
 
 func stick(dur: float, chain: int) -> void:
+	if immune():
+		return
 	stuck_until = Config.now + dur
 	set_chain(chain, stuck_until + 1.0)
 
 
 func wet(dur: float, chain: int) -> void:
+	if immune():
+		return
 	slow_until = Config.now + dur
 	hat_until = Config.now + dur
 	set_chain(chain, slow_until + 0.5)
@@ -339,6 +360,9 @@ func respawn(pos: Vector3) -> void:
 	slide_until = 0.0
 	chain_id = -1
 	mess = 0.0
+	shield_until = 0.0
+	fast_until = 0.0
+	immune_until = 0.0
 	facing = 0.0
 	if Net.is_host():
 		collision_layer = U.L_PLAYER
@@ -397,6 +421,8 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	var rule: String = world.modifier if world else ""
 	if rule == "turbo":
 		spd *= 1.45
+	if now < fast_until:
+		spd *= 1.35
 	if world and world.rush and world.is_runner(self):
 		spd *= 1.15
 	if now < slow_until:
@@ -458,6 +484,10 @@ func net_flags() -> int:
 		f |= F.HIDDEN
 	if interacting:
 		f |= F.ACT
+	if now < shield_until:
+		f |= F.SHIELD
+	if now < fast_until:
+		f |= F.FAST
 	return f
 
 
@@ -551,6 +581,11 @@ func _process(delta: float) -> void:
 		_stars.global_rotation.x = 0.0
 		_stars.global_rotation.z = 0.0
 	_hat.visible = (flags & F.HAT) != 0
+	_umbrella.visible = (flags & F.SHIELD) != 0
+	if _umbrella.visible:
+		_umbrella.global_rotation = Vector3.ZERO
+	if (flags & F.FAST) != 0 and fmod(_anim, 0.12) < delta:
+		Fx.burst(self.get_parent(), global_position - Vector3(0, 0.6, 0), "dust")
 	if _prop_spin:
 		_prop_spin.rotation.y += delta * (6.0 + _vel_disp.length() * 4.0)
 	_tape.visible = (flags & F.STUCK) != 0
