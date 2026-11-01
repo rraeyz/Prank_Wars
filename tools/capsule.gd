@@ -34,19 +34,32 @@ func _ready() -> void:
 	w.host_place(me.slot, "spring", Vector3(1.6, 0, -2.6), 0.0, "")
 	w.host_place(me.slot, "banana", Vector3(3.6, 0, -3.3), 0.0, "")
 	w.host_place(me.slot, "confetti", Vector3(4.5, 0, -2.0), 0.0, "")
-	w.host_place(me.slot, "flour", Vector3(2.6, 2.55, -3.0), 0.0, "")
-	await get_tree().create_timer(0.3).timeout
-	for id in w.pranks:
+	for id in w.pranks:  # fire in the same frame, before the bots step on anything themselves
 		var p: Prank = w.pranks[id]
-		if p.type in ["confetti", "flour"]:
+		if p.type == "confetti":
 			p.fire(null)
 		elif p.type == "spring":
 			p.fire(others[0])
 		elif p.type == "banana":
 			p.fire(others[1])
-	await get_tree().create_timer(0.35).timeout
+	# staged shot: make sure both victims are airborne regardless of how the bots were standing
+	others[0].knock(Vector3(0.6, 8.0, 0.4), Vector3(4, 0, 6), 2.0)
+	others[1].knock(Vector3(1.0, 5.0, 0.0), Vector3(0, 0, 10), 2.0)
+	# wait for the spring victim's highest point in the air
+	var flyer: Avatar = others[0]
+	var top := -1.0
+	for i in 90:
+		await get_tree().physics_frame
+		var y: float = flyer.global_position.y
+		if y < top - 0.05 and top > 1.6:
+			break
+		top = maxf(top, y)
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	get_tree().paused = true  # freeze the moment: slow software frames would otherwise run extra physics steps
 	w.set_process(false)
 	w.cam.set_process(false)
+	w._ghost.visible = false
+	w.house.cupboards["wardrobe"].visible = false  # stands between the camera and the action
 	w.house.update_fade(LOOK, 10.0)
 	var vps := {}
 	for n in SIZES:
@@ -72,11 +85,11 @@ func _viewport(size: Vector2i, title: bool) -> SubViewport:
 	vp.add_child(cam)
 	# taller images: pull back and look a bit higher so the title sits above the action
 	var back := 1.0 + (0.45 if aspect < 1.2 else 0.0) + (0.25 if title else 0.0)
-	cam.position = LOOK + Vector3(3.6, 3.4, 5.4) * back
+	cam.position = LOOK + Vector3(2.4, 3.8, 4.4) * back
 	cam.look_at(LOOK + Vector3(0, 0.55 if title else 0.0, 0) * back, Vector3.UP)
 	cam.current = true
 	if title:
-		var l := _title(size.y * (0.2 if aspect > 2.0 else (0.11 if aspect < 1.2 else 0.17)))
+		var l := _title(minf(size.y * (0.3 if aspect > 2.0 else 0.17), size.x * 0.125))
 		l.size = Vector2(size.x, size.y * 0.42)
 		l.position = Vector2(0, size.y * 0.02)
 		vp.add_child(l)
@@ -90,7 +103,7 @@ func _logo_viewport(size: Vector2i) -> SubViewport:
 	vp.own_world_3d = true
 	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	add_child(vp)
-	var l := _title(size.y * 0.3)
+	var l := _title(size.x * 0.125)
 	l.size = Vector2(size)
 	vp.add_child(l)
 	return vp

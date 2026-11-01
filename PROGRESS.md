@@ -79,3 +79,6 @@ Sonraki oturum: önce `PLAN.md`, sonra bu dosyanın en üstündeki kaydı oku.
 **Durum:** PLAN.md'de yapılabilecek tüm [ ] görevler bitti; kalanlar kullanıcı testine bağlı ([K]/[~]). Saatlik tetikleyici bu yüzden kapatıldı — kullanıcı geri bildirim verince yeniden açılabilir.
 
 **Sıradaki:** Kullanıcı testi 1 sonuçlarına göre mekanik/denge değişiklikleri. Steam lobisinin ilk gerçek testi (Kullanıcı testi 2).
+
+**Oturum 5 (devam):** Sanat yönü (Forward+, ifadeli pijamalı karakterler), gerçek CC0 sesler, 1 dk etkileşimli eğitim, otomatik yatay+dikey klip kaydı, harita editörü, 2 yeni harita (Okul, Düğün Salonu; toplam 5), güncel Steam mağaza metinleri, kapsül/kütüphane görselleri (`marketing/steam_art/`) ve 63 sn fragman (araçla otomatik kurgulanır). 302 test geçiyor.
+**Kullanıcıdan:** Fragman ve görseller yazılım render ile üretildi — beğenilmezse GPU'lu bilgisayarda `marketing/README_ART.md` adımları. Steam sayfası için $100 Steam Direct ücreti hâlâ kullanıcı kararı.

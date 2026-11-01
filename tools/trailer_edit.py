@@ -78,13 +78,13 @@ def build(outdir):
         inputs += ["-stream_loop", "-1", "-i", music]
         parts.append("[1:a]volume=0.45[m]")
         parts.append("[ac][m]amix=inputs=2:duration=first:normalize=0[mx]")
-        parts.append(f"[mx]afade=t=out:st={dur - 1.5:.2f}:d=1.5[a]")
+        parts.append(f"[mx]alimiter=limit=0.79:level=0,afade=t=out:st={dur - 1.5:.2f}:d=1.5[a]")
     else:
-        parts.append(f"[ac]afade=t=out:st={dur - 1.5:.2f}:d=1.5[a]")
+        parts.append(f"[ac]alimiter=limit=0.79:level=0,afade=t=out:st={dur - 1.5:.2f}:d=1.5[a]")
     out = os.path.join(outdir, "trailer.mp4")
     cmd = ["ffmpeg", "-y", "-loglevel", "error"] + inputs + [
         "-filter_complex", ";".join(parts), "-map", "[v]", "-map", "[a]",
-        "-c:v", "libx264", "-crf", "18", "-preset", "medium", "-r", "30",
+        "-c:v", "libx264", "-crf", "21", "-preset", "medium", "-r", "30",
         "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", out]
     subprocess.run(cmd, check=True)
     vert = os.path.join(outdir, "trailer_vertical.mp4")

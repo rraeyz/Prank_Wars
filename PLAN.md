@@ -143,7 +143,8 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [x] Sanat yönü: Forward+ (eski kartlarda otomatik uyumluluk), SSAO/SSIL/glow, pijamalı ifadeli karakterler (göz, kaş, ağız, ruh hâli)
 - [x] Gerçek ses efektleri (CC0 kayıtlar, CREDITS.md)
 - [x] Mağaza: güncel EN/TR metinler, etiketler, gereksinimler, basın kiti
-- [~] Steam kapsül görselleri (`--capsule`) + fragman (`--trailer` + `tools/trailer_edit.py`) — üretiliyor
+- [x] Steam kapsül görselleri (`--capsule`, `marketing/steam_art/`) + 63 sn fragman (`--trailer` + `tools/trailer_edit.py`; mp4 repoda değil, kullanıcıya gönderildi)
+- [K] Görselleri/fragmanı GPU'lu bilgisayarda yeniden üret (yazılım render ile üretildi; daha keskin olur)
 
 ## Haftalık
 - [x] Hafta 1 video fikirleri (`marketing/VIDEO_IDEAS.md`)
