@@ -1,6 +1,14 @@
 PRANK WARS - How to play / Nasil oynanir
 ========================================
 
+NEW / YENI
+- Modes: Turns (one team traps, one runs) or CHAOS (everyone traps and runs at once). Maps: House, Office.
+- House rules from round 2 (moon gravity, ice, big heads, blackout, turbo, earthquake, double points).
+- Last 30 s: "Mom's coming home!" = double points. Random events: runaway cat, pizza delivery.
+- Runner: C = sniff hidden traps, V = taunt. Hat: pick it in the main menu.
+- Modlar: Sirali veya KAOS. Haritalar: Ev, Ofis. 2. rauntan itibaren ev kurallari. Son 30 sn cifte puan.
+  Kosucu: C = kokla, V = dans. Sapka ana menuden secilir.
+
 EN
 - Two teams take turns. TRAPPERS rig the house (90 s), RUNNERS then do 3 chores (150 s).
 - Trapper: Q/R or mouse wheel = pick prank, Left click / F = place. Budget: 15 per round.

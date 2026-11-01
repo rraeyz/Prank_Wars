@@ -33,12 +33,30 @@ var nav_adj := {}  # idx -> Array[idx]
 var spawn_garden: Array = []
 var spawn_house: Array = []
 var _front_block: StaticBody3D
+var map := "house"
+const MAPS := ["house", "office"]
+var _nav_centers := {"kitchen": Vector3(-3.4, 0, -3.0), "living": Vector3(1.6, 0, -2.6),
+	"bath": Vector3(-5.3, 0, 2.8), "hall": Vector3(-1.0, 0, 3.0), "bed": Vector3(3.6, 0, 2.6)}
 
 
-func build() -> void:
-	_floors()
-	_walls()
-	_furniture()
+## Builds the chosen map. Every map shares the outer shell (16x12, front door at x=-1) and the garden.
+func build(map_name := "house") -> void:
+	map = map_name if map_name in MAPS else "house"
+	if map == "office":
+		rooms = {"open_office": Rect2(-8, -6, 11, 7), "break": Rect2(3, -6, 5, 6), "meeting": Rect2(3, 0, 5, 6),
+			"boss": Rect2(-8, 1, 5, 5), "lobby": Rect2(-3, 1, 6, 5), "garden": GARDEN}
+		_nav_centers = {"open_office": Vector3(-2.0, 0, -3.0), "break": Vector3(4.2, 0, -2.6),
+			"meeting": Vector3(4.0, 0, 1.2), "boss": Vector3(-5.0, 0, 2.8), "lobby": Vector3(-0.5, 0, 3.5)}
+		_floors({"open_office": Color("9fb3c8"), "break": Color("e6cf9f"), "meeting": Color("b7c4a3"),
+			"boss": Color("8c5a3c"), "lobby": Color("d8d2c4")})
+		_office_walls()
+		_office_furniture()
+	else:
+		_floors({"kitchen": Color("e6cf9f"), "living": Color("c08f5e"), "bath": Color("8fc9d6"),
+			"hall": Color("bf9c78"), "bed": Color("b9a3dc")})
+		_house_decor()
+		_walls()
+		_furniture()
 	_garden()
 	_roof()
 	_nav()
@@ -53,9 +71,23 @@ func set_front_locked(l: bool) -> void:
 		_front_block.collision_layer = U.L_WORLD if l else 0
 
 
+## Chores that exist on this map.
+func task_ids() -> Array:
+	var out := []
+	for t in Config.TASKS:
+		var ok := true
+		for st in Config.TASKS[t]:
+			var at: String = st["at"]
+			if not (spots.has(at) or cupboards.has(at) or props.any(func(p): return p.kind == at)):
+				ok = false
+		if ok:
+			out.append(t)
+	return out
+
+
 func room_of(p: Vector3) -> String:
-	for r in ["kitchen", "living", "bath", "hall", "bed"]:
-		if rooms[r].has_point(Vector2(p.x, p.z)):
+	for r in rooms:
+		if r != "garden" and rooms[r].has_point(Vector2(p.x, p.z)):
 			return r
 	return "garden" if GARDEN.grow(2.0).has_point(Vector2(p.x, p.z)) else "out"
 
@@ -66,7 +98,7 @@ func inside(p: Vector3, margin := 0.0) -> bool:
 
 # ------------------------------------------------------------------ floors
 
-func _floors() -> void:
+func _floors(cols: Dictionary) -> void:
 	var fl := StaticBody3D.new()
 	fl.collision_layer = U.L_WORLD
 	fl.add_to_group("floor")
@@ -79,11 +111,12 @@ func _floors() -> void:
 	add_child(fl)
 	var grass := U.box(Vector3(60, 0.1, 60), Color("5fb345"), Vector3(0, -0.06, 4), self)
 	grass.name = "Grass"
-	var cols := {"kitchen": Color("e6cf9f"), "living": Color("c08f5e"), "bath": Color("8fc9d6"),
-		"hall": Color("bf9c78"), "bed": Color("b9a3dc")}
 	for r in cols:
 		var rc: Rect2 = rooms[r]
 		U.box(Vector3(rc.size.x, 0.04, rc.size.y), cols[r], Vector3(rc.get_center().x, 0.0, rc.get_center().y), self)
+
+
+func _house_decor() -> void:
 	# kitchen + bath tile checker accents
 	for i in 12:
 		var x := -7.5 + (i % 6) * 1.2
@@ -393,9 +426,8 @@ func _roof() -> void:
 # ------------------------------------------------------------------ navigation (bots)
 
 func _nav() -> void:
-	var centers := {"kitchen": Vector3(-3.4, 0, -3.0), "living": Vector3(1.6, 0, -2.6),
-		"bath": Vector3(-5.3, 0, 2.8), "hall": Vector3(-1.0, 0, 3.0), "bed": Vector3(3.6, 0, 2.6),
-		"garden": Vector3(-1.0, 0, 9.5)}
+	var centers := _nav_centers.duplicate()
+	centers["garden"] = Vector3(-1.0, 0, 9.5)
 	for r in centers:
 		_nav_add(centers[r])
 	_nav_add(Vector3(5.0, 0, 9.5))
@@ -479,3 +511,77 @@ func path(a: Vector3, b: Vector3) -> Array:
 			break
 		c = prev[c]
 	return out
+
+
+# ------------------------------------------------------------------ office map
+
+func _office_walls() -> void:
+	_wall_x(-6.0, -8.0, 8.0, [])
+	_wall_x(6.0, -8.0, 8.0, [-1.0], ["front"])
+	_wall_x(1.0, -8.0, 3.0, [0.0], ["lobby_office"])
+	_wall_x(0.0, 3.0, 8.0, [5.5], ["break_meeting"])
+	_wall_z(-8.0, -6.0, 6.0, [])
+	_wall_z(8.0, -6.0, 6.0, [])
+	_wall_z(3.0, -6.0, 6.0, [-3.0, 3.0], ["office_break", "lobby_meeting"])
+	_wall_z(-3.0, 1.0, 6.0, [3.5], ["lobby_boss"])
+	U.invisible_wall(self, Vector3(16.4, 0.4, 12.4), Vector3(0, 3.1, 0))
+
+
+func _office_furniture() -> void:
+	var grey := Color("c9ced6")
+	var blue := Color("4f6d9a")
+	# --- open office: two rows of cubicles with low partitions ---
+	for x in [-6.5, -3.5, -0.5]:
+		for z in [-4.5, -1.5]:
+			U.solid(self, Vector3(1.6, 0.06, 0.8), Vector3(x, 0.75, z), Color("e9dcc3"))
+			U.invisible_wall(self, Vector3(1.5, 0.72, 0.7), Vector3(x, 0.36, z))
+			U.box(Vector3(0.55, 0.35, 0.05), Color("1d1d22"), Vector3(x, 1.0, z - 0.25), self)
+			U.solid(self, Vector3(1.7, 1.25, 0.08), Vector3(x, 0.62, z - 0.48), Color("7a8fb0"))
+			_prop("chair", Vector3(0.45, 0.8, 0.45), Vector3(x + 0.2, 0.45, z + 0.75), blue, 3.0)
+	_cupboard("file_cabinet", Vector3(0.9, 1.3, 0.6), Vector3(2.4, 0, -5.6), 0.0, grey, Color("aab4c2"))
+	_cupboard("supply_closet", Vector3(1.0, 2.0, 0.6), Vector3(-7.4, 0, -5.6), 0.0, Color("a0785a"), Color("c49a74"))
+	_plant("plant_a", Vector3(2.4, 0, 0.4))
+	_prop("trash_bag", Vector3(0.5, 0.6, 0.5), Vector3(-7.4, 0.35, 0.3), Color("2f3a33"), 2.0)
+	_prop("box", Vector3(0.5, 0.4, 0.5), Vector3(1.6, 0.25, -5.4), Color("d4a373"), 1.5)
+	# --- break room ---
+	_cupboard("fridge", Vector3(0.9, 1.9, 0.75), Vector3(7.45, 0, -5.5), 0.0, Color("e9eef2"), Color("dfe7ee"))
+	U.solid(self, Vector3(2.6, 0.92, 0.7), Vector3(5.6, 0.46, -5.6), Color("c9d6df"))
+	U.box(Vector3(2.65, 0.06, 0.75), Color("f7f7f7"), Vector3(5.6, 0.95, -5.58), self)
+	_spot("counter", Vector3(5.9, 0.95, -5.1), 1.3)
+	U.box(Vector3(0.4, 0.45, 0.35), Color("3a3a3a"), Vector3(4.8, 1.2, -5.6), self)
+	U.cyl(0.06, 0.1, Color("ffffff"), Vector3(4.8, 1.03, -5.35), self)
+	_spot("coffee_machine", Vector3(4.8, 1.0, -5.1), 1.3)
+	_cupboard("coffee_cabinet", Vector3(0.9, 0.92, 0.7), Vector3(3.65, 0, -5.6), 0.0, Color("c9d6df"), Color("8fb3c9"))
+	U.solid(self, Vector3(2.6, 0.45, 0.9), Vector3(5.5, 0.22, -2.0), Color("e07a5f"))
+	U.solid(self, Vector3(2.6, 0.5, 0.25), Vector3(5.5, 0.7, -1.6), Color("c8634a"))
+	_spot("remote_spot", Vector3(5.5, 0.5, -2.3), 1.4)
+	U.box(Vector3(0.12, 0.05, 0.3), Color("222222"), Vector3(5.6, 0.47, -2.1), self)
+	_cupboard("tv_stand", Vector3(2.0, 0.55, 0.5), Vector3(5.5, 0, -3.6), 0.0, C_DARK_WOOD, C_WOOD)
+	U.box(Vector3(1.7, 0.95, 0.08), Color("1d1d22"), Vector3(5.5, 1.05, -3.7), self)
+	_prop("cushion", Vector3(0.55, 0.2, 0.55), Vector3(4.6, 0.6, -2.1), Color("ffd166"), 0.6)
+	# --- meeting room ---
+	U.solid(self, Vector3(2.6, 0.08, 1.2), Vector3(5.5, 0.76, 3.2), Color("6d4c41"))
+	U.invisible_wall(self, Vector3(2.5, 0.72, 1.1), Vector3(5.5, 0.36, 3.2))
+	for cx in [4.6, 5.5, 6.4]:
+		_prop("chair", Vector3(0.45, 0.8, 0.45), Vector3(cx, 0.45, 2.2), blue, 3.0)
+	U.box(Vector3(0.06, 1.0, 2.0), Color.WHITE, Vector3(7.88, 1.3, 3.2), self)
+	U.box(Vector3(0.07, 0.06, 2.05), Color("888888"), Vector3(7.88, 0.78, 3.2), self)
+	_spot("whiteboard", Vector3(7.3, 0.0, 3.2), 1.3)
+	# --- boss office ---
+	U.solid(self, Vector3(2.2, 0.8, 0.9), Vector3(-5.5, 0.4, 4.6), C_DARK_WOOD)
+	_spot("boss_desk", Vector3(-5.5, 0.8, 3.9), 1.4)
+	U.box(Vector3(0.7, 0.9, 0.7), Color("2b2d42"), Vector3(-5.5, 0.45, 5.4), self)
+	_cupboard("boss_drawer", Vector3(0.9, 0.8, 0.5), Vector3(-7.5, 0, 3.3), PI / 2.0, C_DARK_WOOD, C_WOOD)
+	_cupboard("fish_food", Vector3(0.8, 0.9, 0.45), Vector3(-6.0, 0, 5.7), PI, C_WOOD, C_DARK_WOOD)
+	U.solid(self, Vector3(1.0, 0.5, 0.5), Vector3(-3.8, 0.25, 1.5), C_DARK_WOOD)
+	U.box(Vector3(1.0, 0.6, 0.5), Color(0.4, 0.75, 1.0, 0.55), Vector3(-3.8, 0.8, 1.5), self)
+	U.sphere(0.08, Color("ff8c00"), Vector3(-3.9, 0.8, 1.5), self, 8)
+	_spot("aquarium", Vector3(-3.8, 0.0, 2.3), 1.2)
+	_plant("plant_b", Vector3(-7.4, 0, 1.6))
+	# --- lobby ---
+	U.solid(self, Vector3(0.9, 1.1, 0.7), Vector3(2.3, 0.55, 5.5), Color("d9d9d9"))
+	U.box(Vector3(0.7, 0.08, 0.5), Color("555555"), Vector3(2.3, 1.12, 5.5), self)
+	_spot("copier", Vector3(2.3, 0.0, 4.7), 1.3)
+	_prop("report", Vector3(0.35, 0.08, 0.45), Vector3(1.3, 0.85, 2.0), Color.WHITE, 0.4)
+	U.solid(self, Vector3(1.6, 0.8, 0.6), Vector3(1.2, 0.4, 2.0), Color("8d6e63"))
+	_cat(Vector3(-2.4, 0, 5.3))

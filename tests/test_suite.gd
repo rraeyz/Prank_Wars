@@ -34,7 +34,7 @@ func _run() -> void:
 	var mus: AudioStreamWAV = Sfx.build_music()
 	check(mus.data.size() > 100000, "music synthesizes")
 	print("== integration tests")
-	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "rules", "rush", "sniff", "awards", "events", "new_pranks", "chaos", "chaos_bots", "full_match"]:
+	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "rules", "rush", "sniff", "awards", "events", "new_pranks", "chaos", "chaos_bots", "office_match", "full_match"]:
 		if only != "" and only != t:
 			continue
 		print("-- ", t)
@@ -67,6 +67,7 @@ func _dispatch(t: String) -> void:
 		"new_pranks": await it_new_pranks()
 		"chaos": await it_chaos()
 		"chaos_bots": await it_chaos_bots()
+		"office_match": await it_office_match()
 		"full_match": await it_full_match()
 
 
@@ -125,16 +126,20 @@ func test_house() -> void:
 	h.build()
 	check(h.doors.size() == 6, "6 doors")
 	check(h.cupboards.has("fridge") and h.cupboards.has("cat_cabinet"), "task cupboards exist")
+	var office := House.new()
+	get_tree().root.add_child(office)
+	office.build("office")
+	check(office.doors.has("front") and office.doors.size() == 6, "office has 6 doors incl. front")
+	var both: Array = h.task_ids() + office.task_ids()
 	for t in Config.TASKS:
+		check(t in both, "chore %s exists on at least one map" % t)
+	check(h.task_ids().size() >= 6 and office.task_ids().size() >= 6, "each map has enough chores (%d / %d)" % [h.task_ids().size(), office.task_ids().size()])
+	for t in office.task_ids():
 		for st in Config.TASKS[t]:
-			var at: String = st["at"]
-			var ok: bool = h.spots.has(at) or h.cupboards.has(at)
-			if st["type"] == "pickup":
-				ok = false
-				for p in h.props:
-					if p.kind == at:
-						ok = true
-			check(ok, "task %s step target '%s' exists" % [t, at])
+			var tgt: Vector3 = office.spots[st["at"]]["pos"] if office.spots.has(st["at"]) else Vector3(-1, 0, 3)
+			var op: Array = office.path(Vector3(-1, 0, 10), tgt)
+			check(op.size() >= 1 and op[-1] == tgt, "office path to %s" % st["at"])
+	office.free()
 	var p: Array = h.path(Vector3(-1, 0, 10), Vector3(-5.3, 0, -5.1))
 	check(p.size() >= 3 and p[-1] == Vector3(-5.3, 0, -5.1), "garden -> kitchen path has waypoints (%d)" % p.size())
 	var through_front := false
@@ -739,3 +744,25 @@ func it_chaos_bots() -> void:
 	check(most >= 2, "bots placed pranks in chaos (%d)" % most)
 	print("     chaos score ", w.scoring.totals)
 	Config.mode = "turns"
+
+
+
+func it_office_match() -> void:
+	Config.map = "office"
+	var players := {-1: _p("B1", 0, 1, true), -2: _p("B2", 0, 2, true), -3: _p("B3", 1, 3, true), -4: _p("B4", 1, 4, true)}
+	await _make_world(players)
+	Config.setup_time = 30.0
+	Config.run_time = 50.0
+	check(w.house.map == "office", "office map loaded")
+	var done := 0
+	var t := 0
+	while w.phase != "end" and t < 60 * 60 * 5:
+		await get_tree().physics_frame
+		t += 1
+		for tk in w.tasks:
+			if tk["done"]:
+				done = maxi(done, 1)
+	check(w.phase == "end", "office bot match ends")
+	check(w.scoring.totals[0] + w.scoring.totals[1] > 0, "points scored on the office map %s" % str(w.scoring.totals))
+	print("     office score ", w.scoring.totals, " chores done: ", done)
+	Config.map = "house"

@@ -268,7 +268,7 @@ func _wander(now: float, inside: bool) -> void:
 	if now > _wander_at or goal == Vector3.INF:
 		_wander_at = now + rng.randf_range(2.0, 5.0)
 		if inside:
-			var rooms := ["kitchen", "living", "bath", "hall", "bed"]
+			var rooms: Array = world.house.rooms.keys().filter(func(r): return r != "garden")
 			var r: Rect2 = world.house.rooms[rooms[rng.randi() % rooms.size()]]
 			goal = Vector3(r.get_center().x, 0, r.get_center().y)
 		else:

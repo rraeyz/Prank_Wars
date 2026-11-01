@@ -114,5 +114,8 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [x] Kozmetik: 7 şapka (parti, taç, kep, aşçı, pervane, boynuz), ana menüden seçilir
 - [x] BUG: karakterlerde yerçekimi uygulanmıyordu (zıplayan/dalan havada kalıyordu) — düzeltildi
 
+- [x] Zincir anonsları (GÜZEL / SANAT ESERİ / EFSANE / TANRI MODU)
+- [x] İkinci harita: OFİS (açık ofis, mola odası, toplantı, patron odası, lobi) + 5 yeni görev (fotokopi, kahve, toplantı, rapor, balık); lobide harita seçimi
+
 ## Haftalık
 - [x] Hafta 1 video fikirleri (`marketing/VIDEO_IDEAS.md`)

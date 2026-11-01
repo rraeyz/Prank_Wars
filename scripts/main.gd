@@ -23,6 +23,8 @@ func _ready() -> void:
 		Config.run_time = 25.0
 		Config.intro_time = 1.0
 		Config.score_time = 2.0
+	if args.has("map"):
+		Config.map = str(args["map"])
 	if args.has("chaos"):
 		Config.mode = "chaos"
 	if args.has("rule"):

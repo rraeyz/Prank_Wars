@@ -84,7 +84,7 @@ func _ready() -> void:
 	house = House.new()
 	house.name = "House"
 	add_child(house)
-	house.build()
+	house.build(Config.map)
 	_ents = Node3D.new()
 	_ents.name = "Ents"
 	add_child(_ents)
@@ -1123,7 +1123,7 @@ func s_round_reset(i: int, ttm: int, picked: Array, mod: String) -> void:
 
 
 func _pick_tasks() -> Array:
-	var keys := Config.TASKS.keys().filter(func(k): return not k in Config.EVENT_TASKS)
+	var keys := house.task_ids().filter(func(k): return not k in Config.EVENT_TASKS)
 	for k in range(keys.size() - 1, 0, -1):
 		var j := rng.randi_range(0, k)
 		var tmp = keys[k]
@@ -1735,7 +1735,7 @@ func bot_make_plan(team: int, max_cost: int) -> Array:
 					continue
 				e = {"type": t, "pos": pl["pos"], "yaw": pl["yaw"], "socket": "", "stand": stand}
 			"door":
-				var order := ["front", "hall_kitchen", "hall_living", "hall_bath", "hall_bed", "kitchen_living"]
+				var order: Array = ["front"] + house.doors.keys().filter(func(n): return n != "front")
 				for n in order:
 					if not used_sockets.has(n) and not _socket_used(n) and rng.randf() < 0.6:
 						var d2: HouseDoor = house.doors[n]

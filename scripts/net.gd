@@ -160,11 +160,12 @@ func _sync(p: Dictionary, cfg: Dictionary) -> void:
 	var rc := str(cfg.get("rule", "random"))
 	Config.rule_choice = rc if rc in ["random", "off"] or rc in Config.MODIFIERS else "random"
 	Config.mode = "chaos" if str(cfg.get("mode", "turns")) == "chaos" else "turns"
+	Config.map = str(cfg.get("map", "house")) if str(cfg.get("map", "house")) in House.MAPS else "house"
 	players_changed.emit()
 
 
 func lobby_cfg() -> Dictionary:
-	return {"rounds": Config.rounds, "setup": Config.setup_time, "run": Config.run_time, "rule": Config.rule_choice, "mode": Config.mode}
+	return {"rounds": Config.rounds, "setup": Config.setup_time, "run": Config.run_time, "rule": Config.rule_choice, "mode": Config.mode, "map": Config.map}
 
 
 func _broadcast() -> void:
@@ -247,7 +248,7 @@ func start_match() -> void:
 	if not is_host() or not can_start():
 		return
 	var cfg := {"rounds": Config.rounds, "seed": randi(), "demo": Config.demo_mode, "sandbox": Config.sandbox,
-		"setup": Config.setup_time, "run": Config.run_time, "rule": Config.rule_choice, "mode": Config.mode}
+		"setup": Config.setup_time, "run": Config.run_time, "rule": Config.rule_choice, "mode": Config.mode, "map": Config.map}
 	if mode == "host":
 		_begin.rpc(players, cfg)
 	_begin(players, cfg)
@@ -264,6 +265,7 @@ func _begin(p: Dictionary, cfg: Dictionary) -> void:
 	var rc := str(cfg.get("rule", "random"))
 	Config.rule_choice = rc if rc in ["random", "off"] or rc in Config.MODIFIERS else "random"
 	Config.mode = "chaos" if str(cfg.get("mode", "turns")) == "chaos" else "turns"
+	Config.map = str(cfg.get("map", "house")) if str(cfg.get("map", "house")) in House.MAPS else "house"
 	if Config.mode == "chaos":
 		Config.rounds = 1
 	match_begin.emit(cfg)

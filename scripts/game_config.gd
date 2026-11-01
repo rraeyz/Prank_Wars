@@ -20,6 +20,7 @@ const REVEAL_RADIUS := 6.0
 var house_rules := true  # random rule each round (from round 2)
 var rule_choice := "random"
 var mode := "turns"  # turns | chaos
+var map := "house"  # house | office
 const CHAOS_START_BUDGET := 6
 const CHAOS_BUDGET_EVERY := 5.0
 
@@ -101,6 +102,11 @@ const TASKS := {
 	"cat": [{"type": "open", "at": "cat_cabinet"}, {"type": "hold", "at": "cat_bowl", "time": 1.5}],
 	"laundry": [{"type": "pickup", "at": "laundry"}, {"type": "deliver", "at": "clothesline"}],
 	"plants": [{"type": "hold", "at": "plant_a", "time": 1.5}, {"type": "hold", "at": "plant_b", "time": 1.5}],
+	"copies": [{"type": "hold", "at": "copier", "time": 2.5}],
+	"coffee": [{"type": "open", "at": "coffee_cabinet"}, {"type": "hold", "at": "coffee_machine", "time": 2.0}],
+	"meeting": [{"type": "hold", "at": "whiteboard", "time": 2.5}],
+	"report": [{"type": "pickup", "at": "report"}, {"type": "deliver", "at": "boss_desk"}],
+	"fish": [{"type": "open", "at": "fish_food"}, {"type": "hold", "at": "aquarium", "time": 1.5}],
 	"pizza": [{"type": "pickup", "at": "pizza"}, {"type": "deliver", "at": "counter"}],  # event only
 }
 const EVENT_TASKS := ["pizza"]

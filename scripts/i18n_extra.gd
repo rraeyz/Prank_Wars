@@ -4,6 +4,22 @@ extends RefCounted
 const LANGS := ["es", "pt", "de", "fr", "ru"]
 
 const S := {
+	"map": ["Mapa", "Mapa", "Karte", "Carte", "Карта"],
+	"map_house": ["Casa", "Casa", "Haus", "Maison", "Дом"],
+	"map_office": ["Oficina", "Escritório", "Büro", "Bureau", "Офис"],
+	"t_copies": ["Hacer fotocopias", "Tirar cópias", "Kopien machen", "Faire des photocopies", "Сделать копии"],
+	"t_coffee": ["Hacer café", "Fazer café", "Kaffee kochen", "Faire du café", "Сварить кофе"],
+	"t_meeting": ["Notas de la reunión", "Notas da reunião", "Meeting-Notizen", "Notes de réunion", "Записи встречи"],
+	"t_report": ["Lleva el informe al jefe", "Leve o relatório ao chefe", "Bring den Bericht zum Chef", "Apporte le rapport au patron", "Отнеси отчёт боссу"],
+	"t_fish": ["Dale de comer a los peces", "Alimente os peixes", "Füttere die Fische", "Nourris les poissons", "Покорми рыбок"],
+	"s_copier": ["Fotocopiar", "Copiar", "Kopieren", "Photocopier", "Копировать"],
+	"s_coffee_machine": ["Preparar café", "Preparar café", "Kaffee kochen", "Préparer le café", "Сварить кофе"],
+	"s_coffee_cabinet": ["Coger café", "Pegar café", "Kaffee holen", "Prendre le café", "Взять кофе"],
+	"s_whiteboard": ["Escribir en la pizarra", "Escrever no quadro", "An die Tafel schreiben", "Écrire au tableau", "Писать на доске"],
+	"s_report": ["Coger el informe", "Pegar o relatório", "Bericht nehmen", "Prendre le rapport", "Взять отчёт"],
+	"s_boss_desk": ["Mesa del jefe", "Mesa do chefe", "Chefschreibtisch", "Bureau du patron", "Стол босса"],
+	"s_fish_food": ["Coger comida", "Pegar ração", "Futter holen", "Prendre la nourriture", "Взять корм"],
+	"s_aquarium": ["Alimentar peces", "Alimentar peixes", "Fische füttern", "Nourrir les poissons", "Покормить рыбок"],
 	"ann_2": ["¡BIEN!", "BOA!", "SCHÖN!", "BIEN JOUÉ !", "КРАСИВО!"],
 	"ann_3": ["¡OBRA MAESTRA!", "OBRA-PRIMA!", "MEISTERWERK!", "CHEF-D'ŒUVRE !", "ШЕДЕВР!"],
 	"ann_4": ["¡LEGENDARIO!", "LENDÁRIO!", "LEGENDÄR!", "LÉGENDAIRE !", "ЛЕГЕНДАРНО!"],
