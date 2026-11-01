@@ -74,8 +74,9 @@ var now := 0.0
 
 var settings := {
 	"name": "", "lang": "", "master": 0.8, "music": 0.5, "sfx": 0.9,
-	"fullscreen": false, "last_ip": "127.0.0.1",
+	"fullscreen": false, "last_ip": "127.0.0.1", "keys": {},
 }
+const REBINDABLE := ["move_up", "move_down", "move_left", "move_right", "jump", "interact", "dive", "action", "prev_item", "next_item", "cam_next", "trigger_all"]
 const SETTINGS_PATH := "user://settings.cfg"
 
 
@@ -147,11 +148,38 @@ func _setup_input() -> void:
 			InputMap.action_add_event(action, ev)
 
 
+## Replaces the first keyboard key of an action with a custom physical key.
+func rebind(action: String, code: int) -> void:
+	for ev in InputMap.action_get_events(action):
+		if ev is InputEventKey:
+			InputMap.action_erase_event(action, ev)
+			break
+	var k := InputEventKey.new()
+	k.physical_keycode = code as Key
+	InputMap.action_add_event(action, k)
+	var keys: Dictionary = settings["keys"]
+	keys[action] = code
+
+
+func key_name(action: String) -> String:
+	for ev in InputMap.action_get_events(action):
+		if ev is InputEventKey:
+			return OS.get_keycode_string(ev.physical_keycode)
+	return "?"
+
+
 func load_settings() -> void:
 	var cf := ConfigFile.new()
 	if cf.load(SETTINGS_PATH) == OK:
 		for k in settings:
 			settings[k] = cf.get_value("s", k, settings[k])
+	var keys = settings["keys"]
+	if keys is Dictionary:
+		for a in keys:
+			if InputMap.has_action(a):
+				rebind(a, int(keys[a]))
+	else:
+		settings["keys"] = {}
 	if settings["name"] == "":
 		settings["name"] = "Player%d" % (randi() % 900 + 100)
 	apply_settings()

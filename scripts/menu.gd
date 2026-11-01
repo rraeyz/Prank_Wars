@@ -19,6 +19,7 @@ func _ready() -> void:
 	_build_main()
 	_build_lobby()
 	_build_settings()
+	_build_keys()
 	var hv := _screen("how")
 	hv.add_child(_lbl(I18n.t("how"), 40, Color("ffe14d")))
 	var ht := _lbl(I18n.t("how_text"), 18)
@@ -226,6 +227,41 @@ func _refresh_lobby() -> void:
 		_lobby_info.text = ""
 
 
+var _waiting_action := ""
+var _key_buttons := {}
+
+
+func _build_keys() -> void:
+	var v := _screen("keys")
+	v.add_child(_lbl(I18n.t("controls"), 36, Color("ffe14d")))
+	var grid := GridContainer.new()
+	grid.columns = 2
+	v.add_child(grid)
+	for a in Config.REBINDABLE:
+		var l := _lbl(I18n.t("a_" + a), 18)
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		l.custom_minimum_size = Vector2(260, 0)
+		grid.add_child(l)
+		var b := Button.new()
+		b.custom_minimum_size = Vector2(170, 34)
+		b.text = Config.key_name(a)
+		b.pressed.connect(func(): _waiting_action = a; b.text = I18n.t("press_key"))
+		grid.add_child(b)
+		_key_buttons[a] = b
+	_btn(I18n.t("back"), func(): show_screen("settings"), v)
+
+
+func _input(e: InputEvent) -> void:
+	if _waiting_action == "" or not (e is InputEventKey) or not e.pressed:
+		return
+	if e.physical_keycode != KEY_ESCAPE:
+		Config.rebind(_waiting_action, e.physical_keycode)
+		Config.save_settings()
+	_key_buttons[_waiting_action].text = Config.key_name(_waiting_action)
+	_waiting_action = ""
+	get_viewport().set_input_as_handled()
+
+
 func _build_settings() -> void:
 	var v := _screen("settings")
 	v.add_child(_lbl(I18n.t("settings"), 40, Color("ffe14d")))
@@ -258,6 +294,7 @@ func _build_settings() -> void:
 	ob.item_selected.connect(func(i): var code: String = I18n.ALL_LANGS[i]; Config.settings["lang"] = code; Config.save_settings(); I18n.set_lang(code); main.rebuild_menu())
 	lr.add_child(ob)
 	v.add_child(lr)
+	_btn(I18n.t("controls"), func(): show_screen("keys"), v)
 	var cr := _lbl("", 15, Color(1, 1, 1, 0.85))
 	cr.visible = false
 	_btn(I18n.t("credits"), func(): cr.text = I18n.t("credits_text"); cr.visible = not cr.visible, v)

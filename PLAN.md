@@ -1,7 +1,7 @@
 # Prank Wars — PLAN
 
 Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi okuyup ilk `[ ]` görevden devam eder.
-İşaretler: `[x]` bitti · `[ ]` yapılacak · `[~]` kısmen / kullanıcı testi bekliyor · `[K]` sadece kullanıcı yapabilir.
+İşaretler: `[x]` bitti · `[ ]` yapılacak · `[~]` kısmen / kullanıcı testi bekliyor · `[K]` sadece kullanıcı yapabilir · `[-]` bilerek ertelendi.
 
 ## Rapordan yapılan büyük değişiklikler (neden)
 
@@ -91,9 +91,9 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 ## Faz 8 — Dünya pazarı ve erişilebilirlik (saatlik tetikleyici için)
 - [x] Gamepad ile menüde gezinme (Steam Deck)
 - [x] Yeni diller: İspanyolca, Portekizce (BR), Almanca, Fransızca, Rusça (arayüz metinleri; ipuçları İngilizce kalıyor)
-- [ ] Tuş atama ekranı (klavye)
+- [x] Tuş atama ekranı (klavye)
 - [x] Botlar bazen görünen tuzaktan kaçsın (daha inandırıcı antrenman)
-- [ ] İkinci harita taslağı (ofis) — rapor: çıkıştan sonra; sadece altyapı (harita seçimi)
+- [-] İkinci harita (ofis) — ertelendi: rapora göre çıkıştan sonra, önce ilk evin test sonucu
 
 ## Haftalık
 - [x] Hafta 1 video fikirleri (`marketing/VIDEO_IDEAS.md`)

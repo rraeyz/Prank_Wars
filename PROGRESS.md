@@ -43,4 +43,7 @@ Sonraki oturum: önce `PLAN.md`, sonra bu dosyanın en üstündeki kaydı oku.
 - Pazarlama: `marketing/` (mağaza metni, basın kiti, yayıncı mesajı, video fikirleri), `tools/keyart.gd` tanıtım görseli aracı.
 - Testler: 86 kontrol + ağ testi geçiyor; CI yeşil.
 
+**Oturum 1 son eklemeler:** 7 dil (TR/EN/ES/PT/DE/FR/RU), tuş atama ekranı, gamepad ile menü, botlar bazı tuzaklardan kaçıyor, hazırlıkta kapıdan içeri bakma açığı kapatıldı. 101 test + ağ testi geçiyor.
+**Durum:** PLAN.md'de yapılabilecek tüm [ ] görevler bitti; kalanlar kullanıcı testine bağlı ([K]/[~]). Saatlik tetikleyici bu yüzden kapatıldı — kullanıcı geri bildirim verince yeniden açılabilir.
+
 **Sıradaki:** Kullanıcı testi 1 sonuçlarına göre mekanik/denge değişiklikleri. Steam lobisinin ilk gerçek testi (Kullanıcı testi 2).
