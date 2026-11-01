@@ -34,6 +34,7 @@ var spawn_garden: Array = []
 var spawn_house: Array = []
 var _front_block: StaticBody3D
 var map := "house"
+var custom_nodes: Array = []
 const MAPS := ["house", "office", "mansion"]
 const MAP_SIZE := {"house": "medium", "office": "medium", "mansion": "large"}
 var _nav_centers := {"kitchen": Vector3(-3.4, 0, -3.0), "living": Vector3(1.6, 0, -2.6),
@@ -41,7 +42,7 @@ var _nav_centers := {"kitchen": Vector3(-3.4, 0, -3.0), "living": Vector3(1.6, 0
 
 
 ## Builds the chosen map. Every map shares the outer shell (16x12, front door at x=-1) and the garden.
-func build(map_name := "house") -> void:
+func build(map_name := "house", custom: Array = []) -> void:
 	map = map_name if map_name in MAPS else "house"
 	if map == "mansion":
 		RECT = Rect2(-12, -10, 24, 16)
@@ -70,6 +71,8 @@ func build(map_name := "house") -> void:
 		_house_decor()
 		_walls()
 		_furniture()
+	for it in sanitize_items(custom, RECT):
+		custom_nodes.append(build_item(it[0], Vector3(it[1], 0, it[2]), it[3]))
 	_garden()
 	_roof()
 	_nav()
@@ -760,3 +763,69 @@ func _mansion_furniture() -> void:
 	_spot("bed", Vector3(10.8, 0.5, 2.5), 1.9)
 	_cupboard("wardrobe", Vector3(1.5, 2.0, 0.6), Vector3(8.0, 0, -2.6), 0.0, Color("a0785a"), Color("c49a74"))
 	_cupboard("nightstand", Vector3(0.55, 0.55, 0.5), Vector3(11.5, 0, 5.6), PI, C_DARK_WOOD, C_WOOD)
+
+
+# ------------------------------------------------------------------ custom items (map editor)
+
+## type -> [size, color, movable prop?]
+const ITEM_TYPES := {
+	"crate": [Vector3(0.8, 0.8, 0.8), Color("d4a373"), true],
+	"big_crate": [Vector3(1.3, 1.3, 1.3), Color("b5835a"), false],
+	"table": [Vector3(1.6, 0.8, 0.9), Color("c8955f"), false],
+	"sofa": [Vector3(2.2, 0.8, 0.9), Color("e07a5f"), false],
+	"shelf": [Vector3(1.4, 1.8, 0.5), Color("8b5a3c"), false],
+	"wall": [Vector3(2.0, 2.2, 0.2), Color("f6efe3"), false],
+	"ramp": [Vector3(1.2, 0.15, 2.6), Color("9fb3c8"), false],
+	"plant": [Vector3(0.5, 1.2, 0.5), Color("3fa34d"), false],
+	"ball": [Vector3(0.9, 0.9, 0.9), Color("ff4d6d"), true],
+	"chair": [Vector3(0.45, 0.9, 0.45), Color("e8a45c"), true],
+}
+const MAX_ITEMS := 120
+
+
+## Network / file input: keep known types, finite numbers, inside the house, capped count.
+static func sanitize_items(items, rect: Rect2) -> Array:
+	var out := []
+	if not (items is Array):
+		return out
+	for it in items:
+		if out.size() >= MAX_ITEMS:
+			break
+		if not (it is Array) or it.size() != 4 or not ITEM_TYPES.has(str(it[0])):
+			continue
+		var x := float(it[1])
+		var z := float(it[2])
+		var yaw := float(it[3])
+		if not (is_finite(x) and is_finite(z) and is_finite(yaw)) or not rect.grow(-0.3).has_point(Vector2(x, z)):
+			continue
+		out.append([str(it[0]), x, z, fposmod(yaw, TAU)])
+	return out
+
+
+## Builds one editor item (static furniture or a movable prop). Returns the root node.
+func build_item(type: String, pos: Vector3, yaw: float) -> Node3D:
+	var d: Array = ITEM_TYPES[type]
+	var size: Vector3 = d[0]
+	var c: Color = d[1]
+	if d[2]:
+		var p := _prop(type, size, pos + Vector3(0, size.y / 2.0 + 0.05, 0), c, 2.0, "ball" if type == "ball" else "box")
+		p.rotation.y = yaw
+		p.home = p.transform
+		return p
+	var root := Node3D.new()
+	root.position = pos
+	root.rotation.y = yaw
+	add_child(root)
+	match type:
+		"ramp":
+			var sb := U.solid(root, size, Vector3(0, 0.45, 0), c)
+			sb.rotation.x = -0.36
+		"plant":
+			U.solid(root, Vector3(0.45, 0.45, 0.45), Vector3(0, 0.22, 0), Color("c46b3e"))
+			U.sphere(0.42, c, Vector3(0, 0.78, 0), root)
+		"table":
+			U.solid(root, Vector3(size.x, 0.08, size.z), Vector3(0, 0.78, 0), c)
+			U.invisible_wall(root, Vector3(size.x - 0.1, 0.74, size.z - 0.1), Vector3(0, 0.37, 0))
+		_:
+			U.solid(root, size, Vector3(0, size.y / 2.0, 0), c)
+	return root

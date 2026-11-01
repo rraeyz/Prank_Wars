@@ -120,23 +120,27 @@ func _build_main() -> void:
 	_name_edit.text_changed.connect(func(t): Config.settings["name"] = t; Config.save_settings())
 	row.add_child(_name_edit)
 	v.add_child(row)
-	var lk := _btn(I18n.t("locker") + "  (" + I18n.t("level_n", [Config.level()]) + ")", func(): show_screen("locker"); _refresh_locker(), v)
-	lk.add_theme_color_override("font_color", Color("9ad0ff"))
-	var tb := _btn(I18n.t("tutorial_btn"), func(): Net.start_tutorial(), v)
+	# two columns so everything fits on a 720p screen
+	var g := GridContainer.new()
+	g.columns = 2
+	g.add_theme_constant_override("h_separation", 10)
+	g.add_theme_constant_override("v_separation", 8)
+	v.add_child(g)
+	var tb := _btn(I18n.t("tutorial_btn"), func(): Net.start_tutorial(), g)
 	tb.add_theme_color_override("font_color", Color("7CFC9A") if not bool(Config.settings.get("tutorial_done", false)) else Color.WHITE)
-	var pb := _btn(I18n.t("practice"), func(): Net.start_practice(); show_screen("lobby"), v)
+	var pb := _btn(I18n.t("practice"), func(): Net.start_practice(); show_screen("lobby"), g)
 	pb.add_theme_color_override("font_color", Color("ffe14d"))
-	var sbx := _btn(I18n.t("sandbox"), func(): Net.start_sandbox(), v)
+	var sbx := _btn(I18n.t("sandbox"), func(): Net.start_sandbox(), g)
 	sbx.add_theme_color_override("font_color", Color("ffb3e6"))
+	_btn(I18n.t("host"), _on_host, g)
 	if SteamNet.available():
-		var sb := _btn(I18n.t("steam_host"), func(): SteamNet.host_lobby(false), v)
+		var sb := _btn(I18n.t("steam_host"), func(): SteamNet.host_lobby(false), g)
 		sb.add_theme_color_override("font_color", Color("9ad0ff"))
-		var pub := _btn(I18n.t("steam_public"), func(): SteamNet.host_lobby(true), v)
+		var pub := _btn(I18n.t("steam_public"), func(): SteamNet.host_lobby(true), g)
 		pub.add_theme_color_override("font_color", Color("9ad0ff"))
-		var fb := _btn(I18n.t("find_rooms"), func(): show_screen("browser"); SteamNet.find_lobbies(), v)
+		var fb := _btn(I18n.t("find_rooms"), func(): show_screen("browser"); SteamNet.find_lobbies(), g)
 		fb.add_theme_color_override("font_color", Color("9ad0ff"))
 		SteamNet.status.connect(func(t): _status.text = t)
-	_btn(I18n.t("host"), _on_host, v)
 	var jr := HBoxContainer.new()
 	_ip_edit = LineEdit.new()
 	_ip_edit.text = str(Config.settings["last_ip"])
@@ -149,11 +153,14 @@ func _build_main() -> void:
 	jb.add_theme_font_size_override("font_size", 22)
 	jb.pressed.connect(_on_join)
 	jr.add_child(jb)
-	v.add_child(jr)
-	_btn(I18n.t("how"), func(): show_screen("how"), v)
-	_btn(I18n.t("achievements"), func(): _refresh_ach(); show_screen("ach"), v)
-	_btn(I18n.t("settings"), func(): show_screen("settings"), v)
-	_btn(I18n.t("quit"), func(): get_tree().quit(), v)
+	g.add_child(jr)
+	var lk := _btn(I18n.t("locker") + "  (" + I18n.t("level_n", [Config.level()]) + ")", func(): show_screen("locker"); _refresh_locker(), g)
+	lk.add_theme_color_override("font_color", Color("9ad0ff"))
+	_btn(I18n.t("editor"), func(): Config.custom_items = []; Config.custom_name = ""; Net.start_editor(), g)
+	_btn(I18n.t("achievements"), func(): _refresh_ach(); show_screen("ach"), g)
+	_btn(I18n.t("how"), func(): show_screen("how"), g)
+	_btn(I18n.t("settings"), func(): show_screen("settings"), g)
+	_btn(I18n.t("quit"), func(): get_tree().quit(), g)
 	_status = _lbl("", 16, Color("ff9a9a"))
 	v.add_child(_status)
 	v.add_child(_lbl("v" + Config.VERSION, 12, Color(1, 1, 1, 0.5)))
@@ -217,7 +224,7 @@ func _build_lobby() -> void:
 	rb.pressed.connect(func(): Net.remove_bot())
 	_host_box.add_child(rb)
 	_mode_btn = _btn("", func(): Config.mode = "chaos" if Config.mode == "turns" else "turns"; _changed(), v)
-	_map_btn = _btn("", func(): Config.map = House.MAPS[(House.MAPS.find(Config.map) + 1) % House.MAPS.size()]; _changed(), v)
+	_map_btn = _btn("", _cycle_map, v)
 	_rounds_btn = _btn("", _cycle_rounds, v)
 	_setup_btn = _btn("", func(): Config.setup_time = _next_of(Config.SETUP_CHOICES, Config.setup_time); _changed(), v)
 	_run_btn = _btn("", func(): Config.run_time = _next_of(Config.RUN_CHOICES, Config.run_time); _changed(), v)
@@ -274,6 +281,8 @@ func _refresh_lobby() -> void:
 	_mode_btn.visible = host
 	_map_btn.visible = host
 	_map_btn.text = "%s: %s (%s)" % [I18n.t("map"), I18n.t("map_" + Config.map), I18n.t("size_" + House.MAP_SIZE.get(Config.map, "medium"))]
+	if Config.custom_name != "":
+		_map_btn.text = "%s: %s (%s)" % [I18n.t("map"), Config.custom_name, I18n.t("map_" + Config.map)]
 	_mode_btn.text = "%s: %s" % [I18n.t("mode"), I18n.t("mode_" + Config.mode)]
 	_rounds_btn.visible = host and Config.mode == "turns"
 	_setup_btn.visible = host and Config.mode == "turns"
@@ -561,3 +570,22 @@ func _refresh_ach() -> void:
 		var prog := "" if c[0] == "" or got.has(id) else "  (%d/%d)" % [mini(int(counts.get(c[0], 0)), int(c[1])), int(c[1])]
 		t += ("★ " if got.has(id) else "☆ ") + I18n.t("ach_" + id) + prog + "\n"
 	_ach_label.text = t
+
+
+## Base maps first, then the player's own maps from the editor.
+func _cycle_map() -> void:
+	var opts: Array = House.MAPS.duplicate()
+	for n in load("res://scripts/editor.gd").list_maps():
+		opts.append("custom:" + n)
+	var cur: String = ("custom:" + Config.custom_name) if Config.custom_name != "" else Config.map
+	var nxt: String = opts[(opts.find(cur) + 1) % opts.size()]
+	if nxt.begins_with("custom:"):
+		var data: Dictionary = load("res://scripts/editor.gd").load_map(nxt.substr(7))
+		Config.map = data.get("base", "house")
+		Config.custom_items = data.get("items", [])
+		Config.custom_name = nxt.substr(7)
+	else:
+		Config.map = nxt
+		Config.custom_items = []
+		Config.custom_name = ""
+	_changed()

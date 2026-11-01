@@ -20,7 +20,10 @@ const REVEAL_RADIUS := 6.0
 var house_rules := true  # random rule each round (from round 2)
 var rule_choice := "random"
 var mode := "turns"  # turns | chaos
-var map := "house"  # house | office
+var map := "house"  # house | office | mansion (base of custom maps too)
+var custom_items: Array = []  # map editor items: [type, x, z, yaw]
+var custom_name := ""
+var editor := false
 const CHAOS_START_BUDGET := 6
 const CHAOS_BUDGET_EVERY := 5.0
 
@@ -300,6 +303,7 @@ func _setup_input() -> void:
 		"menu": [_key(KEY_ESCAPE), _joy(JOY_BUTTON_START)],
 		"screenshot": [_key(KEY_F9)],
 		"open_clips": [_key(KEY_F10)],
+		"rotate_item": [_key(KEY_X)],
 		"taunt": [_key(KEY_V), _joy(JOY_BUTTON_DPAD_DOWN)],
 		"zoom": [_key(KEY_Z), _joy(JOY_BUTTON_RIGHT_STICK)],
 		"chat": [_key(KEY_ENTER), _key(KEY_KP_ENTER)],

@@ -136,7 +136,8 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [x] Etkileşimli eğitim (10 adım, ~1 dk, otomatik testli)
 - [x] Klip kaydı: tekrar otomatik video (yatay 960x540 + dikey 540x960 TikTok), filigranlı, F10 klasörü açar
 - [ ] Kurucu ayrılınca maçın devam etmesi (host migration) — zor, Steam testi sonrası
-- [ ] Yeni haritalar: okul, düğün salonu; harita editörü (topluluk içeriği)
+- [x] Harita editörü: Q/R eşya seç, sol tık koy, X döndür, sağ tık sil; user://maps/*.json; lobide özel harita seçimi
+- [ ] Yeni haritalar: okul, düğün salonu
 - [x] Günlük görevler (her gün 3 küçük hedef, +150 XP)
 
 ## Haftalık

@@ -37,6 +37,7 @@ func _ready() -> void:
 
 
 func _reset() -> void:
+	Config.editor = false
 	Config.sandbox = false
 	Config.tutorial = false
 	in_match = false
@@ -54,6 +55,12 @@ func start_sandbox() -> void:
 	_add_player(1, str(Config.settings["name"]), false, 0)
 	add_bot(1)
 	add_bot(1)
+	start_match()
+
+
+func start_editor() -> void:
+	start_sandbox_with(0)
+	Config.editor = true
 	start_match()
 
 
@@ -184,11 +191,13 @@ func _sync(p: Dictionary, cfg: Dictionary) -> void:
 	Config.rule_choice = rc if rc in ["random", "off"] or rc in Config.MODIFIERS else "random"
 	Config.mode = "chaos" if str(cfg.get("mode", "turns")) == "chaos" else "turns"
 	Config.map = str(cfg.get("map", "house")) if str(cfg.get("map", "house")) in House.MAPS else "house"
+	Config.custom_items = cfg.get("custom", []) if cfg.get("custom", []) is Array else []
+	Config.custom_name = str(cfg.get("custom_name", "")).substr(0, 24)
 	players_changed.emit()
 
 
 func lobby_cfg() -> Dictionary:
-	return {"rounds": Config.rounds, "setup": Config.setup_time, "run": Config.run_time, "rule": Config.rule_choice, "mode": Config.mode, "map": Config.map}
+	return {"rounds": Config.rounds, "setup": Config.setup_time, "run": Config.run_time, "rule": Config.rule_choice, "mode": Config.mode, "map": Config.map, "custom": Config.custom_items, "custom_name": Config.custom_name}
 
 
 func _broadcast() -> void:
@@ -272,10 +281,10 @@ func can_start() -> bool:
 
 
 func start_match() -> void:
-	if not is_host() or not can_start():
+	if not is_host() or (not can_start() and not Config.sandbox):
 		return
-	var cfg := {"rounds": Config.rounds, "seed": randi(), "demo": Config.demo_mode, "sandbox": Config.sandbox, "tutorial": Config.tutorial,
-		"setup": Config.setup_time, "run": Config.run_time, "rule": Config.rule_choice, "mode": Config.mode, "map": Config.map}
+	var cfg := {"rounds": Config.rounds, "seed": randi(), "demo": Config.demo_mode, "sandbox": Config.sandbox, "tutorial": Config.tutorial, "editor": Config.editor,
+		"setup": Config.setup_time, "run": Config.run_time, "rule": Config.rule_choice, "mode": Config.mode, "map": Config.map, "custom": Config.custom_items, "custom_name": Config.custom_name}
 	if mode == "host":
 		_begin.rpc(players, cfg)
 	_begin(players, cfg)
@@ -288,12 +297,15 @@ func _begin(p: Dictionary, cfg: Dictionary) -> void:
 	Config.demo_mode = bool(cfg["demo"])
 	Config.sandbox = bool(cfg.get("sandbox", false))
 	Config.tutorial = bool(cfg.get("tutorial", false))
+	Config.editor = bool(cfg.get("editor", false))
 	Config.setup_time = float(cfg["setup"])
 	Config.run_time = float(cfg["run"])
 	var rc := str(cfg.get("rule", "random"))
 	Config.rule_choice = rc if rc in ["random", "off"] or rc in Config.MODIFIERS else "random"
 	Config.mode = "chaos" if str(cfg.get("mode", "turns")) == "chaos" else "turns"
 	Config.map = str(cfg.get("map", "house")) if str(cfg.get("map", "house")) in House.MAPS else "house"
+	Config.custom_items = cfg.get("custom", []) if cfg.get("custom", []) is Array else []
+	Config.custom_name = str(cfg.get("custom_name", "")).substr(0, 24)
 	if Config.mode == "chaos":
 		Config.rounds = 1
 	match_begin.emit(cfg)

@@ -41,7 +41,7 @@ func _run() -> void:
 	var mus: AudioStreamWAV = Sfx.build_music()
 	check(mus.data.size() > 100000, "music synthesizes")
 	print("== integration tests")
-	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "rules", "rush", "sniff", "awards", "events", "new_pranks", "chaos", "chaos_bots", "office_match", "powerups", "perks", "mansion_match", "twitch_effect", "tutorial", "full_match"]:
+	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "rules", "rush", "sniff", "awards", "events", "new_pranks", "chaos", "chaos_bots", "office_match", "powerups", "perks", "mansion_match", "twitch_effect", "tutorial", "editor", "custom_match", "full_match"]:
 		if only != "" and only != t:
 			continue
 		print("-- ", t)
@@ -80,6 +80,8 @@ func _dispatch(t: String) -> void:
 		"mansion_match": await it_mansion_match()
 		"twitch_effect": await it_twitch_effect()
 		"tutorial": await it_tutorial()
+		"editor": await it_editor()
+		"custom_match": await it_custom_match()
 		"full_match": await it_full_match()
 
 
@@ -1087,3 +1089,55 @@ func test_clip() -> void:
 	var code := OS.execute("ffprobe", ["-v", "error", "-select_streams", "v:0", "-count_frames", "-show_entries", "stream=codec_name,width,height,nb_read_frames", "-of", "csv=p=0", paths[1]], out)
 	if code == 0:
 		check(str(out[0]).strip_edges() == "mjpeg,540,960,12", "ffprobe reads the vertical clip (%s)" % str(out[0]).strip_edges())
+
+
+
+func it_editor() -> void:
+	var bad := House.sanitize_items([["wall", 1, 1, 0], ["nope", 0, 0, 0], ["ramp", NAN, 0, 0], ["sofa", 99, 0, 0], "x", ["ball", -2, 2, 7.0]], Rect2(-8, -6, 16, 12))
+	check(bad.size() == 2 and bad[1][3] < TAU, "custom items sanitized (unknown, NaN, outside dropped)")
+	Config.map = "house"
+	Config.custom_items = []
+	Net.leave()
+	Net.start_sandbox_with(0)
+	Config.editor = true
+	Net.players = {5: _p("Me", 0, 1)}
+	w = World.new()
+	get_tree().root.add_child(w)
+	await _frames(3)
+	var ed: Node = null
+	for c in w.get_children():
+		if c.get_script() and str(c.get_script().resource_path).ends_with("editor.gd"):
+			ed = c
+	check(ed != null, "editor attached")
+	check(ed.add_item("wall", Vector3(2, 0, -2), 0.0) and ed.add_item("ball", Vector3(-2, 0, 3), 0.0), "items placed")
+	check(Config.custom_items.size() == 2 and w.house.props.back().kind == "ball", "editor tracks items, ball is a physics prop")
+	check(ed.remove_near(Vector3(2.2, 0, -2)) and Config.custom_items.size() == 1, "nearest item removed")
+	ed.add_item("ramp", Vector3(3, 0, 2), 0.5)
+	ed._name.text = "Test Map!!"
+	ed._save()
+	check(ed.clean_name("Test Map!!") == "testmap" and "testmap" in ed.list_maps(), "map saved with a clean name")
+	var data: Dictionary = ed.load_map("testmap")
+	check(data["base"] == "house" and data["items"].size() == 2, "map loads back")
+	Config.editor = false
+
+
+func it_custom_match() -> void:
+	var ed_script = load("res://scripts/editor.gd")
+	var data: Dictionary = ed_script.load_map("testmap")
+	Config.map = data["base"]
+	var players := {-1: _p("B1", 0, 1, true), -2: _p("B2", 1, 2, true)}
+	await _make_world(players)
+	Config.custom_items = data["items"]
+	w.queue_free()
+	await _frames(2)
+	w = World.new()
+	get_tree().root.add_child(w)
+	await _frames(3)
+	check(w.house.custom_nodes.size() == 2, "custom map items built in a match")
+	var t := 0
+	while w.phase != "end" and t < 60 * 60 * 4:
+		await get_tree().physics_frame
+		t += 1
+	check(w.phase == "end", "bot match on a custom map ends")
+	Config.custom_items = []
+	DirAccess.remove_absolute("user://maps/testmap.json")

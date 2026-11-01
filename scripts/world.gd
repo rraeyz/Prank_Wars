@@ -86,7 +86,7 @@ func _ready() -> void:
 	house = House.new()
 	house.name = "House"
 	add_child(house)
-	house.build(Config.map)
+	house.build(Config.map, Config.custom_items)
 	_ents = Node3D.new()
 	_ents.name = "Ents"
 	add_child(_ents)
@@ -122,6 +122,11 @@ func _ready() -> void:
 				var tut: Node = load("res://scripts/tutorial.gd").new()
 				tut.world = self
 				add_child(tut)
+			elif Config.editor:
+				Config.custom_items = House.sanitize_items(Config.custom_items, house.RECT)
+				var ed: Node = load("res://scripts/editor.gd").new()
+				ed.world = self
+				add_child(ed)
 		else:
 			_host_start_round(0)
 
@@ -359,6 +364,8 @@ func _local_input() -> void:
 		_send_action("reveal", [])
 	if Input.is_action_just_pressed("dive"):
 		_send_action("dive", [])
+	if Config.editor:
+		return  # the editor handles clicks itself
 	var list := Config.enabled_pranks()
 	if building() and local_is_trapper():
 		if Input.is_action_just_pressed("next_item"):

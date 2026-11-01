@@ -4,6 +4,10 @@ extends RefCounted
 const LANGS := ["es", "pt", "de", "fr", "ru"]
 
 const S := {
+	"editor": ["Editor de mapas", "Editor de mapas", "Karteneditor", "Éditeur de carte", "Редактор карт"],
+	"save": ["Guardar", "Salvar", "Speichern", "Enregistrer", "Сохранить"],
+	"clear": ["Borrar", "Limpar", "Leeren", "Effacer", "Очистить"],
+	"test_map": ["Probar con bots", "Testar com bots", "Mit Bots testen", "Tester avec des bots", "Тест с ботами"],
 	"clip_saved": ["Clip guardado (horizontal + vertical): %s — F10 abre la carpeta", "Clipe salvo (horizontal + vertical): %s — F10 abre a pasta", "Clip gespeichert (quer + hochkant): %s — F10 öffnet den Ordner", "Clip enregistré (paysage + vertical) : %s — F10 ouvre le dossier", "Клип сохранён (гориз. + верт.): %s — F10 откроет папку"],
 	"clips_opt": ["Guardar la repetición como vídeo", "Salvar o replay como vídeo", "Wiederholung als Video speichern", "Enregistrer le ralenti en vidéo", "Сохранять повтор как видео"],
 	"tutorial": ["TUTORIAL", "TUTORIAL", "TUTORIAL", "TUTORIEL", "ОБУЧЕНИЕ"],

@@ -49,6 +49,8 @@ func _ready() -> void:
 		add_child(load("res://tests/locker_probe.gd").new())
 	if args.has("twitchprobe"):
 		add_child(load("res://tests/twitch_probe.gd").new())
+	if args.has("editorprobe"):
+		add_child(load("res://tests/editor_probe.gd").new())
 	if args.has("nanprobe"):
 		add_child(load("res://tests/nan_probe.gd").new())
 	Net.match_begin.connect(_on_match_begin)
@@ -65,6 +67,8 @@ func _ready() -> void:
 			ka.out = str(args["keyart"])
 		Net.start_sandbox.call_deferred()
 		Net.match_begin.connect(func(_c): add_child.call_deferred(ka), CONNECT_ONE_SHOT)
+	elif args.has("editor"):
+		Net.start_editor.call_deferred()
 	elif args.has("tutorial"):
 		Net.start_tutorial.call_deferred()
 	elif args.has("sandbox"):

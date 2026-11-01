@@ -507,7 +507,7 @@ func _process(delta: float) -> void:
 		tip_key = "tips_run"
 	elif p == "sandbox":
 		tip_key = "tips_trap"
-	_tip.visible = tip_key != "" and not rp and (world.round_i < 2 or p == "sandbox") and not Config.tutorial
+	_tip.visible = tip_key != "" and not rp and (world.round_i < 2 or p == "sandbox") and not Config.tutorial and not Config.editor
 	if _tip.visible:
 		_tip.text = I18n.tip(tip_key, int(_tip_t / 7.0))
 	# tasks
@@ -532,7 +532,8 @@ func _process(delta: float) -> void:
 	_bar.visible = show_prompt and float(pr[1]) > 0.0
 	_bar.value = float(pr[1])
 	# palette
-	var trapper_setup: bool = world.building() and world.local_is_trapper()
+	var trapper_setup: bool = world.building() and world.local_is_trapper() and not Config.editor
+	_tasks.visible = _tasks.visible and not Config.editor
 	_palette.visible = trapper_setup
 	_budget.visible = trapper_setup
 	if trapper_setup:
@@ -572,7 +573,7 @@ func _process(delta: float) -> void:
 		"run":
 			h = I18n.t("run_help_trapper") if world.local_is_trapper() else I18n.t("run_help_runner")
 		"sandbox":
-			h = I18n.t("sandbox_help")
+			h = "" if Config.editor else I18n.t("sandbox_help")
 		"chaos":
 			h = I18n.t("chaos_help")
 	_help.text = h
