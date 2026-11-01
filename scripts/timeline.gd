@@ -5,7 +5,7 @@ extends RefCounted
 ## Entities absent from a frame keep their last known value (host skips resting ones).
 
 const STRIDE := 9
-const MAX_FRAMES := 20 * 60 * 4
+const MAX_FRAMES := 30 * 60 * 4  # 4 min at 30 Hz: longer than the longest chore phase (200 s)
 
 var frames: Array = []  # [{"t": float, "d": PackedFloat32Array}]
 var known := {}  # id -> PackedFloat32Array(8)

@@ -1100,6 +1100,9 @@ func s_phase(p: String, dur: float) -> void:
 	front.locked = p in ["intro", "setup"]
 	house.set_front_locked(front.locked)
 	if p == "run":
+		# replays only show the chores: start recording fresh so long setups can't push run frames out
+		timeline.clear()
+		_last_sent.clear()
 		Sfx.play("go")
 		if cam:
 			cam.spectate_idx = 1
