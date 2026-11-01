@@ -108,7 +108,7 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [x] Koşucu yeteneği "Kokla" (C / LB): 6 m içindeki gizli tuzakları 3,5 sn gösterir, 25 sn bekleme
 - [x] Dans / nanik (V / d-pad aşağı)
 - [x] Maç sonu ödülleri: Muz Kurbanı, En Pis, Tuzak Ustası, Ev Hayaleti, Ev Kuşu, Bomba İmhacı
-- [ ] Rastgele raunt olayları: kedi kaçtı (kedi koşar, tuzakları tetikler), kapı zili / pizza (bonus görev)
+- [x] Rastgele raunt olayları: kedi kaçtı (koşar, tuzak tetikler, yakalayana +10), pizza geldi (bonus görev)
 - [ ] Yeni şakalar: trambolin, sahte kapı, su balonu (fırlatılabilir)
 - [ ] Kaos modu: iki takım aynı anda hem kurar hem koşar (ayrı mod)
 - [ ] Kozmetik: şapkalar, renkler (oyuncunun kendini ifade etmesi, klip için)

@@ -65,6 +65,11 @@ var _taunt_cd := {}
 var _quake_at := 0.0
 var _stats := {}  # host: slot -> {stat: value}
 var awards: Array = []
+var _event := ""
+var _event_at := 0.0
+var cat_zoom_until := 0.0
+var _cat_turn_at := 0.0
+var _cat_dir := Vector3.FORWARD
 var _in_acc := 0.0
 var _mouse_mode := false
 var _last_mv := Vector2.ZERO
@@ -855,6 +860,10 @@ func _best_interaction(a: Avatar) -> Dictionary:
 			var lbl := I18n.t("s_" + str(e["at"]))
 			return {"key": "task_%s_%s" % [e["task"], e["at"]], "label": lbl, "time": e["time"],
 				"do": _do_task_step.bind(a, e)}
+	if phase == "run" and is_runner(a) and cat_zoom_until > Config.now:
+		var cat := _prop_of_kind("cat")
+		if U.dist_xz(cat.global_position, pos) < 1.3:
+			return {"key": "cat", "label": I18n.t("catch_cat"), "time": 0.25, "do": _catch_cat.bind(a)}
 	if phase in ["setup", "run", "intro", "sandbox"] and not a.carrying:
 		var best: Prop = null
 		var bd := 1.3
@@ -1033,6 +1042,7 @@ func _host_start_round(i: int) -> void:
 		p.linear_velocity = Vector3.ZERO
 		p.angular_velocity = Vector3.ZERO
 		p.chain_id = -1
+	_prop_of_kind("pizza").set_hidden(true)
 	for s in bots:
 		bots[s].on_round_start()
 	_set_phase("intro", Config.intro_time)
@@ -1040,6 +1050,8 @@ func _host_start_round(i: int) -> void:
 
 @rpc("authority", "reliable")
 func s_round_reset(i: int, ttm: int, picked: Array, mod: String) -> void:
+	cat_zoom_until = 0.0
+	_event = ""
 	modifier = mod if mod in Config.MODIFIERS else ""
 	rush = false
 	reveal_until = 0.0
@@ -1074,7 +1086,7 @@ func s_round_reset(i: int, ttm: int, picked: Array, mod: String) -> void:
 
 
 func _pick_tasks() -> Array:
-	var keys := Config.TASKS.keys()
+	var keys := Config.TASKS.keys().filter(func(k): return not k in Config.EVENT_TASKS)
 	for k in range(keys.size() - 1, 0, -1):
 		var j := rng.randi_range(0, k)
 		var tmp = keys[k]
@@ -1189,6 +1201,11 @@ func _host_phase_tick() -> void:
 			elif not rush and _phase_end - now <= minf(Config.RUSH_TIME, Config.run_time * 0.25) and _phase_end - now > 3.0:
 				scoring.mult *= 2
 				fx_all("rush", [])
+			if _event != "" and now >= _event_at:
+				_start_event(_event)
+				_event = ""
+			if cat_zoom_until > now:
+				_cat_tick()
 			if modifier == "quake" and now >= _quake_at:
 				_quake_at = now + rng.randf_range(14.0, 22.0)
 				if now - _run_start > 8.0:
@@ -1222,6 +1239,10 @@ func _host_phase_tick() -> void:
 func _start_run() -> void:
 	_run_start = Config.now
 	_quake_at = Config.now + 12.0
+	# one surprise per round (or none): runaway cat or pizza delivery
+	var roll := rng.randf()
+	_event = "cat" if roll < 0.4 else ("pizza" if roll < 0.75 else "")
+	_event_at = Config.now + Config.run_time * rng.randf_range(0.3, 0.55)
 	for id in pranks:
 		pranks[id].arm()
 	for s in avatars:
@@ -1450,6 +1471,10 @@ func _apply_fx(kind: String, args: Array, in_replay: bool) -> void:
 					hud.popup(I18n.t("rush"), Color("ff4d6d"))
 				if cam:
 					cam.shake(0.8)
+		"event":
+			if not in_replay and hud:
+				hud.popup(I18n.t("ev_" + str(args[0])), Color("ffd166"))
+				Sfx.play("meow" if args[0] == "cat" else "doorbell", null, 2.0)
 		"quake":
 			if not in_replay:
 				Sfx.play("thud", null, 4.0, 0.5)
@@ -1815,3 +1840,58 @@ func s_awards(list: Array) -> void:
 	awards = list
 	if hud:
 		hud.show_awards(list)
+
+
+# ------------------------------------------------------------------ round events (host)
+
+func _start_event(kind: String) -> void:
+	match kind:
+		"cat":
+			cat_zoom_until = Config.now + 18.0
+			fx_all("event", ["cat"])
+		"pizza":
+			var pz := _prop_of_kind("pizza")
+			pz.global_transform = pz.home
+			pz.linear_velocity = Vector3.ZERO
+			pz.set_hidden(false)
+			tasks.append({"id": "pizza", "step": 0, "done": false})
+			fx_all("event", ["pizza"])
+			_sync_state()
+
+
+## Zoomies: the cat sprints in random directions and sets off traps it runs over.
+func _cat_tick() -> void:
+	var cat := _prop_of_kind("cat")
+	var now := Config.now
+	var hv := Vector3(cat.linear_velocity.x, 0, cat.linear_velocity.z)
+	if now > _cat_turn_at or hv.length() < 0.5:
+		_cat_turn_at = now + rng.randf_range(0.6, 1.4)
+		var a := rng.randf() * TAU
+		_cat_dir = Vector3(cos(a), 0, sin(a))
+	cat.linear_velocity = Vector3(_cat_dir.x * 4.5, cat.linear_velocity.y, _cat_dir.z * 4.5)
+	cat.rotation.y = atan2(-_cat_dir.x, -_cat_dir.z)
+	if rng.randf() < 0.01:
+		fx_all("sfx", ["meow", cat.global_position])
+
+
+## The cat ran over a floor trap: whoever is standing close gets it, otherwise the trap is wasted.
+func cat_trigger(p: Prank) -> void:
+	var vs := avatars_near(p.global_position, 1.6, true)
+	if vs.size() > 0:
+		p.fire(vs[0])
+		return
+	p.used = true
+	fx_all("prank", [p.id, "trigger"])
+	feed_all("feed_cat_wasted", ["@p_" + p.type], p.team)
+
+
+func _catch_cat(a: Avatar) -> void:
+	if cat_zoom_until <= Config.now:
+		return
+	cat_zoom_until = 0.0
+	var cat := _prop_of_kind("cat")
+	cat.linear_velocity = Vector3.ZERO
+	scoring.bonus(a.team, Config.CAT_BONUS * scoring.mult, "cat", Config.now)
+	feed_all("feed_cat_caught", [a.pname, Config.CAT_BONUS * scoring.mult], a.team)
+	fx_all("sfx", ["meow", cat.global_position])
+	_sync_state()

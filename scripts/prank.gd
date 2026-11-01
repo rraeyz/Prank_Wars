@@ -303,7 +303,9 @@ func _on_step(body: Node) -> void:
 			fire(a)
 	elif body is Prop:
 		var p: Prop = body
-		if (p.is_chained(Config.now) or Config.now < p.thrown_until) and type in ["marbles", "spring"]:
+		if p.kind == "cat" and world.cat_zoom_until > Config.now and def["place"] == "floor" and type != "vacuum":
+			world.cat_trigger(self)
+		elif (p.is_chained(Config.now) or Config.now < p.thrown_until) and type in ["marbles", "spring"]:
 			fire(p)
 
 

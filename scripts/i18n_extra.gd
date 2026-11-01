@@ -4,6 +4,13 @@ extends RefCounted
 const LANGS := ["es", "pt", "de", "fr", "ru"]
 
 const S := {
+	"ev_cat": ["¡SE ESCAPÓ EL GATO!\nActiva trampas — atrápalo: +10", "O GATO FUGIU!\nEle ativa armadilhas — pegue: +10", "DIE KATZE IST LOS!\nSie löst Fallen aus — fang sie: +10", "LE CHAT S'EST ÉCHAPPÉ !\nIl déclenche les pièges — attrape-le : +10", "КОТ СБЕЖАЛ!\nОн включает ловушки — поймай: +10"],
+	"ev_pizza": ["¡LLEGÓ LA PIZZA!\nLleva la pizza de la puerta a la cocina", "CHEGOU A PIZZA!\nLeve a pizza da porta para a cozinha", "PIZZA IST DA!\nBring die Pizza von der Tür in die Küche", "LA PIZZA EST LÀ !\nApporte la pizza de la porte à la cuisine", "ПИЦЦА ПРИЕХАЛА!\nОтнеси пиццу от двери на кухню"],
+	"catch_cat": ["Atrapar al gato", "Pegar o gato", "Katze fangen", "Attraper le chat", "Поймать кота"],
+	"feed_cat_caught": ["%s atrapó al gato  +%d", "%s pegou o gato  +%d", "%s hat die Katze gefangen  +%d", "%s a attrapé le chat  +%d", "%s поймал(а) кота  +%d"],
+	"feed_cat_wasted": ["¡El gato desperdició un(a) %s!", "O gato desperdiçou: %s!", "Die Katze hat verschwendet: %s!", "Le chat a gâché : %s !", "Кот потратил: %s!"],
+	"t_pizza": ["Lleva la pizza a la cocina", "Leve a pizza para a cozinha", "Bring die Pizza in die Küche", "Apporte la pizza à la cuisine", "Отнеси пиццу на кухню"],
+	"s_pizza": ["Coger la pizza", "Pegar a pizza", "Pizza nehmen", "Prendre la pizza", "Взять пиццу"],
 	"rule_random": ["Aleatoria (desde la ronda 2)", "Aleatória (a partir da rodada 2)", "Zufällig (ab Runde 2)", "Aléatoire (dès la manche 2)", "Случайное (со 2-го раунда)"],
 	"rule_off": ["Desactivada", "Desligada", "Aus", "Désactivée", "Выкл."],
 	"rule": ["Regla", "Regra", "Hausregel", "Règle", "Правило"],

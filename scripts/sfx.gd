@@ -106,6 +106,8 @@ func build_all() -> void:
 	sounds["whoosh"] = [_whoosh()]
 	sounds["tape"] = [_squelch()]
 	sounds["disarm"] = [_arp([784.0, 523.0], 0.08)]
+	sounds["meow"] = [_meow(1.0), _meow(1.2)]
+	sounds["doorbell"] = [_doorbell()]
 
 
 func _buf(dur: float) -> PackedFloat32Array:
@@ -375,6 +377,28 @@ func _squelch() -> AudioStreamWAV:
 	var b := _buf(0.5)
 	_noise(b, 0.0, 0.5, 0.8, 0.1, 0.3, 3.0)
 	_osc(b, 0.0, 0.5, 90.0, 140.0, 2, 0.4, 2.0, 20.0, 0.3)
+	return _to_wav(b)
+
+
+func _meow(pitch: float) -> AudioStreamWAV:
+	var b := _buf(0.6)
+	var phase := 0.0
+	var bp := _bp_coef(1400.0 * pitch, 3.0)
+	var st := [0.0, 0.0, 0.0, 0.0]
+	for i in b.size():
+		var t := float(i) / b.size()
+		var f := (520.0 + 380.0 * sin(t * PI)) * pitch
+		phase += f / RATE
+		var x := _wave(phase, 2)
+		var env := minf(1.0, i / (0.03 * RATE)) * (1.0 - t)
+		b[i] = (_biquad(bp, st, x) * 1.5 + x * 0.15) * env
+	return _to_wav(b)
+
+
+func _doorbell() -> AudioStreamWAV:
+	var b := _buf(1.3)
+	_osc(b, 0.0, 0.7, 659.0, 659.0, 0, 0.6, 2.5)
+	_osc(b, 0.45, 0.85, 523.0, 523.0, 0, 0.6, 2.5)
 	return _to_wav(b)
 
 

@@ -87,7 +87,10 @@ const TASKS := {
 	"cat": [{"type": "open", "at": "cat_cabinet"}, {"type": "hold", "at": "cat_bowl", "time": 1.5}],
 	"laundry": [{"type": "pickup", "at": "laundry"}, {"type": "deliver", "at": "clothesline"}],
 	"plants": [{"type": "hold", "at": "plant_a", "time": 1.5}, {"type": "hold", "at": "plant_b", "time": 1.5}],
+	"pizza": [{"type": "pickup", "at": "pizza"}, {"type": "deliver", "at": "counter"}],  # event only
 }
+const EVENT_TASKS := ["pizza"]
+const CAT_BONUS := 10
 
 ## Physics-time clock of the running match (seconds). Set by World.
 var now := 0.0

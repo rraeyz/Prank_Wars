@@ -29,8 +29,12 @@ func _run() -> void:
 	test_house()
 	test_sample_one()
 	test_i18n()
+	Sfx.build_all()
+	check(Sfx.sounds.has("meow") and Sfx.sounds.has("doorbell") and Sfx.sounds.size() >= 26, "all sounds synthesize (%d)" % Sfx.sounds.size())
+	var mus: AudioStreamWAV = Sfx.build_music()
+	check(mus.data.size() > 100000, "music synthesizes")
 	print("== integration tests")
-	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "rules", "rush", "sniff", "awards", "full_match"]:
+	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "rules", "rush", "sniff", "awards", "events", "full_match"]:
 		if only != "" and only != t:
 			continue
 		print("-- ", t)
@@ -59,6 +63,7 @@ func _dispatch(t: String) -> void:
 		"rush": await it_rush()
 		"sniff": await it_sniff()
 		"awards": await it_awards()
+		"events": await it_events()
 		"full_match": await it_full_match()
 
 
@@ -590,3 +595,42 @@ func it_awards() -> void:
 			check(x[1] == "Trap" and x[2] == 10, "trap master gets the prank points")
 	w.s_awards(aw)
 	check(w.awards.size() == aw.size(), "awards reach the HUD")
+
+
+
+func it_events() -> void:
+	await _make_world(_two_players())
+	check(not ("pizza" in w._pick_tasks()), "pizza is never a normal chore")
+	await _setup_run([["banana", Vector3(0.3, 0, 2.5), ""]])
+	var r := _runner(2)
+	var r3 := _runner(3)
+	r.respawn(Vector3(6.5, 0.8, 5))
+	r3.respawn(Vector3(5.5, 0.8, 5))
+	w._start_event("cat")
+	check(w.cat_zoom_until > Config.now, "runaway cat starts")
+	var cat: Prop = w._prop_of_kind("cat")
+	var p: Prank = w.pranks.values()[0]
+	w.cat_trigger(p)
+	check(p.used and w.scoring.totals[0] == 0, "cat wastes a trap when nobody is near")
+	cat.global_position = r.global_position + Vector3(0.5, 0, 0)
+	await _frames(2)
+	w._catch_cat(r)
+	check(w.cat_zoom_until == 0.0 and w.scoring.totals[1] == Config.CAT_BONUS, "catching the cat gives the runners a bonus")
+	for i in 60:
+		w._cat_tick()
+		await get_tree().physics_frame
+	w._start_event("pizza")
+	var pz: Prop = w._prop_of_kind("pizza")
+	check(not pz.hidden_prop and w.tasks.back()["id"] == "pizza", "pizza appears with a bonus chore")
+	r.respawn(pz.global_position + Vector3(0.5, 0.6, 0))
+	await _frames(5)
+	r.in_interact = true
+	await _seconds(0.5)
+	r.in_interact = false
+	check(r.carrying == pz, "runner grabbed the pizza")
+	r.respawn(Vector3(-5.3, 0.8, -4.6))
+	r.carrying = pz
+	pz.carrier = r
+	pz.freeze = true
+	await _frames(10)
+	check(w.tasks.back()["done"], "pizza delivered to the kitchen counter")

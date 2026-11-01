@@ -193,6 +193,17 @@ func _runner(now: float, _delta: float) -> void:
 					return
 				_go(p.net_pos(), "disarm%d" % id, now)
 				return
+	# chase the runaway cat if it's close
+	if world.cat_zoom_until > now:
+		var cat: Prop = world._prop_of_kind("cat")
+		var cd := U.dist_xz(cat.global_position, a.global_position)
+		if cd < 4.0:
+			if cd < 1.0:
+				a.in_interact = true
+				return
+			var to := U.flat_xz(cat.global_position - a.global_position).normalized()
+			a.in_move = Vector2(to.x, to.z)
+			return
 	var targets: Array = world.bot_targets()
 	if a.carrying:
 		for e in targets:

@@ -301,12 +301,16 @@ func _plant(n: String, pos: Vector3) -> void:
 	_spot(n, pos, 1.3)
 
 
+## The cat is a physics prop so the "runaway cat" event can make it zoom around the house.
 func _cat(pos: Vector3) -> void:
-	var c := Node3D.new()
-	c.position = pos
-	c.name = "Cat"
-	add_child(c)
 	var col := Color("f4a259")
+	var cp := _prop("cat", Vector3(0.3, 0.5, 0.5), pos + Vector3(0, 0.26, 0), col, 1.5, "box", false)
+	cp.get_child(0).visible = false
+	cp.axis_lock_angular_x = true
+	cp.axis_lock_angular_z = true
+	var c := Node3D.new()
+	c.position = Vector3(0, -0.26, 0)
+	cp.add_child(c)
 	U.box(Vector3(0.3, 0.25, 0.45), col, Vector3(0, 0.15, 0), c)
 	U.box(Vector3(0.26, 0.24, 0.24), col, Vector3(0, 0.38, -0.22), c)
 	U.box(Vector3(0.07, 0.1, 0.05), col, Vector3(-0.08, 0.53, -0.22), c)
@@ -360,6 +364,11 @@ func _garden() -> void:
 	# tree
 	U.solid(self, Vector3(0.4, 2.0, 0.4), Vector3(8.5, 1.0, 14.0), C_DARK_WOOD)
 	U.sphere(1.3, Color("4caf50"), Vector3(8.5, 2.6, 14.0), self)
+	# pizza for the "delivery" event (hidden until the doorbell rings)
+	var pz := _prop("pizza", Vector3(0.5, 0.08, 0.5), Vector3(-0.2, 0.1, 7.3), Color("e9a23b"), 0.5)
+	U.cyl(0.21, 0.02, Color("d94a2b"), Vector3(0, 0.05, 0), pz)
+	for i in 4:
+		U.sphere(0.04, Color("8b1e1e"), Vector3(cos(i * 1.6) * 0.12, 0.07, sin(i * 1.6) * 0.12), pz, 6)
 	# toys for warm-up
 	_prop("ball", Vector3(0.8, 0.8, 0.8), Vector3(2.0, 0.5, 12.0), Color("ff4d6d"), 0.8, "ball")
 	_prop("ball", Vector3(0.6, 0.6, 0.6), Vector3(-3.0, 0.5, 13.5), Color("4dd2ff"), 0.6, "ball")
