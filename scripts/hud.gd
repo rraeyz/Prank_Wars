@@ -231,6 +231,7 @@ func _ready() -> void:
 	ev.add_child(_end_lobby)
 	ev.add_child(_btn(I18n.t("to_menu"), func(): get_tree().root.get_node("Main").to_menu()))
 
+	_build_chat()
 	# pause
 	_pause = _panel()
 	var pv := VBoxContainer.new()
@@ -298,10 +299,66 @@ func _focus_in(root: Node) -> void:
 
 
 func is_blocking() -> bool:
-	return _pause.visible or _end.visible
+	return _pause.visible or _end.visible or (_chat_edit != null and _chat_edit.visible)
+
+
+var _chat_edit: LineEdit
+var _chat_log: VBoxContainer
+
+
+func _build_chat() -> void:
+	_chat_log = VBoxContainer.new()
+	_chat_log.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	_chat_log.offset_left = 20
+	_chat_log.offset_top = -330
+	_chat_log.offset_right = 520
+	_chat_log.offset_bottom = -200
+	_chat_log.alignment = BoxContainer.ALIGNMENT_END
+	_chat_log.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root.add_child(_chat_log)
+	_chat_edit = LineEdit.new()
+	_chat_edit.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	_chat_edit.offset_left = 20
+	_chat_edit.offset_top = -196
+	_chat_edit.offset_right = 520
+	_chat_edit.offset_bottom = -160
+	_chat_edit.max_length = Net.CHAT_MAX
+	_chat_edit.placeholder_text = I18n.t("chat_hint")
+	_chat_edit.visible = false
+	_chat_edit.text_submitted.connect(func(t): if t.strip_edges() != "": Net.send_chat(t); _close_chat())
+	_root.add_child(_chat_edit)
+	Net.chat_received.connect(_on_chat)
+
+
+func _close_chat() -> void:
+	_chat_edit.text = ""
+	_chat_edit.visible = false
+	_chat_edit.release_focus()
+
+
+func _on_chat(pname: String, team: int, text: String) -> void:
+	var l := _lbl("%s: %s" % [pname, text], 18, Config.TEAM_COLORS[team].lightened(0.35))
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.set_meta("t", 12.0)
+	_chat_log.add_child(l)
+	while _chat_log.get_child_count() > 6:
+		_chat_log.get_child(0).free()
+	Sfx.play("click")
 
 
 func _unhandled_input(e: InputEvent) -> void:
+	if e.is_action_pressed("chat") and not _chat_edit.visible:
+		_chat_edit.visible = true
+		_chat_edit.grab_focus.call_deferred()
+		get_viewport().set_input_as_handled()
+		return
+	if e.is_action_pressed("menu") and _chat_edit.visible:
+		_close_chat()
+		get_viewport().set_input_as_handled()
+		return
+	for i in 4:
+		if e.is_action_pressed("quick_%d" % (i + 1)):
+			Net.send_chat("@q_%d" % (i + 1))
 	if e.is_action_pressed("menu"):
 		_pause.visible = not _pause.visible
 		if _pause.visible:
@@ -514,6 +571,12 @@ func _process(delta: float) -> void:
 			_blind.color.a = 0.0
 			for c in _confetti.get_children():
 				c.queue_free()
+	for l in _chat_log.get_children():
+		var ct: float = l.get_meta("t") - delta
+		l.set_meta("t", ct)
+		l.modulate.a = clampf(ct, 0.0, 1.0)
+		if ct <= 0.0:
+			l.queue_free()
 	for l in _feed.get_children():
 		var tt: float = l.get_meta("t") - delta
 		l.set_meta("t", tt)

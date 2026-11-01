@@ -4,6 +4,13 @@ extends RefCounted
 const LANGS := ["es", "pt", "de", "fr", "ru"]
 
 const S := {
+	"chat_hint": ["Chat: escribe y pulsa Enter (F1-F4 mensajes rápidos)", "Chat: digite e aperte Enter (F1-F4 mensagens rápidas)", "Chat: tippen und Enter (F1-F4 Schnellnachrichten)", "Chat : écris puis Entrée (F1-F4 messages rapides)", "Чат: напиши и нажми Enter (F1-F4 быстрые фразы)"],
+	"q_1": ["¡JAJAJA!", "KKKKKK!", "HAHAHA!", "MDR !", "АХАХАХ!"],
+	"q_2": ["¡Cuidado, trampa!", "Cuidado, armadilha!", "Vorsicht, Falle!", "Attention, piège !", "Осторожно, ловушка!"],
+	"q_3": ["¡Ven aquí!", "Vem aqui!", "Komm her!", "Viens ici !", "Иди сюда!"],
+	"q_4": ["¡Buena partida!", "Boa partida!", "Gutes Spiel!", "Bien joué !", "Хорошая игра!"],
+	"q_5": ["Ups...", "Ops...", "Hoppla...", "Oups...", "Упс..."],
+	"q_6": ["¡Ayuda!", "Socorro!", "Hilfe!", "À l'aide !", "Помогите!"],
 	"brightness": ["Brillo", "Brilho", "Helligkeit", "Luminosité", "Яркость"],
 	"contrast": ["Contraste", "Contraste", "Kontrast", "Contraste", "Контраст"],
 	"saturation": ["Saturación", "Saturação", "Sättigung", "Saturation", "Насыщенность"],

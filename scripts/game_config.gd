@@ -181,6 +181,8 @@ func _setup_input() -> void:
 		"screenshot": [_key(KEY_F9)],
 		"taunt": [_key(KEY_V), _joy(JOY_BUTTON_DPAD_DOWN)],
 		"zoom": [_key(KEY_Z), _joy(JOY_BUTTON_RIGHT_STICK)],
+		"chat": [_key(KEY_ENTER), _key(KEY_KP_ENTER)],
+		"quick_1": [_key(KEY_F1)], "quick_2": [_key(KEY_F2)], "quick_3": [_key(KEY_F3)], "quick_4": [_key(KEY_F4)],
 		"reveal": [_key(KEY_C), _joy(JOY_BUTTON_LEFT_SHOULDER)],
 		"ghost": [_key(KEY_G), _mouse(MOUSE_BUTTON_RIGHT)],
 		"trigger_all": [_key(KEY_T), _joy(JOY_BUTTON_DPAD_UP)],

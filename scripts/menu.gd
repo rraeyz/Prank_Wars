@@ -17,6 +17,8 @@ var _rule_btn: Button
 var _mode_btn: Button
 var _map_btn: Button
 var _invite_btn: Button
+var _lobby_chat: Label
+var _chat_lines: Array = []
 
 
 func _ready() -> void:
@@ -171,6 +173,18 @@ func _build_lobby() -> void:
 	_lobby_list = VBoxContainer.new()
 	_lobby_list.custom_minimum_size = Vector2(520, 220)
 	v.add_child(_lobby_list)
+	_lobby_chat = Label.new()
+	_lobby_chat.add_theme_font_size_override("font_size", 15)
+	_lobby_chat.custom_minimum_size = Vector2(520, 70)
+	_lobby_chat.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	_lobby_chat.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	v.add_child(_lobby_chat)
+	var ce := LineEdit.new()
+	ce.placeholder_text = I18n.t("chat_hint")
+	ce.max_length = Net.CHAT_MAX
+	ce.text_submitted.connect(func(t): if t.strip_edges() != "": Net.send_chat(t); ce.text = "")
+	v.add_child(ce)
+	Net.chat_received.connect(func(n, _tm, t): _chat_lines.append("%s: %s" % [n, t]); _chat_lines = _chat_lines.slice(-4); _lobby_chat.text = "\n".join(_chat_lines))
 	_btn(I18n.t("switch_team"), func(): Net.request_switch_team(), v)
 	_invite_btn = _btn(I18n.t("invite"), func(): SteamNet.invite(), v)
 	_host_box = HBoxContainer.new()

@@ -7,12 +7,16 @@ signal connected_ok
 signal connection_failed
 signal server_gone
 signal match_begin(cfg: Dictionary)
+signal chat_received(pname: String, team: int, text: String)
 signal lobby_return
 
 var players := {}
 var mode := "none"  # none | practice | host | client
 var _next_bot := -1
 var in_match := false
+var _chat_next := {}  # peer -> earliest time of the next allowed message
+const CHAT_MAX := 100
+const QUICK := ["q_1", "q_2", "q_3", "q_4", "q_5", "q_6"]
 signal rejected(reason: String)
 
 
@@ -303,3 +307,49 @@ func peer_of_slot(slot: int) -> int:
 		if players[id]["slot"] == slot:
 			return id
 	return 0
+
+
+# ------------------------------------------------------------------ chat (host relays and sanitizes)
+
+## Send a chat line. Quick phrases are sent as "@q_N" and translated on each screen.
+func send_chat(text: String) -> void:
+	if mode == "client":
+		_chat_req.rpc_id(1, text)
+	else:
+		_relay(my_id(), text)
+
+
+@rpc("any_peer", "reliable")
+func _chat_req(text: String) -> void:
+	if is_host():
+		_relay(multiplayer.get_remote_sender_id(), text)
+
+
+func _relay(id: int, text: String) -> void:
+	if not players.has(id):
+		return
+	var now := Time.get_ticks_msec() * 0.001
+	if _chat_next.get(id, 0.0) > now:
+		return
+	_chat_next[id] = now + 0.8
+	text = clean_chat(text)
+	if text == "" or (text.begins_with("@") and not text.substr(1) in QUICK):
+		return
+	var p: Dictionary = players[id]
+	if mode == "host":
+		_chat.rpc(str(p["name"]), int(p["team"]), text)
+	_chat(str(p["name"]), int(p["team"]), text)
+
+
+static func clean_chat(text: String) -> String:
+	var out := ""
+	for ch in text.substr(0, CHAT_MAX):
+		out += " " if ch.unicode_at(0) < 32 else ch
+	return out.strip_edges()
+
+
+@rpc("authority", "reliable")
+func _chat(pname: String, team: int, text: String) -> void:
+	if text.begins_with("@"):
+		text = I18n.t(text.substr(1))
+	chat_received.emit(pname, team, text)

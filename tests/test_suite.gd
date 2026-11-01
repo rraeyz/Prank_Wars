@@ -29,6 +29,7 @@ func _run() -> void:
 	test_house()
 	test_sample_one()
 	test_i18n()
+	test_chat()
 	Sfx.build_all()
 	check(Sfx.sounds.has("meow") and Sfx.sounds.has("doorbell") and Sfx.sounds.size() >= 26, "all sounds synthesize (%d)" % Sfx.sounds.size())
 	var mus: AudioStreamWAV = Sfx.build_music()
@@ -803,3 +804,23 @@ func it_powerups() -> void:
 	x0 = r.global_position.x
 	await _walk(r, Vector2(1, 0), 0.5)
 	check(r.global_position.x - x0 > base * 1.2, "coffee makes you faster (%.2f m)" % (r.global_position.x - x0))
+
+
+func test_chat() -> void:
+	check(Net.clean_chat("hi\nthere\t!") == "hi there !", "chat strips control characters")
+	check(Net.clean_chat("x".repeat(500)).length() == Net.CHAT_MAX, "chat is length limited")
+	Net.leave()
+	Net.mode = "practice"
+	Net.players = {1: _p("Me", 0, 1)}
+	var got := []
+	var cb := func(n, t, tx): got.append(tx)
+	Net.chat_received.connect(cb)
+	Net.send_chat("hello")
+	Net.send_chat("spam")  # rate limited
+	Net._chat_next.clear()
+	Net.send_chat("@q_1")
+	Net._chat_next.clear()
+	Net.send_chat("@evil_key")
+	Net.chat_received.disconnect(cb)
+	check(got.size() == 2 and got[0] == "hello" and got[1] == I18n.t("q_1"), "chat: relay, rate limit, quick phrase, unknown key dropped (%s)" % str(got))
+	Net.leave()
