@@ -67,6 +67,16 @@ func _ready() -> void:
 			ka.out = str(args["keyart"])
 		Net.start_sandbox.call_deferred()
 		Net.match_begin.connect(func(_c): add_child.call_deferred(ka), CONNECT_ONE_SHOT)
+	elif args.has("capsule"):
+		var cap: Node = load("res://tools/capsule.gd").new()
+		if str(args["capsule"]) != "1":
+			cap.out = str(args["capsule"])
+		add_child(cap)
+	elif args.has("trailer"):
+		var tr: Node = load("res://tools/trailer.gd").new()
+		if str(args["trailer"]) != "1":
+			tr.out = str(args["trailer"])
+		add_child(tr)
 	elif args.has("editor"):
 		Net.start_editor.call_deferred()
 	elif args.has("tutorial"):
