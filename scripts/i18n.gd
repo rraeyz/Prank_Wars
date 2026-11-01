@@ -391,6 +391,10 @@ func set_lang(l: String) -> void:
 
 
 func tip(key: String, i: int) -> String:
+	var ei: int = EXTRA.LANGS.find(lang)
+	if ei >= 0 and EXTRA.S.has(key):
+		var er: Array = EXTRA.S[key]
+		return str(er[i % er.size()][ei])
 	var rows: Array = S.get(key, [])
 	if rows.is_empty():
 		return ""

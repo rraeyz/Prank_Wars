@@ -504,6 +504,21 @@ func test_i18n() -> void:
 		I18n.set_lang(l)
 		check(I18n.t("p_banana") != "p_banana" and I18n.t("chain", [3, 40]).find("40") >= 0, "lang %s: strings + format args" % l)
 		check(I18n.t("feed_disarm", ["A", "B", 10]).find("10") >= 0 and I18n.t("winner", ["X"]).find("X") >= 0, "lang %s: feed formats" % l)
+	var ex: Dictionary = load("res://scripts/i18n_extra.gd").S
+	var missing := []
+	var bad_fmt := []
+	for k in I18n.S:
+		if not ex.has(k):
+			missing.append(k)
+		elif not (I18n.S[k][0] is Array):
+			var en: String = I18n.S[k][1]
+			for tr in ex[k]:
+				if str(tr).count("%") != en.count("%"):
+					bad_fmt.append(k)
+	check(missing.is_empty(), "every text is translated into all 7 languages (missing: %s)" % str(missing))
+	check(bad_fmt.is_empty(), "translations keep their %%s/%%d placeholders (%s)" % str(bad_fmt))
+	I18n.set_lang("de")
+	check(I18n.tip("tips_run", 1).begins_with("Tipp"), "tips are translated too")
 	I18n.set_lang("xx")
 	check(I18n.lang == "en", "unknown language falls back to English")
 	I18n.set_lang(keep)
