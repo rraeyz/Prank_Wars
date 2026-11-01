@@ -11,6 +11,8 @@ var chain_id := -1
 var chain_until := 0.0
 var thrown_by: Node3D = null
 var thrown_until := 0.0
+var ghost_until := 0.0
+var ghost_team := 0
 var home := Transform3D.IDENTITY
 var world: Node = null
 

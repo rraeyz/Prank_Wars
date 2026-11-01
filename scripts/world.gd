@@ -339,6 +339,10 @@ func _local_input() -> void:
 				Sfx.play("tick")
 		elif me.visible:
 			_send_action("throw", [])
+	if phase == "run" and local_is_trapper() and not me.visible and (Input.is_action_just_pressed("ghost") or Input.is_action_just_pressed("interact")):
+		if ghost_wait_local() <= 0.0:
+			_send_action("ghost", [_ghost_point()])
+			_ghost_local_ready = _clock + Config.GHOST_COOLDOWN
 	if phase == "run" and local_is_trapper():
 		var rl := remote_pranks(local_team())
 		for i in range(1, 10):
@@ -399,9 +403,15 @@ func _sender_avatar() -> Avatar:
 
 func _host_action(slot: int, kind: String, args: Array) -> void:
 	var a: Avatar = avatars.get(slot)
-	if a == null or not a.active:
-		if kind == "remote" and a and a.team == trapper_team and args.size() == 1:
-			remote_trigger(a.team, int(args[0]))
+	if a == null:
+		return
+	if not a.active:
+		# parked trappers (watching the chores) can still fire remote pranks and haunt
+		if a.team == trapper_team and args.size() == 1:
+			if kind == "remote" and args[0] is int:
+				remote_trigger(a.team, args[0])
+			elif kind == "ghost" and args[0] is Vector3:
+				ghost_action(slot, args[0])
 		return
 	match kind:
 		"jump":
@@ -414,11 +424,12 @@ func _host_action(slot: int, kind: String, args: Array) -> void:
 				a.throw_carry()
 				fx_all("sfx", ["whoosh", a.global_position])
 		"place":
-			if args.size() == 4:
-				host_place(slot, str(args[0]), args[1], float(args[2]), str(args[3]))
+			# untrusted client data: check every type before use
+			if args.size() == 4 and args[0] is String and args[1] is Vector3 and (args[2] is float or args[2] is int) and args[3] is String:
+				host_place(slot, args[0], args[1], float(args[2]), args[3])
 		"remote":
-			if args.size() == 1 and a.team == trapper_team:
-				remote_trigger(a.team, int(args[0]))
+			if args.size() == 1 and args[0] is int and a.team == trapper_team:
+				remote_trigger(a.team, args[0])
 		"remote_all", "rearm", "clear":
 			if phase == "sandbox":
 				_sandbox_action(kind)
@@ -534,6 +545,49 @@ func _ray_down(p: Vector3) -> Dictionary:
 	return space.intersect_ray(q)
 
 
+## Host-side validation of a requested placement. Sockets must exist, match the prank's kind and be free;
+## free placements must be finite, inside the house, on the right kind of surface and not too close to others.
+func canonical_placement(type: String, pos: Vector3, socket: String) -> Dictionary:
+	var bad := {"ok": false, "pos": Vector3.ZERO, "yaw": 0.0}
+	if not Config.PRANKS.has(type) or not pos.is_finite():
+		return bad
+	var place: String = Config.PRANKS[type]["place"]
+	if socket != "" and _socket_used(socket):
+		return bad
+	match place:
+		"door":
+			if not house.doors.has(socket):
+				return bad
+			var d: HouseDoor = house.doors[socket]
+			return {"ok": true, "pos": d.bucket_slot.global_position, "yaw": d.rotation.y}
+		"container":
+			if not house.cupboards.has(socket):
+				return bad
+			var c: Cupboard = house.cupboards[socket]
+			return {"ok": true, "pos": c.inside_point(), "yaw": c.rotation.y}
+		"task":
+			if not house.spots.has(socket) or not _is_hold_spot(socket):
+				return bad
+			return {"ok": true, "pos": house.spots[socket]["pos"] + Vector3(0, 0.05, 0), "yaw": 0.0}
+	if socket != "" or not house.inside(pos, 0.2):
+		return bad
+	var p := pos
+	if place == "ceiling":
+		p.y = 2.55
+	else:
+		var hit := _ray_down(p)
+		if hit.is_empty() or (place == "floor" and not hit["collider"].is_in_group("floor")):
+			return bad
+		p = hit["position"]
+		if place == "floor":
+			p.y = 0.0
+	for id in pranks:
+		var o: Prank = pranks[id]
+		if o.def["place"] == place and U.dist_xz(o.position, p) < 0.6:
+			return bad
+	return {"ok": true, "pos": p, "yaw": 0.0}
+
+
 func host_place(slot: int, type: String, pos: Vector3, yaw: float, socket: String) -> bool:
 	var a: Avatar = avatars.get(slot)
 	if a == null or not building() or a.team != trapper_team or not Config.PRANKS.has(type):
@@ -546,24 +600,13 @@ func host_place(slot: int, type: String, pos: Vector3, yaw: float, socket: Strin
 	if budget[a.team] < cost:
 		_toast_to(a, "no_budget")
 		return false
-	if U.dist_xz(a.global_position, pos) > 7.0:
+	# never trust the client position: rebuild it from the host's own house data
+	var canon := canonical_placement(type, pos, socket)
+	if not canon["ok"] or U.dist_xz(a.global_position, canon["pos"]) > 7.0:
 		return false
-	# re-validate from the host's view of the world
-	var check := placement_for(type, pos - Vector3(0, 0, 0), Vector3.FORWARD) if Config.PRANKS[type]["place"] in ["door", "container", "task"] else {}
+	pos = canon["pos"]
 	if socket != "":
-		if _socket_used(socket):
-			return false
-		if not check.is_empty() and check["socket"] != socket:
-			# accept if the named socket exists and is near the avatar
-			if not (house.doors.has(socket) or house.cupboards.has(socket) or house.spots.has(socket)):
-				return false
-	else:
-		if not house.inside(pos, 0.2):
-			return false
-		for id in pranks:
-			var o: Prank = pranks[id]
-			if o.def["place"] == Config.PRANKS[type]["place"] and U.dist_xz(o.position, pos) < 0.6:
-				return false
+		yaw = canon["yaw"]
 	budget[a.team] -= cost
 	var pid := _next_prank_id
 	_next_prank_id += 1
@@ -669,6 +712,14 @@ func on_prop_hit(p: Prop, body: Node) -> void:
 			a.knock(d * 5.0 + Vector3.UP * 3.0, d.cross(Vector3.UP) * 11.0, 1.8, r["chain"])
 			fx_all("sfx", ["slip", a.global_position])
 			_sync_state()
+		return
+	if now < p.ghost_until and phase == "run" and is_runner(a) and spd > 3.0:
+		p.ghost_until = 0.0
+		var gch: int = _ghost_hit(p.ghost_team, a)
+		a.knock(p.linear_velocity * 0.5 + Vector3.UP * 3.0, Vector3(randf_range(-8, 8), 0, randf_range(-8, 8)), 1.5, gch)
+		p.chain_id = gch
+		p.chain_until = now + 2.0
+		fx_all("sfx", ["thud", a.global_position])
 		return
 	if spd < 5.0:
 		return
@@ -973,7 +1024,7 @@ func _pick_tasks() -> Array:
 		var tmp = keys[k]
 		keys[k] = keys[j]
 		keys[j] = tmp
-	return keys.slice(0, Config.TASKS_PER_ROUND)
+	return keys.slice(0, Config.tasks_per_round())
 
 
 func _sync_tasks_new() -> void:
@@ -1099,6 +1150,7 @@ func _host_phase_tick() -> void:
 
 
 func _start_run() -> void:
+	_run_start = Config.now
 	for id in pranks:
 		pranks[id].arm()
 	for s in avatars:
@@ -1418,6 +1470,30 @@ func local_placement(type: String) -> Dictionary:
 	return placement_for(type, me.global_position, fwd)
 
 
+var _ghost_local_ready := 0.0
+
+
+## Client-side estimate of the haunt cooldown (host is authoritative).
+func ghost_wait_local() -> float:
+	if Net.is_host():
+		return ghost_wait(local_slot())
+	var start := phase_end_local - phase_dur + Config.GHOST_DELAY
+	return maxf(0.0, maxf(start, _ghost_local_ready) - _clock)
+
+
+## Where a watching trapper is pointing: mouse on the floor, or the camera focus.
+func _ghost_point() -> Vector3:
+	if _mouse_mode and cam and not headless:
+		var mp := get_viewport().get_mouse_position()
+		var from := cam.project_ray_origin(mp)
+		var dir := cam.project_ray_normal(mp)
+		if absf(dir.y) > 0.01:
+			var t := -from.y / dir.y
+			if t > 0.0:
+				return from + dir * t
+	return cam.focus if cam else Vector3.ZERO
+
+
 func _input(e: InputEvent) -> void:
 	if e is InputEventMouseMotion:
 		_mouse_mode = true
@@ -1517,3 +1593,72 @@ func bot_make_plan(team: int, max_cost: int) -> Array:
 		plan.append(e)
 		left -= int(def["cost"])
 	return plan
+
+
+# ------------------------------------------------------------------ ghosts (trappers during chores)
+
+var _ghost_ready := {}
+var _run_start := 0.0  # slot -> Config.now when the next haunt is allowed
+
+
+## How many seconds until this trapper can haunt again (0 = ready). Host-side truth.
+func ghost_wait(slot: int) -> float:
+	var start: float = _run_start + Config.GHOST_DELAY
+	return maxf(0.0, maxf(start, float(_ghost_ready.get(slot, 0.0))) - Config.now)
+
+
+## A parked trapper flings the nearest object at the nearest runner (or spooks a runner if nothing is near).
+func ghost_action(slot: int, point: Vector3) -> bool:
+	var a: Avatar = avatars.get(slot)
+	if a == null or a.active or a.team != trapper_team or phase != "run" or not point.is_finite():
+		return false
+	if ghost_wait(slot) > 0.0:
+		return false
+	point.y = 0.0
+	var best: Prop = null
+	var bd := 3.5
+	for p in house.props:
+		if p.hidden_prop or p.carrier or p.freeze:
+			continue
+		var d := U.dist_xz(p.global_position, point)
+		if d < bd:
+			bd = d
+			best = p
+	var origin := best.global_position if best else point
+	var target: Avatar = null
+	var td := 8.0 if best else 3.0
+	for r in runner_avatars():
+		if not r.active:
+			continue
+		var d2 := U.dist_xz(r.global_position, origin)
+		if d2 < td:
+			td = d2
+			target = r
+	if target == null:
+		_toast_to(a, "ghost_none")
+		return false
+	_ghost_ready[slot] = Config.now + Config.GHOST_COOLDOWN
+	if best:
+		var dir := U.flat_xz(target.global_position - best.global_position).normalized()
+		best.linear_velocity = dir * 11.0 + Vector3.UP * 3.5
+		best.angular_velocity = Vector3(randf_range(-8, 8), randf_range(-8, 8), randf_range(-8, 8))
+		best.ghost_until = Config.now + 2.0
+		best.ghost_team = a.team
+		fx_all("burst", [best.global_position, "ghost", Color("b98cff")])
+	else:
+		var ch: int = _ghost_hit(a.team, target)
+		target.panic(1.0, ch)
+		fx_all("burst", [target.global_position + Vector3(0, 1, 0), "ghost", Color("b98cff")])
+	fx_all("sfx", ["whoosh", origin])
+	return true
+
+
+func _ghost_hit(team: int, victim: Avatar) -> int:
+	var r := scoring.prank_hit(victim.chain_id if victim.is_chained() else -1, team, "ghost", victim.pname, Config.now)
+	_chain_victims.get_or_add(r["chain"], []).append(victim.slot)
+	victim.set_chain(r["chain"], Config.now + 2.5)
+	feed_all("feed_prank", ["@p_ghost", victim.pname, r["delta"]], team)
+	if r["links"] >= 2:
+		feed_all("chain", [r["links"], Scoring.chain_value(r["links"])], team, true)
+	_sync_state()
+	return r["chain"]

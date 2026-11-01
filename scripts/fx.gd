@@ -77,6 +77,17 @@ static func burst(parent: Node, pos: Vector3, kind: String, c := Color.WHITE) ->
 			p.mesh = bm
 			p.angular_velocity_min = -400.0
 			p.angular_velocity_max = 400.0
+		"ghost":
+			p.amount = 30
+			p.spread = 180.0
+			p.initial_velocity_min = 0.5
+			p.initial_velocity_max = 2.0
+			p.gravity = Vector3(0, 1.5, 0)
+			p.lifetime = 1.2
+			p.scale_amount_min = 1.5
+			p.scale_amount_max = 3.0
+			p.color = Color(0.72, 0.55, 1.0, 0.75)
+			m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		"sparkle":
 			p.amount = 24
 			p.spread = 180.0

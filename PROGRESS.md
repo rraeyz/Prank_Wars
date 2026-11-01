@@ -13,6 +13,16 @@ Sonraki oturum: önce `PLAN.md`, sonra bu dosyanın en üstündeki kaydı oku.
 
 ---
 
+## Oturum 2 — 2026-11-01 (kullanıcı isteği)
+- İstek: raunt daha uzun, varsayılan maç 8–10 dk, özel ayar; bekleyen takım izlesin ve müdahale etsin; açık/bug kapat.
+- Yapılan: hazırlık 90 sn + görev 150 sn, 2 raunt ≈ 9 dk (lobide değiştirilebilir). Görev uzayınca 4 görev seçiliyor.
+- Hayalet modu: görevde izleyen kuran takımı 20 sn sonra G / sağ tık / E ile yakındaki eşyayı koşucuya fırlatıyor (12 sn bekleme).
+  Hazırlıkta koşucuların içeriyi izlemesine izin verilmedi (tuzakların yeri belli olur, sürpriz biter).
+- Güvenlik/bug: host yerleştirmeyi kendi verisinden yeniden kuruyor; NaN/yanlış yuva/tip uyuşmazlığı reddediliyor; bozuk istemci eylemleri yok sayılıyor;
+  maçta takım değiştirme, çift kayıt engellendi; isimlerden satır sonu temizleniyor; lobi ayarları istemcilere senkron.
+- Testler: 116 kontrol + ağ testi geçiyor.
+- Sıradaki: kullanıcı testi (hayalet eğlenceli mi, 9 dk uygun mu).
+
 ## Oturum 1 — 2026-11-01
 **Yapılanlar**
 - Repo boştu → PLAN/PROGRESS, Godot 4.4.1 ekransız kurulum, saatlik devam tetikleyicisi (trig_01D7JsQ4ygenfeoS1eemUZF7, her saat :30).

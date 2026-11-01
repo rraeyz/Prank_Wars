@@ -111,7 +111,7 @@ func _ready() -> void:
 	# remote list (right bottom)
 	_remote = _lbl("", 20, Color.WHITE)
 	_remote.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	_remote.offset_left = -360
+	_remote.offset_left = -520
 	_remote.offset_top = -220
 	_remote.offset_right = -20
 	_remote.offset_bottom = -60
@@ -447,6 +447,9 @@ func _process(delta: float) -> void:
 		var rl: Array = world.remote_pranks(world.local_team())
 		for i in rl.size():
 			rtext += "[%d] %s\n" % [i + 1, I18n.t("p_" + rl[i].type)]
+	if p == "run" and world.local_is_trapper() and me != null and not me.visible:
+		var gw: float = world.ghost_wait_local()
+		rtext += (I18n.t("ghost_ready") if gw <= 0.0 else I18n.t("ghost_wait", [ceili(gw)])) + "\n"
 	_remote.text = rtext
 	# help
 	var h := ""

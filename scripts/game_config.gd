@@ -6,15 +6,29 @@ const STORE_URL := "store.steampowered.com — Prank Wars"
 
 # --- Match timing (seconds). Change here only. ---
 var intro_time := 4.0
-var setup_time := 60.0
-var run_time := 100.0
+var setup_time := 90.0
+var run_time := 150.0
 var replay_time := 9.0
 var score_time := 6.0
-var rounds := 4
+var rounds := 2  # default match: each team traps once, ~9 minutes
+const SETUP_CHOICES := [60.0, 90.0, 120.0]
+const RUN_CHOICES := [100.0, 150.0, 200.0]
+const GHOST_DELAY := 20.0  # trappers become poltergeists this long after chores start
+const GHOST_COOLDOWN := 12.0
 
 # --- Scoring ---
 const BUDGET := 15
 const TASKS_PER_ROUND := 3
+
+
+## Longer chore phases get one more chore so the round doesn't end early.
+func tasks_per_round() -> int:
+	return TASKS_PER_ROUND + (1 if run_time >= 140.0 else 0) + (1 if run_time >= 190.0 else 0)
+
+
+## Rough match length in minutes (intro + setup + chores + replay + score per round).
+func match_minutes() -> float:
+	return rounds * (intro_time + setup_time + run_time + replay_time + score_time) / 60.0
 const TASK_POINTS := 15
 const PRANK_POINTS := 10
 const DISARM_POINTS := 10
@@ -135,6 +149,7 @@ func _setup_input() -> void:
 		"menu": [_key(KEY_ESCAPE), _joy(JOY_BUTTON_START)],
 		"scoreboard": [_key(KEY_C)],
 		"screenshot": [_key(KEY_F9)],
+		"ghost": [_key(KEY_G), _mouse(MOUSE_BUTTON_RIGHT)],
 		"trigger_all": [_key(KEY_T), _joy(JOY_BUTTON_DPAD_UP)],
 		"rearm": [_key(KEY_BACKSPACE), _joy(JOY_BUTTON_BACK)],
 		"clear_all": [_key(KEY_DELETE)],

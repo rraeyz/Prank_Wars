@@ -153,6 +153,14 @@ func _trapper_setup(now: float) -> void:
 
 
 func _trapper_run(now: float) -> void:
+	# haunt: when a runner walks past something throwable
+	if world.ghost_wait(a.slot) <= 0.0 and rng.randf() < 0.05:
+		for p in world.house.props:
+			if p.hidden_prop or p.carrier or p.freeze:
+				continue
+			if world.avatars_near(p.global_position, 3.0, true).size() > 0:
+				world.ghost_action(a.slot, p.global_position)
+				break
 	for p in world.remote_pranks(a.team):
 		if _remote_at.has(p.id):
 			if now >= _remote_at[p.id]:

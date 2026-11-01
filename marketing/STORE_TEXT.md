@@ -9,7 +9,7 @@ Evi şakalarla donat, arkadaşlarının tam içine yürümesini izle. Prank Wars
 ## Long description (EN)
 **Set it up. Watch it go wrong. Laugh until you can't breathe.**
 
-Two teams. One house. Sixty seconds to hide banana peels, buckets over doors, flour sacks and paint-loaded fridges. Then the other team has to do their chores — make a sandwich, take a shower, find the remote — while everything you built goes off.
+Two teams. One house. Ninety seconds to hide banana peels, buckets over doors, flour sacks and paint-loaded fridges. Then the other team has to do their chores — make a sandwich, take a shower, find the remote — while everything you built goes off.
 
 - **14 pranks** you can place anywhere — some go off by themselves, some you fire at the perfect moment
 - **Chain reactions:** one slip knocks over the next trap — every extra link doubles your score

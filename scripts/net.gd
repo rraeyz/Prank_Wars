@@ -115,7 +115,7 @@ func _on_connected() -> void:
 
 func _on_peer_connected(id: int) -> void:
 	if is_host():
-		_sync.rpc_id(id, players)
+		_sync.rpc_id(id, players, lobby_cfg())
 
 
 func _on_peer_disconnected(id: int) -> void:
@@ -133,7 +133,10 @@ func _register(pname: String) -> void:
 		_reject.rpc_id(id, "in_match" if in_match else "full")
 		get_tree().create_timer(0.5).timeout.connect(func(): if multiplayer.multiplayer_peer: multiplayer.multiplayer_peer.disconnect_peer(id))
 		return
-	pname = pname.strip_edges().substr(0, 16)
+	if players.has(id):
+		return
+	# names are shown everywhere: keep them short and on one line
+	pname = pname.replace("\n", " ").replace("\r", " ").replace("\t", " ").strip_edges().substr(0, 16)
 	if pname == "":
 		pname = "Player"
 	_add_player(id, pname, false)
@@ -147,15 +150,23 @@ func _reject(reason: String) -> void:
 
 
 @rpc("authority", "reliable")
-func _sync(p: Dictionary) -> void:
+func _sync(p: Dictionary, cfg: Dictionary) -> void:
 	players = p
+	# show the host's match settings in the client lobby
+	Config.rounds = clampi(int(cfg.get("rounds", Config.rounds)), 1, 12)
+	Config.setup_time = clampf(float(cfg.get("setup", Config.setup_time)), 10.0, 600.0)
+	Config.run_time = clampf(float(cfg.get("run", Config.run_time)), 10.0, 600.0)
 	players_changed.emit()
+
+
+func lobby_cfg() -> Dictionary:
+	return {"rounds": Config.rounds, "setup": Config.setup_time, "run": Config.run_time}
 
 
 func _broadcast() -> void:
 	players_changed.emit()
 	if mode == "host":
-		_sync.rpc(players)
+		_sync.rpc(players, lobby_cfg())
 
 
 func _team_counts() -> Array:
@@ -217,7 +228,7 @@ func _req_switch() -> void:
 
 
 func _switch_team(id: int) -> void:
-	if players.has(id):
+	if players.has(id) and not in_match:
 		players[id]["team"] = 1 - int(players[id]["team"])
 		_broadcast()
 
@@ -240,7 +251,7 @@ func start_match() -> void:
 @rpc("authority", "reliable")
 func _begin(p: Dictionary, cfg: Dictionary) -> void:
 	players = p
-	Config.rounds = int(cfg["rounds"])
+	Config.rounds = clampi(int(cfg["rounds"]), 1, 12)
 	Config.demo_mode = bool(cfg["demo"])
 	Config.sandbox = bool(cfg.get("sandbox", false))
 	Config.setup_time = float(cfg["setup"])

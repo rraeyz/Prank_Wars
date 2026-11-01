@@ -30,7 +30,7 @@ func _run() -> void:
 	test_sample_one()
 	test_i18n()
 	print("== integration tests")
-	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "full_match"]:
+	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "full_match"]:
 		if only != "" and only != t:
 			continue
 		print("-- ", t)
@@ -53,6 +53,8 @@ func _dispatch(t: String) -> void:
 		"bump_chain": await it_bump_chain()
 		"placement": await it_placement()
 		"sandbox": await it_sandbox()
+		"ghost": await it_ghost()
+		"security": await it_security()
 		"full_match": await it_full_match()
 
 
@@ -436,3 +438,52 @@ func test_i18n() -> void:
 	I18n.set_lang("xx")
 	check(I18n.lang == "en", "unknown language falls back to English")
 	I18n.set_lang(keep)
+
+
+func it_ghost() -> void:
+	await _make_world(_two_players())
+	await _setup_run([])
+	var trapper := _runner(1)
+	check(not trapper.active, "trapper is parked (watching) during chores")
+	var r := _runner(2)
+	_runner(3).respawn(Vector3(6.5, 0.8, 5))
+	r.respawn(Vector3(-5.3, 0.8, -0.6))
+	await _frames(5)
+	check(not w.ghost_action(1, Vector3(-5.3, 0, -1.6)), "ghost not ready right after chores start")
+	w._run_start -= Config.GHOST_DELAY
+	var ok: bool = w.ghost_action(1, Vector3(-5.3, 0, -1.6))
+	check(ok, "ghost flings the chair after the delay")
+	var hit := false
+	for i in 90:
+		await get_tree().physics_frame
+		if r.down:
+			hit = true
+			break
+	check(hit, "flung object knocked the runner")
+	check(w.scoring.totals[0] >= 10, "ghost hit scores for the trappers (got %d)" % w.scoring.totals[0])
+	check(not w.ghost_action(1, Vector3(-5.3, 0, -1.6)), "cooldown blocks a second haunt")
+	check(not w.ghost_action(2, Vector3(-5.3, 0, -1.6)), "runners can't haunt")
+
+
+func it_security() -> void:
+	await _make_world(_two_players())
+	w._set_phase("setup", 999.0)
+	var t := _runner(1)
+	t.respawn(Vector3(-1, 0.8, 3))
+	await _frames(3)
+	check(not w.host_place(1, "banana", Vector3(NAN, 0, 0), 0.0, ""), "NaN position rejected")
+	check(not w.host_place(1, "banana", Vector3(-1, 0, 2), 0.0, "fridge"), "floor prank can't claim a cupboard socket")
+	check(not w.host_place(1, "paint", Vector3(-1, 0, 2), 0.0, "front"), "container prank can't go on a door")
+	check(not w.host_place(1, "paint", Vector3(-1, 0, 2), 0.0, "no_such_socket"), "unknown socket rejected")
+	check(w.host_place(1, "bucket", Vector3(99, 99, 99), 0.0, "hall_bath"), "door socket accepted with any client pos...")
+	var b: Prank = w.pranks.values()[0]
+	check(b.global_position.distance_to(w.house.doors["hall_bath"].bucket_slot.global_position) < 0.01, "...but placed at the real door position")
+	w._host_action(1, "place", [123, "x", "y", 5])
+	w._host_action(1, "remote", ["boom"])
+	w._host_action(1, "ghost", [42])
+	check(w.pranks.size() == 1, "malformed client actions are ignored")
+	Net.in_match = true
+	var team_before: int = Net.players[2]["team"]
+	Net._switch_team(2)
+	check(Net.players[2]["team"] == team_before, "can't switch teams mid-match")
+	Net.in_match = false

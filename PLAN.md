@@ -95,5 +95,12 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [x] Botlar bazen görünen tuzaktan kaçsın (daha inandırıcı antrenman)
 - [-] İkinci harita (ofis) — ertelendi: rapora göre çıkıştan sonra, önce ilk evin test sonucu
 
+## Faz 9 — Kullanıcı isteği (oturum 2)
+- [x] Daha uzun raunt: hazırlık 90 sn, görev 150 sn; varsayılan maç 2 raunt ≈ 9 dk
+- [x] Lobide özel ayar: raunt sayısı (2/4/6), hazırlık (60/90/120), görev (100/150/200), tahmini süre; istemcilere de gösteriliyor
+- [x] Görev sırasında izleyen kuranlar HAYALET: 20 sn sonra eşya fırlatır (12 sn bekleme), koşucu yakındaysa ve eşya yoksa korkutur; puan + zincir sayılır, botlar da kullanır
+- [x] Güvenlik: yerleştirme host'ta yeniden hesaplanıyor (NaN, yanlış yuva, yuva/tip uyuşmazlığı), istemci eylemlerinde tip kontrolü, maç sırasında takım değiştirme ve çift kayıt engeli, isim temizleme
+- [x] Testler: hayalet + güvenlik testleri (116 kontrol)
+
 ## Haftalık
 - [x] Hafta 1 video fikirleri (`marketing/VIDEO_IDEAS.md`)

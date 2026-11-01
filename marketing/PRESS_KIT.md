@@ -10,7 +10,7 @@
 Booby-trap the house, then watch your friends walk right into it.
 
 ## Features
-- Two teams take turns: one rigs the house in 60 seconds, the other has 100 seconds to do the chores.
+- Two teams take turns: one rigs the house in 90 seconds, the other has 150 seconds to do the chores.
 - 14 pranks: banana peels, buckets over doors, paint bombs in fridges, flour sacks, giant springs, marbles, a rogue robot vacuum...
 - Chain reactions double your points with every extra link.
 - Slow-motion replay of the best prank every round — made for clips.
