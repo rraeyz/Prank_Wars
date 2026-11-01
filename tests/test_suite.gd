@@ -31,12 +31,13 @@ func _run() -> void:
 	test_i18n()
 	test_chat()
 	test_cosmetics()
+	test_twitch()
 	Sfx.build_all()
 	check(Sfx.sounds.has("meow") and Sfx.sounds.has("doorbell") and Sfx.sounds.size() >= 26, "all sounds synthesize (%d)" % Sfx.sounds.size())
 	var mus: AudioStreamWAV = Sfx.build_music()
 	check(mus.data.size() > 100000, "music synthesizes")
 	print("== integration tests")
-	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "rules", "rush", "sniff", "awards", "events", "new_pranks", "chaos", "chaos_bots", "office_match", "powerups", "perks", "mansion_match", "full_match"]:
+	for t in ["banana", "combo", "bucket", "paint_fridge", "spring", "task_flow", "disarm", "bump_chain", "placement", "sandbox", "ghost", "security", "rules", "rush", "sniff", "awards", "events", "new_pranks", "chaos", "chaos_bots", "office_match", "powerups", "perks", "mansion_match", "twitch_effect", "full_match"]:
 		if only != "" and only != t:
 			continue
 		print("-- ", t)
@@ -73,6 +74,7 @@ func _dispatch(t: String) -> void:
 		"powerups": await it_powerups()
 		"perks": await it_perks()
 		"mansion_match": await it_mansion_match()
+		"twitch_effect": await it_twitch_effect()
 		"full_match": await it_full_match()
 
 
@@ -934,3 +936,34 @@ func test_cosmetics() -> void:
 		a.freeze = true
 		a.free()
 	check(true, "all %d cosmetics build" % Cosmetics.ITEMS.size())
+
+
+
+func test_twitch() -> void:
+	check(Twitch.clean_channel("  #Some_Streamer!! ") == "some_streamer", "channel name cleaned")
+	var m: Array = Twitch.parse_line(":viewer1!viewer1@viewer1.tmi.twitch.tv PRIVMSG #chan :!muz lol")
+	check(m.size() == 2 and m[0] == "viewer1" and m[1] == "!muz lol", "PRIVMSG parsed")
+	check(Twitch.parse_line("PING :tmi.twitch.tv").is_empty() and Twitch.parse_line(":tmi.twitch.tv 001 justinfan :Welcome").is_empty(), "non-chat lines ignored")
+	Twitch.take_winner()
+	Twitch.vote("a", "!muz")
+	Twitch.vote("a", "!un")  # same viewer twice: ignored
+	Twitch.vote("b", "!BANANA")
+	Twitch.vote("c", "!un")
+	Twitch.vote("d", "hello")
+	var w: Dictionary = Twitch.take_winner()
+	check(w.get("effect") == "banana" and w.get("votes") == 2 and w.get("total") == 3, "votes: one per viewer, TR+EN commands, winner (%s)" % str(w))
+	check(Twitch.take_winner().is_empty(), "new window starts empty")
+
+
+func it_twitch_effect() -> void:
+	await _make_world(_two_players())
+	await _setup_run([])
+	var r := _runner(2)
+	r.respawn(Vector3(3, 0.8, 3))
+	_runner(3).respawn(Vector3(-2, 0.8, 4))
+	await _frames(3)
+	for e in ["banana", "flour", "confetti", "fart", "quake", "cat"]:
+		w.twitch_effect(e, 3)
+		await _frames(5)
+	check(r.down or r.is_knocked() or _runner(3).is_knocked() or w.cat_zoom_until > Config.now, "viewer effects hit the beans")
+	check(w.scoring.totals[0] + w.scoring.totals[1] == 0, "Twitch effects don't change the score")

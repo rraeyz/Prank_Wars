@@ -142,7 +142,8 @@ const POWERUPS := ["umbrella", "coffee"]
 # one random perk per player per round (no pick screen, so the game never slows down)
 const RUNNER_PERKS := ["nose", "steady", "quick_hands", "sprinter"]
 const TRAPPER_PERKS := ["master", "budget", "remote_pro", "haunter"]
-const CATCHUP_DIFF := 60  # a team this far ahead gets a handicap, the other a boost
+const CATCHUP_DIFF := 60
+const TWITCH_WINDOW := 25.0  # seconds per viewer vote  # a team this far ahead gets a handicap, the other a boost
 const CAT_BONUS := 10
 
 ## Physics-time clock of the running match (seconds). Set by World.
@@ -151,7 +152,7 @@ var now := 0.0
 var settings := {
 	"name": "", "lang": "", "master": 0.8, "music": 0.5, "sfx": 0.9,
 	"fullscreen": false, "last_ip": "127.0.0.1", "keys": {}, "look": {}, "xp": 0,
-	"brightness": 1.0, "contrast": 1.0, "saturation": 1.0,
+	"brightness": 1.0, "contrast": 1.0, "saturation": 1.0, "twitch": "", "twitch_on": false,
 }
 const REBINDABLE := ["move_up", "move_down", "move_left", "move_right", "jump", "interact", "dive", "action", "prev_item", "next_item", "cam_next", "reveal", "taunt", "ghost", "trigger_all"]
 const SETTINGS_PATH := "user://settings.cfg"

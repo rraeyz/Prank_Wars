@@ -351,6 +351,31 @@ func _build_settings() -> void:
 	lr.add_child(ob)
 	v.add_child(lr)
 	_btn(I18n.t("controls"), func(): show_screen("keys"), v)
+	var tw := HBoxContainer.new()
+	tw.add_child(_lbl("Twitch:", 18))
+	var tw_edit := LineEdit.new()
+	tw_edit.placeholder_text = I18n.t("twitch_channel")
+	tw_edit.text = str(Config.settings.get("twitch", ""))
+	tw_edit.custom_minimum_size = Vector2(200, 36)
+	tw.add_child(tw_edit)
+	var tw_on := CheckBox.new()
+	tw_on.text = I18n.t("twitch_mode")
+	tw_on.button_pressed = bool(Config.settings.get("twitch_on", false))
+	tw.add_child(tw_on)
+	v.add_child(tw)
+	var tw_status := _lbl("", 14, Color(1, 1, 1, 0.7))
+	v.add_child(tw_status)
+	Twitch.status_changed.connect(func(t): tw_status.text = t)
+	var apply_tw := func():
+		Config.settings["twitch"] = Twitch.clean_channel(tw_edit.text)
+		Config.settings["twitch_on"] = tw_on.button_pressed
+		Config.save_settings()
+		if tw_on.button_pressed and str(Config.settings["twitch"]) != "":
+			Twitch.start(str(Config.settings["twitch"]))
+		else:
+			Twitch.stop()
+	tw_on.toggled.connect(func(_on): apply_tw.call())
+	tw_edit.text_submitted.connect(func(_t): apply_tw.call())
 	var cr := _lbl("", 15, Color(1, 1, 1, 0.85))
 	cr.visible = false
 	_btn(I18n.t("credits"), func(): cr.text = I18n.t("credits_text"); cr.visible = not cr.visible, v)

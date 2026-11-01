@@ -1132,6 +1132,7 @@ func _host_start_round(i: int) -> void:
 @rpc("authority", "reliable")
 func s_round_reset(i: int, ttm: int, picked: Array, mod: String) -> void:
 	cat_zoom_until = 0.0
+	twitch_at = 0.0
 	_event = ""
 	modifier = mod if mod in Config.MODIFIERS else ""
 	rush = false
@@ -1292,6 +1293,7 @@ func _host_phase_tick() -> void:
 			if cat_zoom_until > now:
 				_cat_tick()
 			_powerup_tick(now)
+			_twitch_tick(now)
 			if modifier == "quake" and now >= _quake_at:
 				_quake_at = now + rng.randf_range(14.0, 22.0)
 				if now - _run_start > 8.0:
@@ -2052,6 +2054,7 @@ func _chaos_tick(now: float) -> void:
 	if cat_zoom_until > now:
 		_cat_tick()
 	_powerup_tick(now)
+	_twitch_tick(now)
 	if not rush and _phase_end - now <= minf(Config.RUSH_TIME, Config.chaos_time() * 0.25) and _phase_end - now > 3.0:
 		scoring.mult *= 2
 		fx_all("rush", [])
@@ -2181,3 +2184,58 @@ func s_perks(perks: Dictionary, leader: int) -> void:
 		if a:
 			a.perk = str(perks[s])
 	comeback_leader = leader
+
+
+# ------------------------------------------------------------------ Twitch mode (host only)
+
+var twitch_at := 0.0  # Config.now of the next viewer-vote result
+
+
+func _twitch_tick(now: float) -> void:
+	if not Twitch.active():
+		return
+	if twitch_at == 0.0:
+		twitch_at = now + Config.TWITCH_WINDOW
+		Twitch.take_winner()  # votes from before the chores don't count
+		return
+	if now < twitch_at:
+		return
+	twitch_at = now + Config.TWITCH_WINDOW
+	var win := Twitch.take_winner()
+	if not win.is_empty():
+		twitch_effect(str(win["effect"]), int(win["votes"]))
+
+
+## Viewers' pick hits the streamer (the host's own bean) if it's on the floor, otherwise a random runner.
+func twitch_effect(eff: String, n: int) -> void:
+	var target: Avatar = local_avatar()
+	if target == null or not target.active:
+		var rs := runner_avatars().filter(func(r): return r.active)
+		target = rs[rng.randi() % rs.size()] if rs.size() > 0 else null
+	match eff:
+		"quake":
+			_quake()
+		"cat":
+			_start_event("cat")
+		_:
+			if target == null:
+				return
+			var d := target.move_dir()
+			match eff:
+				"banana":
+					target.knock(d * 6.0 + Vector3.UP * 4.5, d.cross(Vector3.UP) * 12.0, 2.0)
+					fx_all("sfx", ["slip", target.global_position])
+				"flour":
+					target.knock(Vector3.UP * 2.5, Vector3(rng.randf_range(-4, 4), 0, rng.randf_range(-4, 4)), 1.3)
+					add_mess(target, 30.0, Color.WHITE, "flour")
+					blind(target, "flour", 2.0)
+					fx_all("burst", [target.global_position + Vector3(0, 1, 0), "flour", Color.WHITE])
+				"confetti":
+					target.knock(Vector3.UP * 3.0, Vector3(rng.randf_range(-6, 6), 0, rng.randf_range(-6, 6)), 1.2)
+					blind(target, "confetti", 2.0)
+					fx_all("burst", [target.global_position + Vector3(0, 0.6, 0), "confetti", Color.WHITE])
+				"fart":
+					target.panic(1.5, -1)
+					fx_all("sfx", ["fart", target.global_position])
+					fx_all("burst", [target.global_position, "fart", Color.WHITE])
+	feed_all("feed_twitch", ["@tw_" + eff, n, target.pname if target else "-"], 1 - (target.team if target else 0), true)

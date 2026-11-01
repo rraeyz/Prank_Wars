@@ -47,6 +47,8 @@ func _ready() -> void:
 		add_child(load("res://tests/pos_probe.gd").new())
 	if args.has("lockerprobe"):
 		add_child(load("res://tests/locker_probe.gd").new())
+	if args.has("twitchprobe"):
+		add_child(load("res://tests/twitch_probe.gd").new())
 	if args.has("nanprobe"):
 		add_child(load("res://tests/nan_probe.gd").new())
 	Net.match_begin.connect(_on_match_begin)
@@ -54,6 +56,8 @@ func _ready() -> void:
 	Net.server_gone.connect(to_menu)
 	_make_bg()
 	rebuild_menu()
+	if bool(Config.settings.get("twitch_on", false)) and DisplayServer.get_name() != "headless":
+		Twitch.start(str(Config.settings.get("twitch", "")))
 	Sfx.play_music()
 	if args.has("keyart"):
 		var ka: Node = load("res://tools/keyart.gd").new()

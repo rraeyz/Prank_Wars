@@ -548,6 +548,12 @@ func _process(delta: float) -> void:
 		rtext += (I18n.t("sniff_ready") if rw <= 0.0 else I18n.t("sniff_wait", [ceili(rw)])) + "\n"
 	_remote.text = rtext
 	_rule.text = (I18n.t("rule") + ": " + I18n.t("m_" + world.modifier)) if world.modifier != "" else ""
+	if Twitch.active() and Net.is_host() and world.live():
+		var parts := []
+		for e in Twitch.votes:
+			parts.append("%s %d" % [I18n.t("tw_" + str(e)), Twitch.votes[e]])
+		var left := maxf(0.0, world.twitch_at - Config.now)
+		rtext += "Twitch: %s  (%d)\n" % [" · ".join(parts) if parts.size() > 0 else I18n.t("tw_help"), ceili(left)]
 	if me != null and me.perk != "" and p in ["setup", "run", "chaos", "intro"]:
 		_rule.text += ("   ·   " if _rule.text != "" else "") + I18n.t("perk") + ": " + I18n.t("k_" + me.perk)
 	if world.rush and p == "run":

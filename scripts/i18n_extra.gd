@@ -4,6 +4,19 @@ extends RefCounted
 const LANGS := ["es", "pt", "de", "fr", "ru"]
 
 const S := {
+	"twitch_channel": ["tu canal", "seu canal", "dein Kanal", "ta chaîne", "твой канал"],
+	"twitch_mode": ["Los espectadores mandan bromas", "Espectadores mandam pegadinhas", "Zuschauer schicken Streiche", "Les spectateurs envoient des blagues", "Зрители шлют приколы"],
+	"twitch_ok": ["Twitch conectado: #%s — escriban !banana !flour !confetti !quake !cat !fart", "Twitch conectado: #%s — digitem !banana !flour !confetti !quake !cat !fart", "Twitch verbunden: #%s — schreibt !banana !flour !confetti !quake !cat !fart", "Twitch connecté : #%s — tapez !banana !flour !confetti !quake !cat !fart", "Twitch подключён: #%s — пишите !banana !flour !confetti !quake !cat !fart"],
+	"twitch_fail": ["No se pudo conectar a Twitch", "Não foi possível conectar à Twitch", "Twitch-Verbindung fehlgeschlagen", "Connexion Twitch impossible", "Не удалось подключиться к Twitch"],
+	"twitch_lost": ["Twitch desconectado", "Twitch desconectada", "Twitch getrennt", "Twitch déconnecté", "Twitch отключён"],
+	"tw_help": ["!banana !flour !confetti !quake !cat !fart", "!banana !flour !confetti !quake !cat !fart", "!banana !flour !confetti !quake !cat !fart", "!banana !flour !confetti !quake !cat !fart", "!banana !flour !confetti !quake !cat !fart"],
+	"tw_banana": ["plátano", "banana", "Banane", "banane", "банан"],
+	"tw_flour": ["harina", "farinha", "Mehl", "farine", "мука"],
+	"tw_confetti": ["confeti", "confete", "Konfetti", "confettis", "конфетти"],
+	"tw_quake": ["terremoto", "terremoto", "Erdbeben", "séisme", "землетрясение"],
+	"tw_cat": ["gato", "gato", "Katze", "chat", "кот"],
+	"tw_fart": ["pedo", "pum", "Furz", "prout", "пук"],
+	"feed_twitch": ["TWITCH: %s (%d votos) → %s", "TWITCH: %s (%d votos) → %s", "TWITCH: %s (%d Stimmen) → %s", "TWITCH : %s (%d votes) → %s", "TWITCH: %s (%d голосов) → %s"],
 	"steam_public": ["Crear sala pública (Steam)", "Criar sala pública (Steam)", "Öffentlichen Raum hosten (Steam)", "Créer un salon public (Steam)", "Открытая комната (Steam)"],
 	"find_rooms": ["Buscar salas (Steam)", "Procurar salas (Steam)", "Räume finden (Steam)", "Trouver un salon (Steam)", "Найти комнату (Steam)"],
 	"refresh": ["Actualizar", "Atualizar", "Aktualisieren", "Actualiser", "Обновить"],
