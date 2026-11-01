@@ -150,7 +150,7 @@ func _ready() -> void:
 	pc.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bottom.add_child(pc)
 	_palette = HBoxContainer.new()
-	_palette.add_theme_constant_override("separation", 6)
+	_palette.add_theme_constant_override("separation", 4)
 	pc.add_child(_palette)
 	_help = _lbl("", 16, Color(1, 1, 1, 0.75))
 	_help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -365,6 +365,7 @@ func _process(delta: float) -> void:
 	if p in ["setup", "run"] and tl <= 5.0 and tl > 0.0 and ceili(tl) != _last_sec:
 		_last_sec = ceili(tl)
 		Sfx.play("tick")
+	_sub.visible = _sub.visible and p != "sandbox"
 	_sub.text = I18n.t("round_n", [world.round_i + 1, Config.rounds]) + "   ·   " + I18n.t("team_%d" % world.trapper_team) + " ⚑"
 	# tasks
 	var tasks: Array = world.tasks
@@ -392,10 +393,10 @@ func _process(delta: float) -> void:
 	_palette.visible = trapper_setup
 	_budget.visible = trapper_setup
 	if trapper_setup:
-		_update_palette()
 		_budget.text = "%s: %d / %d" % [I18n.t("budget"), world.budget[world.local_team()], Config.BUDGET]
 		if p == "sandbox":
 			_budget.text = I18n.t("budget") + ": ∞"
+		_update_palette()
 	# remote list
 	var rtext := ""
 	if (p == "run" and world.local_is_trapper()) or p == "sandbox":
@@ -456,11 +457,13 @@ func _update_palette() -> void:
 			pc.add_child(v)
 			var n := _lbl("", 14, Color.WHITE)
 			n.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			n.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			n.custom_minimum_size = Vector2(74, 0)
 			v.add_child(n)
 			var c2 := _lbl("", 13, Color("ffe14d"))
 			c2.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			v.add_child(c2)
-			pc.custom_minimum_size = Vector2(84, 52)
+			pc.custom_minimum_size = Vector2(78, 48)
 			_palette.add_child(pc)
 	var budget: int = world.budget[world.local_team()]
 	for i in list.size():
@@ -469,7 +472,10 @@ func _update_palette() -> void:
 		var def: Dictionary = Config.PRANKS[t]
 		var v: VBoxContainer = pc.get_child(0)
 		(v.get_child(0) as Label).text = I18n.t("p_" + t)
-		(v.get_child(1) as Label).text = "%d ● %s%s" % [def["cost"], I18n.t("pl_" + def["place"]), (" · " + I18n.t("tr_remote")) if def["trigger"] == "remote" else ""]
+		var sel_i: bool = i == world.selected
+		(v.get_child(1) as Label).text = ("%d ●" % def["cost"]) + ((" " + I18n.t("tr_remote")) if def["trigger"] == "remote" else "")
+		if sel_i:
+			_budget.text += "     ▶ %s: %s" % [I18n.t("p_" + t), I18n.t("pl_" + def["place"])]
 		var sb := StyleBoxFlat.new()
 		sb.set_corner_radius_all(8)
 		sb.set_content_margin_all(4)
@@ -481,4 +487,4 @@ func _update_palette() -> void:
 			sb.set_border_width_all(3)
 			sb.border_color = Color.WHITE
 		pc.add_theme_stylebox_override("panel", sb)
-		(v.get_child(0) as Label).add_theme_font_size_override("font_size", 15 if sel else 13)
+		(v.get_child(0) as Label).add_theme_font_size_override("font_size", 14 if sel else 13)
