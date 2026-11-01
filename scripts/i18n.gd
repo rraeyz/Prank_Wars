@@ -71,6 +71,7 @@ const S := {
 	"pu_coffee": ["Kahve (10 sn hız)", "Coffee (10 s speed)"],
 	"feed_powerup": ["%s aldı: %s", "%s got: %s"],
 	"feed_shield": ["%s şemsiyeyle korundu!", "%s's umbrella blocked it!"],
+	"brightness": ["Parlaklık", "Brightness"], "contrast": ["Kontrast", "Contrast"], "saturation": ["Renk doygunluğu", "Saturation"],
 	"mode": ["Mod", "Mode"],
 	"mode_turns": ["Sıralı (biri kurar, biri koşar)", "Turns (one traps, one runs)"],
 	"mode_chaos": ["KAOS (herkes aynı anda kurar ve koşar)", "CHAOS (everyone traps and runs at once)"],

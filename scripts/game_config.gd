@@ -119,6 +119,7 @@ var now := 0.0
 var settings := {
 	"name": "", "lang": "", "master": 0.8, "music": 0.5, "sfx": 0.9,
 	"fullscreen": false, "last_ip": "127.0.0.1", "keys": {}, "hat": 1,
+	"brightness": 1.0, "contrast": 1.0, "saturation": 1.0,
 }
 const REBINDABLE := ["move_up", "move_down", "move_left", "move_right", "jump", "interact", "dive", "action", "prev_item", "next_item", "cam_next", "reveal", "taunt", "ghost", "trigger_all"]
 const SETTINGS_PATH := "user://settings.cfg"
@@ -239,7 +240,21 @@ func save_settings() -> void:
 	apply_settings()
 
 
+signal visuals_changed
+const SLIDERS := {"master": [0.0, 1.0], "music": [0.0, 1.0], "sfx": [0.0, 1.0],
+	"brightness": [0.5, 1.5], "contrast": [0.6, 1.4], "saturation": [0.0, 1.6]}
+
+
+## Applies the player's brightness / contrast / saturation (plus our base color grade) to an Environment.
+func apply_env(e: Environment) -> void:
+	e.adjustment_enabled = true
+	e.adjustment_brightness = 0.94 * float(settings["brightness"])
+	e.adjustment_contrast = 1.06 * float(settings["contrast"])
+	e.adjustment_saturation = 1.15 * float(settings["saturation"])
+
+
 func apply_settings() -> void:
+	visuals_changed.emit()
 	var buses := {"Master": settings["master"], "Music": settings["music"], "SFX": settings["sfx"]}
 	for b in buses:
 		var idx := AudioServer.get_bus_index(b)

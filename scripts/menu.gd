@@ -303,14 +303,14 @@ func _input(e: InputEvent) -> void:
 func _build_settings() -> void:
 	var v := _screen("settings")
 	v.add_child(_lbl(I18n.t("settings"), 40, Color("ffe14d")))
-	for k in ["master", "music", "sfx"]:
+	for k in Config.SLIDERS:
 		var row := HBoxContainer.new()
 		var l := _lbl(I18n.t(k), 20)
 		l.custom_minimum_size = Vector2(160, 0)
 		row.add_child(l)
 		var sl := HSlider.new()
-		sl.min_value = 0.0
-		sl.max_value = 1.0
+		sl.min_value = Config.SLIDERS[k][0]
+		sl.max_value = Config.SLIDERS[k][1]
 		sl.step = 0.05
 		sl.value = float(Config.settings[k])
 		sl.custom_minimum_size = Vector2(260, 24)

@@ -238,12 +238,12 @@ func _ready() -> void:
 	_pause.add_child(pv)
 	pv.add_child(_lbl("PRANK WARS", 36, Color("ffe14d")))
 	pv.add_child(_btn(I18n.t("resume"), func(): _pause.visible = false))
-	for k in ["master", "music", "sfx"]:
+	for k in Config.SLIDERS:
 		var row := HBoxContainer.new()
 		row.add_child(_lbl(I18n.t(k), 18, Color.WHITE))
 		var sl := HSlider.new()
-		sl.min_value = 0.0
-		sl.max_value = 1.0
+		sl.min_value = Config.SLIDERS[k][0]
+		sl.max_value = Config.SLIDERS[k][1]
 		sl.step = 0.05
 		sl.value = float(Config.settings[k])
 		sl.custom_minimum_size = Vector2(200, 20)

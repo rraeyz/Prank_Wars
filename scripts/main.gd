@@ -96,8 +96,9 @@ func _make_bg() -> void:
 	e.background_color = Color("9fd8ff")
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	e.ambient_light_color = Color("fff4e6")
-	e.ambient_light_energy = 0.6
+	e.ambient_light_energy = 0.45
 	env.environment = e
+	Config.apply_env(e)
 	bg.add_child(env)
 	var cam := Camera3D.new()
 	cam.name = "BgCam"

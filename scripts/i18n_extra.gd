@@ -4,6 +4,9 @@ extends RefCounted
 const LANGS := ["es", "pt", "de", "fr", "ru"]
 
 const S := {
+	"brightness": ["Brillo", "Brilho", "Helligkeit", "Luminosité", "Яркость"],
+	"contrast": ["Contraste", "Contraste", "Kontrast", "Contraste", "Контраст"],
+	"saturation": ["Saturación", "Saturação", "Sättigung", "Saturation", "Насыщенность"],
 	"pu_umbrella": ["Paraguas (bloquea la próxima broma)", "Guarda-chuva (bloqueia a próxima)", "Schirm (blockt den nächsten Streich)", "Parapluie (bloque la prochaine blague)", "Зонт (блокирует следующий прикол)"],
 	"pu_coffee": ["Café (10 s de velocidad)", "Café (10 s de velocidade)", "Kaffee (10 s schneller)", "Café (10 s de vitesse)", "Кофе (10 с скорости)"],
 	"feed_powerup": ["%s consiguió: %s", "%s pegou: %s", "%s hat: %s", "%s a pris : %s", "%s взял(а): %s"],

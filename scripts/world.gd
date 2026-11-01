@@ -136,10 +136,12 @@ func _lights() -> void:
 	e.background_color = Color("9fd8ff")
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	e.ambient_light_color = Color("fff4e6")
-	e.ambient_light_energy = 0.42
+	e.ambient_light_energy = 0.36
 	env.environment = e
 	add_child(env)
 	_env = e
+	Config.apply_env(e)
+	Config.visuals_changed.connect(func(): Config.apply_env(e))
 
 
 func _make_client_body(b: RigidBody3D) -> void:

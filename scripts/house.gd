@@ -111,9 +111,75 @@ func _floors(cols: Dictionary) -> void:
 	add_child(fl)
 	var grass := U.box(Vector3(60, 0.1, 60), Color("5fb345"), Vector3(0, -0.06, 4), self)
 	grass.name = "Grass"
+	grass.material_override = _textured(Color("5fb345"), _noise_tex(0.08), Vector3(18, 18, 1))
+	var floor_tex := _noise_tex(0.02, true)
 	for r in cols:
 		var rc: Rect2 = rooms[r]
-		U.box(Vector3(rc.size.x, 0.04, rc.size.y), cols[r], Vector3(rc.get_center().x, 0.0, rc.get_center().y), self)
+		var f := U.box(Vector3(rc.size.x, 0.04, rc.size.y), cols[r], Vector3(rc.get_center().x, 0.0, rc.get_center().y), self)
+		f.material_override = _textured(cols[r], floor_tex, Vector3(rc.size.x / 3.0, rc.size.y / 3.0, 1))
+	_windows()
+
+
+static var _tex_cache := {}
+
+
+## Soft procedural noise so floors and grass aren't flat colors (no image files needed).
+func _noise_tex(freq: float, planks := false) -> Texture2D:
+	var key := "%f%s" % [freq, planks]
+	if _tex_cache.has(key):
+		return _tex_cache[key]
+	var n := FastNoiseLite.new()
+	n.frequency = freq
+	n.seed = 7
+	var t := NoiseTexture2D.new()
+	t.width = 256
+	t.height = 256
+	t.seamless = true
+	t.noise = n
+	if planks:
+		n.fractal_octaves = 2
+		t.width = 64
+		t.height = 512
+	var g := Gradient.new()
+	g.colors = PackedColorArray([Color(0.82, 0.82, 0.82), Color(1, 1, 1)])
+	t.color_ramp = g
+	_tex_cache[key] = t
+	return t
+
+
+func _textured(c: Color, tex: Texture2D, scale: Vector3) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = c
+	m.albedo_texture = tex
+	m.uv1_scale = scale
+	m.roughness = 0.85
+	return m
+
+
+## Windows on the inside faces of the outer walls the camera can see (north, west, east).
+func _windows() -> void:
+	var glass := Color(0.62, 0.84, 1.0)
+	var frame := Color("fdfdfd")
+	var x := RECT.position.x + 2.0
+	while x < RECT.end.x - 1.5:
+		var win := Node3D.new()
+		win.position = Vector3(x, 1.45, RECT.position.y + T / 2.0 + 0.02)
+		add_child(win)
+		U.box(Vector3(1.2, 0.9, 0.04), frame, Vector3.ZERO, win)
+		U.box(Vector3(1.05, 0.75, 0.05), glass, Vector3(0, 0, 0.01), win)
+		U.box(Vector3(0.04, 0.75, 0.06), frame, Vector3(0, 0, 0.02), win)
+		x += 4.0
+	for side in [-1.0, 1.0]:
+		var z := RECT.position.y + 2.0
+		while z < 5.0:
+			var w2 := Node3D.new()
+			var wx: float = (RECT.position.x + T / 2.0 + 0.02) if side < 0.0 else (RECT.end.x - T / 2.0 - 0.02)
+			w2.position = Vector3(wx, 1.45, z)
+			w2.rotation.y = PI / 2.0
+			add_child(w2)
+			U.box(Vector3(1.2, 0.9, 0.04), frame, Vector3.ZERO, w2)
+			U.box(Vector3(1.05, 0.75, 0.05), glass, Vector3(0, 0, 0.01 * side), w2)
+			z += 4.0
 
 
 func _house_decor() -> void:
