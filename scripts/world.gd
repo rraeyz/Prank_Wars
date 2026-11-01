@@ -1024,6 +1024,7 @@ func _do_task_step(a: Avatar, e: Dictionary) -> void:
 				if p.socket == e["at"] and p.type == "fake_remote" and p.armed and not p.used:
 					p.fire(a)
 					return
+			fx_all("task_fx", [str(e["at"]), e["pos"]])
 			_advance_task(e["task"], a)
 		"open":
 			var c: Cupboard = house.cupboards[e["at"]]
@@ -1567,6 +1568,10 @@ func _apply_fx(kind: String, args: Array, in_replay: bool) -> void:
 					hud.toast(I18n.t("quake"))
 			if cam:
 				cam.shake(2.0)
+		"task_fx":
+			if in_replay or headless:
+				return
+			_task_fx(str(args[0]), args[1])
 		"cup_open":
 			var cup: Cupboard = house.cupboards.get(str(args[0]))
 			if cup:
@@ -2083,3 +2088,27 @@ func _take_powerup(a: Avatar, pu: Prop) -> void:
 			a.fast_until = Config.now + 10.0
 	feed_all("feed_powerup", [a.pname, "@pu_" + pu.kind], a.team)
 	fx_all("sfx", ["task", a.global_position])
+
+
+## Small visual payoff when a hold-chore finishes (water, a sandwich appears, papers fly...).
+func _task_fx(at: String, pos: Vector3) -> void:
+	match at:
+		"shower", "plant_a", "plant_b", "aquarium":
+			Fx.burst(self, pos + Vector3(0, 1.4 if at == "shower" else 0.9, 0), "water")
+			Sfx.play("splash", pos, -8.0, 1.4)
+		"counter":
+			var sw := Node3D.new()
+			sw.position = pos + Vector3(randf_range(-0.3, 0.3), 0.05, -0.35)
+			_splat_root.add_child(sw)
+			U.box(Vector3(0.24, 0.05, 0.2), Color("f5c26b"), Vector3.ZERO, sw)
+			U.box(Vector3(0.25, 0.03, 0.21), Color("7cb342"), Vector3(0, 0.04, 0), sw)
+			U.box(Vector3(0.24, 0.05, 0.2), Color("f5c26b"), Vector3(0, 0.08, 0), sw)
+		"coffee_machine":
+			U.cyl(0.06, 0.1, Color.WHITE, pos + Vector3(randf_range(-0.2, 0.2), 0.08, -0.2), _splat_root)
+			Fx.burst(self, pos + Vector3(0, 0.4, -0.3), "flour")
+		"copier", "whiteboard", "boss_desk":
+			Fx.burst(self, pos + Vector3(0, 1.0, 0), "confetti")
+		"bed":
+			Fx.burst(self, pos + Vector3(0, 0.6, 0), "flour")
+		_:
+			Fx.burst(self, pos + Vector3(0, 0.8, 0), "sparkle")

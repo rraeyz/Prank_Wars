@@ -11,6 +11,7 @@ var spectate_idx := 0  # 0 = overview, 1.. = runners
 var pan := Vector3.ZERO
 var focus := Vector3(0, 0, 3)
 var _shake := 0.0
+var zoomed := false  # Z: closer camera for precise trap placement
 
 
 func _ready() -> void:
@@ -39,7 +40,9 @@ func spectate_target() -> Node3D:
 
 
 func _process(delta: float) -> void:
-	var off := OFF
+	if Input.is_action_just_pressed("zoom") and not world.ui_blocking():
+		zoomed = not zoomed
+	var off := OFF * (0.55 if zoomed else 1.0)
 	var target: Node3D = null
 	if world.replaying:
 		target = world.replay_focus()

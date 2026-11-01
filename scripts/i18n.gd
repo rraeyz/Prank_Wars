@@ -136,7 +136,7 @@ const S := {
 	"runners_enter": ["Koşucular içeri giriyor!", "Runners are coming in!"],
 	"budget": ["Bütçe", "Budget"],
 	"tasks": ["Görevler", "Chores"],
-	"setup_help": ["[Q/R / tekerlek] şaka seç  [Sol tık / F] fareyle gösterdiğin yere koy", "[Q/R / wheel] pick prank  [LMB / F] place where you point"],
+	"setup_help": ["[Q/R / tekerlek] şaka seç  [Sol tık / F] fareyle gösterdiğin yere koy  [Z] yakınlaştır", "[Q/R / wheel] pick prank  [LMB / F] place where you point  [Z] zoom"],
 	"run_help_trapper": ["[1-9] veya [Sol tık] uzaktan şakayı patlat  [Tab] kamera  [WASD] kaydır", "[1-9] or [LMB] fire a remote prank  [Tab] camera  [WASD] pan"],
 	"run_help_runner": ["[E] basılı tut: görev / aç / etkisiz bırak  [Space] zıpla  [Shift] dalış  [C] kokla  [V] dans", "[E] hold: chore / open / disarm  [Space] jump  [Shift] dive  [C] sniff  [V] taunt"],
 	"warmup_help": ["Bahçede ısın: [Shift] dalış, [E] eşya al, [Sol tık] fırlat", "Warm up: [Shift] dive, [E] grab, [LMB] throw"],
