@@ -77,10 +77,10 @@ func _floors() -> void:
 	cs.position = Vector3(0, -0.5, 4)
 	fl.add_child(cs)
 	add_child(fl)
-	var grass := U.box(Vector3(60, 0.1, 60), Color("86c96a"), Vector3(0, -0.06, 4), self)
+	var grass := U.box(Vector3(60, 0.1, 60), Color("5fb345"), Vector3(0, -0.06, 4), self)
 	grass.name = "Grass"
-	var cols := {"kitchen": Color("f1e3c6"), "living": Color("dcb88f"), "bath": Color("bfe0e6"),
-		"hall": Color("d7bfa3"), "bed": Color("d9c8ea")}
+	var cols := {"kitchen": Color("e6cf9f"), "living": Color("c08f5e"), "bath": Color("8fc9d6"),
+		"hall": Color("bf9c78"), "bed": Color("b9a3dc")}
 	for r in cols:
 		var rc: Rect2 = rooms[r]
 		U.box(Vector3(rc.size.x, 0.04, rc.size.y), cols[r], Vector3(rc.get_center().x, 0.0, rc.get_center().y), self)
@@ -88,7 +88,7 @@ func _floors() -> void:
 	for i in 12:
 		var x := -7.5 + (i % 6) * 1.2
 		var z := -5.5 + (i / 6) * 1.2 + (0.6 if i % 2 == 0 else 0.0)
-		U.box(Vector3(0.6, 0.045, 0.6), Color("e6d2ad"), Vector3(x, 0.0, z), self)
+		U.box(Vector3(0.6, 0.045, 0.6), Color("f4ead2"), Vector3(x, 0.0, z), self)
 	# rugs
 	U.box(Vector3(3.2, 0.05, 2.2), Color("e86f5a"), Vector3(3.5, 0.0, -2.6), self)
 	U.box(Vector3(1.4, 0.05, 3.6), Color("6a8fd8"), Vector3(-1.0, 0.0, 3.2), self)

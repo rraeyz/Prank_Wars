@@ -31,6 +31,8 @@ func _ready() -> void:
 		for s in str(args["shot"]).split(","):
 			var p := s.split("@")
 			_shots.append([p[0], float(p[1])])
+	if args.has("nanprobe"):
+		add_child(load("res://tests/nan_probe.gd").new())
 	Net.match_begin.connect(_on_match_begin)
 	Net.lobby_return.connect(_on_lobby_return)
 	Net.server_gone.connect(to_menu)

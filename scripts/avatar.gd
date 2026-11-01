@@ -449,9 +449,9 @@ func _process(delta: float) -> void:
 		var target := Vector3(clampf(-_vel_disp.x * 0.01, -0.05, 0.05), clampf(-_vel_disp.y * 0.01, -0.05, 0.05), 0)
 		if knocked:
 			target = Vector3(sin(t * 20.0 + i * 3.0), cos(t * 16.0 + i), 0) * 0.05
-		_pupil_v[i] += (target - _pupil_off[i]) * 300.0 * delta
-		_pupil_v[i] *= 0.85
-		_pupil_off[i] += _pupil_v[i] * delta
+		var dt := minf(delta, 1.0 / 30.0)
+		_pupil_v[i] = (_pupil_v[i] + (target - _pupil_off[i]) * 300.0 * dt).limit_length(3.0) * 0.85
+		_pupil_off[i] = (_pupil_off[i] + _pupil_v[i] * dt).limit_length(0.08)
 		var base := Vector3(0.15 * (-1.0 if i == 0 else 1.0), 0.42, -0.41)
 		_pupils[i].position = base + _pupil_off[i].limit_length(0.06)
 	_hat.visible = (flags & F.HAT) != 0

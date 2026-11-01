@@ -1,0 +1,68 @@
+name: test-and-build
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  GODOT_VERSION: 4.4.1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot
+            ~/.local/share/godot/export_templates
+          key: godot-${{ env.GODOT_VERSION }}-v2
+
+      - name: Install Godot + export templates
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot && cd ~/godot
+          curl -sSL -o g.zip https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip
+          unzip -q g.zip && rm g.zip
+          curl -sSL -o t.tpz https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz
+          unzip -q t.tpz && rm t.tpz
+          mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          mv templates/windows_release_x86_64.exe templates/linux_release.x86_64 templates/version.txt ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
+          rm -rf templates
+
+      - name: Import project
+        run: timeout 300 ~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 --headless --path . --import || true
+
+      - name: Run tests
+        run: GODOT=~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 tests/run.sh
+
+      - name: Export Windows
+        run: |
+          mkdir -p build
+          ~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 --headless --path . --export-release "Windows Desktop" build/PrankWars.exe
+          cd build && zip -q PrankWars-Windows.zip PrankWars.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PrankWars-Windows
+          path: build/PrankWars.exe
+
+      - name: Publish pre-release (download from the Releases page)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Prank Wars test build ${{ github.run_number }}
+          prerelease: true
+          target_commitish: ${{ github.sha }}
+          files: build/PrankWars-Windows.zip
+          body: |
+            Windows test build from commit ${{ github.sha }}.
+            Download PrankWars-Windows.zip, extract, run PrankWars.exe.
