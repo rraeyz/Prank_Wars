@@ -60,6 +60,7 @@ const S := {
 	"hat": ["Şapka", "Hat"],
 	"hat_none": ["Yok", "None"], "hat_party": ["Parti", "Party"], "hat_crown": ["Taç", "Crown"], "hat_cap": ["Kep", "Cap"],
 	"hat_chef": ["Aşçı", "Chef"], "hat_propeller": ["Pervane", "Propeller"], "hat_horns": ["Boynuz", "Horns"],
+	"ann_2": ["GÜZEL!", "NICE!"], "ann_3": ["SANAT ESERİ!", "MASTERPIECE!"], "ann_4": ["EFSANE!", "LEGENDARY!"], "ann_5": ["TANRI MODU!", "GOD MODE!"],
 	"mode": ["Mod", "Mode"],
 	"mode_turns": ["Sıralı (biri kurar, biri koşar)", "Turns (one traps, one runs)"],
 	"mode_chaos": ["KAOS (herkes aynı anda kurar ve koşar)", "CHAOS (everyone traps and runs at once)"],

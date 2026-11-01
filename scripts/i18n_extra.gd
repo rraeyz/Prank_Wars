@@ -4,6 +4,10 @@ extends RefCounted
 const LANGS := ["es", "pt", "de", "fr", "ru"]
 
 const S := {
+	"ann_2": ["¡BIEN!", "BOA!", "SCHÖN!", "BIEN JOUÉ !", "КРАСИВО!"],
+	"ann_3": ["¡OBRA MAESTRA!", "OBRA-PRIMA!", "MEISTERWERK!", "CHEF-D'ŒUVRE !", "ШЕДЕВР!"],
+	"ann_4": ["¡LEGENDARIO!", "LENDÁRIO!", "LEGENDÄR!", "LÉGENDAIRE !", "ЛЕГЕНДАРНО!"],
+	"ann_5": ["¡MODO DIOS!", "MODO DEUS!", "GOTTMODUS!", "MODE DIEU !", "РЕЖИМ БОГА!"],
 	"mode": ["Modo", "Modo", "Modus", "Mode", "Режим"],
 	"mode_turns": ["Por turnos (uno pone trampas, otro corre)", "Por turnos (um arma, outro corre)", "Abwechselnd (einer stellt Fallen, einer läuft)", "Chacun son tour (l'un piège, l'autre court)", "По очереди (одни ставят, другие бегут)"],
 	"mode_chaos": ["CAOS (todos ponen trampas y corren a la vez)", "CAOS (todos armam e correm ao mesmo tempo)", "CHAOS (alle stellen Fallen und laufen gleichzeitig)", "CHAOS (tout le monde piège et court en même temps)", "ХАОС (все ставят ловушки и бегают одновременно)"],

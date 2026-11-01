@@ -1578,8 +1578,16 @@ func s_feed(key: String, args: Array, team: int, big: bool) -> void:
 	var text := I18n.t(key, a2)
 	if hud:
 		if big:
+			# chain announcer: the bigger the chain, the louder the title
+			if key == "chain" and a2.size() > 0:
+				var n: int = int(a2[0])
+				text = I18n.t("ann_%d" % clampi(n, 2, 5)) + "\n" + text
+				if cam:
+					cam.shake(0.4 + 0.3 * n)
+				Sfx.play("win" if n >= 4 else "chain", null, 0.0, 1.0 + 0.1 * n)
+			else:
+				Sfx.play("chain")
 			hud.popup(text, Config.TEAM_COLORS[team])
-			Sfx.play("chain")
 		else:
 			hud.feed(text, Config.TEAM_COLORS[team])
 
