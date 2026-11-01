@@ -16,6 +16,7 @@ var _last_pos := Vector3.ZERO
 var _strafe_until := 0.0
 var _strafe := Vector3.ZERO
 var _disarm_roll := {}
+var _avoid_roll := {}
 var _remote_at := {}
 var _wander_at := 0.0
 var _dive_cd := 0.0
@@ -34,6 +35,7 @@ func on_round_start() -> void:
 	goal = Vector3.INF
 	goal_key = ""
 	_disarm_roll.clear()
+	_avoid_roll.clear()
 	_remote_at.clear()
 
 
@@ -96,6 +98,8 @@ func _go(target: Vector3, key: String, now: float) -> bool:
 		path.pop_front()
 		return path.is_empty()
 	var dir := to.normalized()
+	if world.phase == "run" and a.team != world.trapper_team:
+		dir = _avoid_traps(dir)
 	# unstick
 	if now < _strafe_until:
 		dir = (dir + _strafe).normalized()
@@ -110,6 +114,27 @@ func _go(target: Vector3, key: String, now: float) -> bool:
 		_stuck_t = 0.0
 	a.in_move = Vector2(dir.x, dir.z)
 	return false
+
+
+## Runner bots notice some visible floor traps right in front of them and sidestep (others they walk right into).
+func _avoid_traps(dir: Vector3) -> Vector3:
+	var pos := a.global_position
+	for id in world.pranks:
+		var p: Prank = world.pranks[id]
+		if p.used or p.disarmed or not p.armed or not p.def["reveal"] or p.def["place"] != "floor":
+			continue
+		var to := U.flat_xz(p.global_position - pos)
+		var d := to.length()
+		if d > 1.8 or d < 0.05 or to.normalized().dot(dir) < 0.6:
+			continue
+		if not _avoid_roll.has(id):
+			_avoid_roll[id] = rng.randf() < 0.45
+		if _avoid_roll[id]:
+			var side := Vector3(-dir.z, 0, dir.x)
+			if side.dot(to) > 0.0:
+				side = -side
+			return (dir * 0.4 + side).normalized()
+	return dir
 
 
 func _trapper_setup(now: float) -> void:

@@ -92,7 +92,7 @@ Bu dosya projenin görev listesidir. Her oturum bu dosyayı ve `PROGRESS.md`'yi 
 - [x] Gamepad ile menüde gezinme (Steam Deck)
 - [x] Yeni diller: İspanyolca, Portekizce (BR), Almanca, Fransızca, Rusça (arayüz metinleri; ipuçları İngilizce kalıyor)
 - [ ] Tuş atama ekranı (klavye)
-- [ ] Botlar bazen görünen tuzaktan kaçsın (daha inandırıcı antrenman)
+- [x] Botlar bazen görünen tuzaktan kaçsın (daha inandırıcı antrenman)
 - [ ] İkinci harita taslağı (ofis) — rapor: çıkıştan sonra; sadece altyapı (harita seçimi)
 
 ## Haftalık
